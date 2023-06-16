@@ -1,0 +1,32 @@
+Transform: AWS::Serverless-2016-10-31
+Description: "Tool that scans websites and checks for changes"
+
+Globals:
+  Function:
+    Runtime: nodejs14.x
+    Timeout: 30
+    CodeUri: /src/lambdas
+
+#Parameters:
+
+#Conditions:
+
+Resources:
+  ScheduledStart:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS
+      Handler: scheduled-start.handler
+      Events:
+        ScheudledCall:
+          Type: Schedule
+          Properties:
+            Schedule: 'rate(7 days)'
+            Name: website-alerter-schedule
+            Description: Scheduled call to the function to start scrapping process
+            Enabled: true
+      VpcConfig:
+        SecurityGroupIds: !Ref VpcSecurityGroupId
+        SubnetIds: !Ref VpcSubnetIds
+
+#Outputs:
