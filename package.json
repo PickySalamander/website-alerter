@@ -19,6 +19,7 @@
 	"devDependencies": {
 		"@types/aws-lambda": "^8.10.119",
 		"aws-sam-webpack-plugin": "^0.13.0",
+		"aws-sdk": "^2.1399.0",
 		"rimraf": "^5.0.1",
 		"ts-loader": "^9.4.3",
 		"typescript": "^5.1.3",

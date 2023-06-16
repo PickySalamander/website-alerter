@@ -6,10 +6,16 @@ Globals:
     Runtime: nodejs14.x
     Timeout: 30
     CodeUri: /src/lambdas
+    Environment:
+      Variables:
+        CONFIG_S3: !Ref S3Website
 
-#Parameters:
-
-#Conditions:
+Parameters:
+  IsProduction:
+    Description: Current environment of this deployment
+    Default: "false"
+    Type: String
+    AllowedValues: [ "false", "true" ]
 
 Resources:
   ScheduledStart:
@@ -17,6 +23,9 @@ Resources:
     Properties:
       Description: Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS
       Handler: scheduled-start.handler
+      Environment:
+        Variables:
+          WEBSITE_QUEUE_NAME: !Ref WebsiteQueue
       Events:
         ScheudledCall:
           Type: Schedule
@@ -25,8 +34,29 @@ Resources:
             Name: website-alerter-schedule
             Description: Scheduled call to the function to start scrapping process
             Enabled: true
-      VpcConfig:
-        SecurityGroupIds: !Ref VpcSecurityGroupId
-        SubnetIds: !Ref VpcSubnetIds
 
-#Outputs:
+  WebsiteQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: website-alerter-queue
+
+  ConfigurationBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - "-"
+        - - "website-alerter"
+          - !Select
+            - 0
+            - !Split
+              - "-"
+              - !Select
+                - 2
+                - !Split
+                  - "/"
+                  - !Ref "AWS::StackId"
+
+Outputs:
+  ConfigurationBucket:
+    Value: !Ref ConfigurationBucket
+    Description: Name of S3 bucket to configuration, upload your config json here
