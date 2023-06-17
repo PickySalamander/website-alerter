@@ -1,5 +1,5 @@
 export class Utils {
 	public static get isProduction():boolean {
-		return process.env.IsProduction == "true";
+		return process.env.IS_PRODUCTION == "true";
 	}
 }

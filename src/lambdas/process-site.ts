@@ -1,7 +1,8 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {ConfigurationService, SiteConfig} from "../services/configuration.service";
 import {DatabaseService} from "../services/database.service";
-import chromium from "chrome-aws-lambda";
+// import chromium from "@sparticuz/chromium";
+// import puppeteer from "puppeteer-core";
 
 class ProcessSite {
 	private config:ConfigurationService;
@@ -44,13 +45,6 @@ class ProcessSite {
 				lastCheck: undefined
 			};
 		}
-
-		const browser = await chromium.puppeteer.launch({
-			headless: true,
-			args: chromium.args,
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath,
-		});
 
 		// chromium.setHeadlessMode = true;
 		// chromium.setGraphicsMode = false;

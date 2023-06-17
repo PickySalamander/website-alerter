@@ -3,13 +3,14 @@ Description: "Tool that scans websites and checks for changes"
 
 Globals:
   Function:
-    Runtime: nodejs14.x
+    Runtime: nodejs18.x
     Timeout: 30
     CodeUri: /src/lambdas
     Environment:
       Variables:
         WEBSITE_TABLE: !Select [ 1, !Split [ '/', !GetAtt WebsiteTable.Arn ] ]
         CONFIG_S3: !Ref ConfigurationBucket
+        IS_PRODUCTION: !Sub "${IsProduction}"
 
 Parameters:
   IsProduction:
