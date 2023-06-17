@@ -8,7 +8,8 @@ Globals:
     CodeUri: /src/lambdas
     Environment:
       Variables:
-        CONFIG_S3: !Ref S3Website
+        WEBSITE_TABLE: !Select [ 1, !Split [ '/', !GetAtt WebsiteTable.Arn ] ]
+        CONFIG_S3: !Ref ConfigurationBucket
 
 Parameters:
   IsProduction:
@@ -23,17 +24,31 @@ Resources:
     Properties:
       Description: Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS
       Handler: scheduled-start.handler
+      Role: !GetAtt LambdaIAMRole.Arn
       Environment:
         Variables:
           WEBSITE_QUEUE_NAME: !Ref WebsiteQueue
       Events:
-        ScheudledCall:
+        ScheduledCall:
           Type: Schedule
           Properties:
             Schedule: 'rate(7 days)'
-            Name: website-alerter-schedule
+            Name: website-alerter-trigger
             Description: Scheduled call to the function to start scrapping process
             Enabled: true
+
+  ProcessSite:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Process a website that was queued via SQS
+      Handler: process-site.handler
+      Role: !GetAtt LambdaIAMRole.Arn
+      Events:
+        ProcessSiteEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt WebsiteQueue.Arn
+            BatchSize: 2
 
   WebsiteQueue:
     Type: AWS::SQS::Queue
@@ -55,6 +70,78 @@ Resources:
                 - !Split
                   - "/"
                   - !Ref "AWS::StackId"
+
+  LambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "website-alerter-role"
+      Description: Generic role for Lambdas
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: Read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:DescribeLogStreams"
+                  - "logs:CreateLogStream"
+                  - "logs:CreateLogGroup"
+                  - "logs:PutLogEvents"
+                  - "s3:ListBucket"
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                Resource: !Sub 'arn:aws:s3:::${ConfigurationBucket}/*'
+        - PolicyName: Dynamo
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:ListTables"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:GetItem"
+                  - "dynamodb:DeleteItem"
+                  - "dynamodb:PutItem"
+                  - "dynamodb:Query"
+                  - "dynamodb:UpdateItem"
+                Resource:
+                  - !GetAtt WebsiteTable.Arn
+        - PolicyName: Events
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "sqs:ReceiveMessage"
+                  - "sqs:DeleteMessage"
+                  - "sqs:GetQueueAttributes"
+                Resource:
+                  - !GetAtt WebsiteQueue.Arn
+
+  WebsiteTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: website-alerter-sites
+      AttributeDefinitions:
+        - AttributeName: site
+          AttributeType: S
+      KeySchema:
+        - AttributeName: site
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
 Outputs:
   ConfigurationBucket:

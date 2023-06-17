@@ -1,5 +1,5 @@
 import {EventBridgeHandler} from "aws-lambda";
-import {Config, SQS} from "aws-sdk";
+import {SQS} from "aws-sdk";
 import {ConfigurationService} from "../services/configuration.service";
 import {Utils} from "../util/utils";
 

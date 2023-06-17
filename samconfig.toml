@@ -7,5 +7,5 @@ resolve_s3 = true
 s3_prefix = "website-alerter"
 region = "us-east-1"
 confirm_changeset = true
-capabilities = "CAPABILITY_IAM"
-parameter_overrides = 'EnvType="prod"'
+capabilities = ["CAPABILITY_IAM", "CAPABILITY_NAMED_IAM"]
+parameter_overrides = 'IsProduction="true"'
