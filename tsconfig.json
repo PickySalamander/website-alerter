@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
-		"target": "es2015",
-		"module": "commonjs",
+		"target": "es2020",
+		"module": "es2020",
 		"sourceMap": true,
 		"rootDir": "./src",
 		"strict": true,
@@ -10,6 +10,8 @@
 		"forceConsistentCasingInFileNames": true,
 		"strictNullChecks": false,
 		"noImplicitReturns": true,
-		"noFallthroughCasesInSwitch": true
+		"noFallthroughCasesInSwitch": true,
+		"moduleResolution": "node",
+		"importHelpers": true
 	}
 }

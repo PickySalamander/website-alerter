@@ -1,5 +1,6 @@
-import {DocumentClient} from "aws-sdk/lib/dynamodb/document_client";
+
 import {Utils} from "../util/utils";
+import {DocumentClient} from "aws-sdk/clients/dynamodb";
 import {DynamoDB} from "aws-sdk";
 
 export class DatabaseService {

@@ -1,6 +1,11 @@
 const path = require("path");
 const AwsSamPlugin = require("aws-sam-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
+const nodeExternals = require('webpack-node-externals');
+
 const awsSamPlugin = new AwsSamPlugin();
+
+const finalPuppeteerSpace = ".aws-sam/build/ProcessSite/node_modules";
 
 module.exports = {
 	// Loads the entry object from the AWS::Serverless::Function resources in your
@@ -23,7 +28,7 @@ module.exports = {
 	},
 
 	// Target node
-	target: "node",
+	externalsPresets: { node: true },
 
 	externals: [],
 
@@ -36,5 +41,7 @@ module.exports = {
 	},
 
 	// Add the AWS SAM Webpack plugin
-	plugins: [awsSamPlugin]
+	plugins: [
+		awsSamPlugin
+	]
 };
