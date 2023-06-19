@@ -27,7 +27,6 @@ class ProcessSite {
 			await this.parseSite(siteInfo);
 		}
 
-
 		console.log("Done.");
 	}
 

@@ -10,6 +10,8 @@ export class DatabaseService {
 		if(Utils.isProduction) {
 			this.client = new DynamoDB.DocumentClient();
 		} else {
+			console.log("Dynamo connecting to localhost");
+
 			//if a dev environment try to connect to docker
 			this.client = new DynamoDB.DocumentClient({
 				endpoint: 'http://host.docker.internal:8000'

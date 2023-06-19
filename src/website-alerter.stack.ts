@@ -9,6 +9,7 @@ import {Rule, Schedule} from "aws-cdk-lib/aws-events";
 import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {Effect, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {RetentionDays} from "aws-cdk-lib/aws-logs";
 
 export class WebsiteAlerterStack extends Stack {
 	constructor(scope:Construct, id:string, props?:StackProps) {
@@ -45,7 +46,8 @@ export class WebsiteAlerterStack extends Stack {
 				"WEBSITE_TABLE": websiteTable.tableName,
 				"WEBSITE_QUEUE_NAME": websiteQueue.queueUrl,
 				"IS_PRODUCTION": "true"
-			}
+			},
+			logRetention: RetentionDays.ONE_MONTH
 		});
 
 		new Rule(this, "ScheduledStartRule", {
@@ -65,6 +67,7 @@ export class WebsiteAlerterStack extends Stack {
 				"WEBSITE_TABLE": websiteTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
+			logRetention: RetentionDays.ONE_MONTH,
 			events: [
 				new SqsEventSource(websiteQueue)
 			]
@@ -123,7 +126,11 @@ export class WebsiteAlerterStack extends Stack {
 							actions: [
 								"sqs:ReceiveMessage",
 								"sqs:DeleteMessage",
-								"sqs:GetQueueAttributes"
+								"sqs:GetQueueAttributes",
+								"sqs:ChangeMessageVisibility",
+								"sqs:DeleteMessage",
+								"sqs:GetQueueUrl",
+								"sqs:SendMessage"
 							],
 							resources: [websiteQueue.queueArn]
 						})
