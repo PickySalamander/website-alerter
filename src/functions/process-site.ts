@@ -1,8 +1,6 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {ConfigurationService, SiteConfig} from "../services/configuration.service";
 import {DatabaseService} from "../services/database.service";
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
 
 class ProcessSite {
 	private config:ConfigurationService;
@@ -42,19 +40,19 @@ class ProcessSite {
 
 			site = {
 				site: siteConfig.site,
-				lastCheck: undefined
+				lastCheck: 0
 			};
 		}
 
-		chromium.setHeadlessMode = true;
-		chromium.setGraphicsMode = false;
-
-		const browser = await puppeteer.launch({
-			args: chromium.args,
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath(),
-			headless: chromium.headless,
-		})
+		// chromium.setHeadlessMode = true;
+		// chromium.setGraphicsMode = false;
+		//
+		// const browser = await puppeteer.launch({
+		// 	args: chromium.args,
+		// 	defaultViewport: chromium.defaultViewport,
+		// 	executablePath: await chromium.executablePath(),
+		// 	headless: chromium.headless,
+		// })
 
 		site.lastCheck = new Date().getTime();
 		await this.database.putWebsite(site);

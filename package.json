@@ -6,28 +6,23 @@
 	"author": "PickySalamander",
 	"license": "MIT",
 	"scripts": {
-		"build": "webpack-cli",
-		"clean": "rimraf .aws-sam .vscode",
-		"prebuild": "rimraf .aws-sam .vscode",
-		"prewatch": "rimraf .aws-sam .vscode",
-		"watch": "webpack-cli -w"
-	},
-	"dependencies": {
-		"@sparticuz/chromium": "^114.0.0",
-		"amazon-s3-uri": "^0.1.1",
-		"uuid": "^9.0.0"
+
 	},
 	"devDependencies": {
-		"puppeteer-core": "^20.7.2",
 		"@types/aws-lambda": "^8.10.119",
-		"aws-sam-webpack-plugin": "^0.13.0",
+		"@types/jest": "^29.5.1",
+		"@types/node": "20.1.7",
+		"aws-cdk": "2.84.0",
 		"aws-sdk": "^2.1399.0",
-		"copy-webpack-plugin": "^11.0.0",
-		"rimraf": "^5.0.1",
-		"ts-loader": "^9.4.3",
-		"typescript": "^5.1.3",
-		"webpack": "^5.87.0",
-		"webpack-cli": "^5.1.4",
-		"webpack-node-externals": "^3.0.0"
+		"jest": "^29.5.0",
+		"ts-jest": "^29.1.0",
+		"ts-node": "^10.9.1",
+		"typescript": "~5.0.4"
+	},
+	"dependencies": {
+		"aws-cdk-lib": "2.84.0",
+		"constructs": "^10.0.0",
+		"source-map-support": "^0.5.21",
+		"uuid": "^9.0.0"
 	}
 }
