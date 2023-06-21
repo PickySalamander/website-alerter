@@ -1,7 +1,7 @@
 import {Duration, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
-import {Runtime} from "aws-cdk-lib/aws-lambda";
+import {DockerImageCode, DockerImageFunction, Runtime} from "aws-cdk-lib/aws-lambda";
 import {Queue} from "aws-cdk-lib/aws-sqs";
 import {SqsEventSource} from "aws-cdk-lib/aws-lambda-event-sources";
 import {Bucket} from "aws-cdk-lib/aws-s3";
@@ -21,16 +21,17 @@ export class WebsiteAlerterStack extends Stack {
 				name: "site",
 				type: AttributeType.STRING
 			},
-			billingMode: BillingMode.PAY_PER_REQUEST
+			billingMode: BillingMode.PAY_PER_REQUEST,
+			removalPolicy: RemovalPolicy.DESTROY
 		});
 
 		const websiteQueue = new Queue(this, "WebsiteQueue", {
-			queueName: "website-alerter-queue"
+			queueName: "website-alerter-queue",
+			visibilityTimeout: Duration.minutes(2)
 		});
 
 		const configBucket = new Bucket(this, 'ConfigurationBucket', {
-			removalPolicy: RemovalPolicy.RETAIN,
-			bucketName: "website-alerter"
+			removalPolicy: RemovalPolicy.DESTROY
 		});
 
 		const lambdaRole = this.createLambdaRole(websiteTable, websiteQueue, configBucket);
@@ -56,11 +57,9 @@ export class WebsiteAlerterStack extends Stack {
 			targets: [new LambdaFunction(scheduledStartFunc)]
 		});
 
-		new NodejsFunction(this, "ProcessSite", {
+		new DockerImageFunction(this, "ProcessSite", {
+			code: DockerImageCode.fromImageAsset("build/process-site"),
 			description: "Scheduled call to the function to start scrapping process",
-			runtime: Runtime.NODEJS_18_X,
-			entry: "src/functions/process-site.ts",
-			handler: "handler",
 			role: lambdaRole,
 			environment: {
 				"CONFIG_S3": configBucket.bucketName,
@@ -70,7 +69,9 @@ export class WebsiteAlerterStack extends Stack {
 			logRetention: RetentionDays.ONE_MONTH,
 			events: [
 				new SqsEventSource(websiteQueue)
-			]
+			],
+			memorySize: 512,
+			timeout: Duration.minutes(1)
 		});
 	}
 

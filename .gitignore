@@ -133,9 +133,7 @@ dist
 .aws-sam/
 .idea/
 .vscode/
-*.js
-!jest.config.js
-*.d.ts
+build/
 
 # CDK asset staging directory
 .cdk.staging

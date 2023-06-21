@@ -1,6 +1,7 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {ConfigurationService, SiteConfig} from "../services/configuration.service";
 import {DatabaseService} from "../services/database.service";
+import puppeteer, {Browser} from "puppeteer";
 
 class ProcessSite {
 	private config:ConfigurationService;
@@ -43,15 +44,28 @@ class ProcessSite {
 			};
 		}
 
-		// chromium.setHeadlessMode = true;
-		// chromium.setGraphicsMode = false;
-		//
-		// const browser = await puppeteer.launch({
-		// 	args: chromium.args,
-		// 	defaultViewport: chromium.defaultViewport,
-		// 	executablePath: await chromium.executablePath(),
-		// 	headless: chromium.headless,
-		// })
+		let browser:Browser;
+
+		try {
+
+			browser = await puppeteer.launch({
+				args: [
+					'--no-sandbox',
+					'--disable-setuid-sandbox',
+					'--disable-dev-shm-usage',
+					'--single-process'
+				],
+				headless: "new"
+			});
+
+			const browserVersion = await browser.version()
+			console.log(`Started ${browserVersion}`);
+
+		} finally {
+			await browser?.close();
+		}
+
+		console.log("All done, updating database");
 
 		site.lastCheck = new Date().getTime();
 		await this.database.putWebsite(site);

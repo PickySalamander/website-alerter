@@ -1,7 +1,6 @@
 # Website Alerter Tool
 
-## Development
+## Local Development
 
-- Building project: `NODE_ENV=development npm run build`
-- Watching: `NODE_ENV=development npm run watch`
-- Test lambda: `sam local invoke ScheduledStart -e events/scheduled-start.json`
+1. Build the project: `cdk synth --no-staging`
+2. Run the project with SAM: `sam local invoke ProcessSite -e sample/process-site.json -n sample/env.json -t cdk.out/WebsiteAlerter.template.json`

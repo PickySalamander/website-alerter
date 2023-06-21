@@ -1,0 +1,7 @@
+{
+	"name": "process-site-docker",
+	"version": "1.0.0",
+	"dependencies": {
+		"puppeteer": "^20.7.2"
+	}
+}
