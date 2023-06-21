@@ -1,4 +1,3 @@
-
 import {Utils} from "../util/utils";
 import {DocumentClient} from "aws-sdk/clients/dynamodb";
 import {DynamoDB} from "aws-sdk";
@@ -42,4 +41,10 @@ export interface WebsiteItem {
 	site:string;
 	lastCheck:number;
 	lastChanged?:number;
+	updates:WebsiteCheck[];
+}
+
+export interface WebsiteCheck {
+	time:number;
+	id:string;
 }

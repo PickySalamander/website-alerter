@@ -1,4 +1,4 @@
-FROM amazon/aws-lambda-nodejs:18
+FROM public.ecr.aws/lambda/nodejs:18
 WORKDIR ${LAMBDA_TASK_ROOT}
 
 # Install Chrome to get all of the dependencies installed

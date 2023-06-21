@@ -70,7 +70,7 @@ export class WebsiteAlerterStack extends Stack {
 			events: [
 				new SqsEventSource(websiteQueue)
 			],
-			memorySize: 512,
+			memorySize: 1024,
 			timeout: Duration.minutes(1)
 		});
 	}
@@ -81,7 +81,7 @@ export class WebsiteAlerterStack extends Stack {
 			description: "Generic role for Lambdas in website-alerter stack",
 			assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
 			inlinePolicies: {
-				Read: new PolicyDocument({
+				General: new PolicyDocument({
 					statements: [
 						new PolicyStatement({
 							effect: Effect.ALLOW,
@@ -93,17 +93,10 @@ export class WebsiteAlerterStack extends Stack {
 								"s3:ListBucket"
 							],
 							resources: ["*"]
-						}),
-						new PolicyStatement({
-							effect: Effect.ALLOW,
-							actions: [
-								"s3:GetObject"
-							],
-							resources: [`${configBucket.bucketArn}/*`]
 						})
 					]
 				}),
-				Dynamo: new PolicyDocument({
+				Data: new PolicyDocument({
 					statements: [
 						new PolicyStatement({
 							effect: Effect.ALLOW,
@@ -117,6 +110,15 @@ export class WebsiteAlerterStack extends Stack {
 								"dynamodb:UpdateItem"
 							],
 							resources: [websiteTable.tableArn]
+						}),
+						new PolicyStatement({
+							effect: Effect.ALLOW,
+							actions: [
+								"s3:GetObject",
+								"s3:PutObject",
+								"s3:DeleteObject"
+							],
+							resources: [`${configBucket.bucketArn}/*`]
 						})
 					]
 				}),

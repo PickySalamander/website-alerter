@@ -7,13 +7,13 @@ export class ConfigurationService {
 
 	private configurationPath:string;
 
-	constructor() {
+	constructor(s3?:S3) {
 		this.configurationPath = process.env.CONFIG_S3 as string;
 		if(!this.configurationPath) {
 			throw "Failed to get configuration s3 bucket from environment";
 		}
 
-		this.s3 = new S3();
+		this.s3 = s3 ?? new S3();
 	}
 
 	public async load():Promise<Config> {
@@ -33,6 +33,10 @@ export class ConfigurationService {
 		}
 
 		return this.config;
+	}
+
+	get configPath():string {
+		return this.configurationPath;
 	}
 }
 
