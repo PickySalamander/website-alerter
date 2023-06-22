@@ -1,9 +1,9 @@
 import {EventBridgeHandler} from "aws-lambda";
 import {SQS} from "aws-sdk";
-import {ConfigurationService} from "../services/configuration.service";
 import {Utils} from "../util/utils";
+import {LambdaBase} from "../util/lambda-base";
 
-class ScheduledStart {
+class ScheduledStart extends LambdaBase {
 	public handler:EventBridgeHandler<string, any, void> = async() => {
 		console.log("Starting scheduled queuing of websites");
 
@@ -13,25 +13,40 @@ class ScheduledStart {
 			return;
 		}
 
-		const config = await new ConfigurationService().load();
+		await this.setupServices();
 
-		if(!Utils.isProduction) {
-			console.log(`Would have queued ${config.websites.length} websites to be checked, but this isn't production.`);
-			return;
-		}
-
-		const sqs = new SQS();
-
-		console.log(`Queueing ${config.websites.length} websites to ${queueUrl} be checked.`);
-
-		for(const site of config.websites) {
-			await sqs.sendMessage({
-				QueueUrl: queueUrl,
-				MessageBody: JSON.stringify(site)
-			}).promise();
-		}
+		await this.queueSiteChecks(queueUrl);
 
 		console.log("Done.");
+	}
+
+	private async queueSiteChecks(queueUrl:string) {
+		console.log(`Queueing ${this.config.websites.length} websites to ${queueUrl} be checked.`);
+
+		for(const siteConfig of this.config.websites) {
+			let siteItem = await this.database.getWebsite(siteConfig.site);
+			if(!siteItem) {
+				console.log(`Site ${siteConfig.site} doesn't exist yet, adding to database`);
+
+				siteItem = {
+					site: siteConfig.site,
+					lastCheck: 0,
+					updates: []
+				};
+
+				await this.database.putWebsite(siteItem);
+			}
+
+			if(!Utils.isProduction) {
+				console.log(`Would have queued ${siteConfig.site} to be checked, but this isn't production.`);
+				continue;
+			}
+
+			await this.sqs.sendMessage({
+				QueueUrl: queueUrl,
+				MessageBody: JSON.stringify(siteConfig)
+			}).promise();
+		}
 	}
 }
 

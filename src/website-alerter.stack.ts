@@ -30,11 +30,15 @@ export class WebsiteAlerterStack extends Stack {
 			visibilityTimeout: Duration.minutes(2)
 		});
 
+		const changeQueue = new Queue(this, "ChangeQueue", {
+			queueName: "website-alerter-change"
+		})
+
 		const configBucket = new Bucket(this, 'ConfigurationBucket', {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
-		const lambdaRole = this.createLambdaRole(websiteTable, websiteQueue, configBucket);
+		const lambdaRole = this.createLambdaRole(websiteTable, websiteQueue, changeQueue, configBucket);
 
 		const scheduledStartFunc = new NodejsFunction(this, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS",
@@ -64,6 +68,7 @@ export class WebsiteAlerterStack extends Stack {
 			environment: {
 				"CONFIG_S3": configBucket.bucketName,
 				"WEBSITE_TABLE": websiteTable.tableName,
+				"CHANGE_QUEUE_NAME": changeQueue.queueUrl,
 				"IS_PRODUCTION": "true"
 			},
 			logRetention: RetentionDays.ONE_MONTH,
@@ -73,9 +78,26 @@ export class WebsiteAlerterStack extends Stack {
 			memorySize: 1024,
 			timeout: Duration.minutes(1)
 		});
+
+		new NodejsFunction(this, "DetectChanges", {
+			description: "Detect the changes from the browser processing and notify",
+			runtime: Runtime.NODEJS_18_X,
+			entry: "src/functions/detect-changes.ts",
+			handler: "handler",
+			role: lambdaRole,
+			environment: {
+				"CONFIG_S3": configBucket.bucketName,
+				"WEBSITE_TABLE": websiteTable.tableName,
+				"IS_PRODUCTION": "true"
+			},
+			events: [
+				new SqsEventSource(changeQueue)
+			],
+			logRetention: RetentionDays.ONE_MONTH
+		});
 	}
 
-	private createLambdaRole(websiteTable:Table, websiteQueue:Queue, configBucket:Bucket):Role {
+	private createLambdaRole(websiteTable:Table, websiteQueue:Queue, changeQueue:Queue, configBucket:Bucket):Role {
 		return new Role(this, "LambdaIAMRole", {
 			roleName: "website-alerter-role",
 			description: "Generic role for Lambdas in website-alerter stack",
@@ -135,7 +157,7 @@ export class WebsiteAlerterStack extends Stack {
 								"sqs:GetQueueUrl",
 								"sqs:SendMessage"
 							],
-							resources: [websiteQueue.queueArn]
+							resources: [websiteQueue.queueArn, changeQueue.queueArn]
 						})
 					]
 				})

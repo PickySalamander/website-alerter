@@ -5,7 +5,7 @@ export class ConfigurationService {
 
 	private config:Config;
 
-	private configurationPath:string;
+	private readonly configurationPath:string;
 
 	constructor(s3?:S3) {
 		this.configurationPath = process.env.CONFIG_S3 as string;
@@ -35,6 +35,10 @@ export class ConfigurationService {
 		return this.config;
 	}
 
+	public getConfig(site:string) {
+		return this.config.websites.find(value => value.site == site);
+	}
+
 	get configPath():string {
 		return this.configurationPath;
 	}
@@ -46,4 +50,5 @@ export interface Config {
 
 export interface SiteConfig {
 	site:string;
+	selector?:string;
 }

@@ -1,16 +1,14 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
-import {ConfigurationService, SiteConfig} from "../services/configuration.service";
-import {DatabaseService} from "../services/database.service";
+import {SiteConfig} from "../services/configuration.service";
 import puppeteer, {Browser} from "puppeteer";
 import {DefaultChromeArgs} from "../util/default-chrome-args";
 import {v4 as uuidV4} from "uuid";
-import {S3} from "aws-sdk";
+import {LambdaBase} from "../util/lambda-base";
+import {Utils} from "../util/utils";
+import {SqsSiteEvent} from "../util/sqs-site-event";
 
-class ProcessSite {
-	private config:ConfigurationService;
-	private database:DatabaseService;
+class ProcessSite extends LambdaBase {
 	private browser:Browser;
-	private s3:S3;
 
 	public handler:SQSHandler = async(event:SQSEvent) => {
 		console.log(`Starting to parse ${event.Records.length} websites`);
@@ -20,21 +18,14 @@ class ProcessSite {
 			return;
 		}
 
-		if(!this.database) {
-			this.database = new DatabaseService();
-		}
-
-		if(!this.config) {
-			this.s3 = new S3();
-			this.config = new ConfigurationService(this.s3);
-		}
+		await this.setupServices();
 
 		try {
 			await this.initializeBrowser();
 
 			for(const record of event.Records) {
-				const siteInfo = JSON.parse(record.body) as SiteConfig;
-				await this.parseSite(siteInfo);
+				const siteEvent = JSON.parse(record.body) as SqsSiteEvent;
+				await this.parseSite(siteEvent);
 			}
 		} finally {
 			console.log("Closing down browser...");
@@ -57,18 +48,13 @@ class ProcessSite {
 		console.log(`Puppeteer started, running chrome ${browserVersion}`);
 	}
 
-	private async parseSite(siteConfig:SiteConfig) {
-		console.log(`Parsing website ${siteConfig.site}`);
+	private async parseSite(siteEvent:SqsSiteEvent) {
+		console.log(`Parsing website ${siteEvent.site}`);
 
-		let site = await this.database.getWebsite(siteConfig.site);
+		let site = await this.database.getWebsite(siteEvent.site);
 		if(!site) {
-			console.log("This is a new website, setting up");
-
-			site = {
-				site: siteConfig.site,
-				lastCheck: 0,
-				updates: []
-			};
+			console.error(`Site ${siteEvent.site} doesn't exist in the database, aborting`);
+			return;
 		}
 
 		console.log("Navigating to page in browser...");
@@ -76,7 +62,7 @@ class ProcessSite {
 		const page = await this.browser.newPage();
 
 		await page.setViewport({width: 1920, height: 1080});
-		await page.goto(siteConfig.site, {waitUntil: "load", timeout: 30000});
+		await page.goto(siteEvent.site, {waitUntil: "load", timeout: 30000});
 
 		const content = await page.content();
 		const screenshot = await page.screenshot({fullPage: true}) as Buffer;
@@ -88,13 +74,13 @@ class ProcessSite {
 		const changeID = uuidV4();
 
 		await this.s3.putObject({
-			Bucket: this.config.configPath,
-			Key: `content/${changeID}.txt`,
+			Bucket: this.configPath,
+			Key: `content/${changeID}.html`,
 			Body: content
 		}).promise();
 
 		await this.s3.putObject({
-			Bucket: this.config.configPath,
+			Bucket: this.configPath,
 			Key: `content/${changeID}.png`,
 			Body: screenshot
 		}).promise();
@@ -110,6 +96,20 @@ class ProcessSite {
 
 		site.lastCheck = time;
 		await this.database.putWebsite(site);
+
+		await this.queueWebsiteCheck(site);
+	}
+
+	private async queueWebsiteCheck(site:SiteConfig) {
+		if(!Utils.isProduction) {
+			console.log(`Would have queued ${site} to be checked, but this isn't production.`);
+			return;
+		}
+
+		await this.sqs.sendMessage({
+			QueueUrl: process.env.CHANGE_QUEUE_NAME,
+			MessageBody: JSON.stringify(site)
+		}).promise();
 	}
 }
 
