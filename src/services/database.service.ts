@@ -44,6 +44,17 @@ export class DatabaseService {
 		}).promise();
 	}
 
+	public async getRunThrough(runID:string) {
+		const response = await this.client.get({
+			TableName: process.env.RUN_TABLE,
+			Key: {
+				id: runID
+			}
+		}).promise();
+
+		return response?.Item as RunThrough;
+	}
+
 	public async updateRunSiteState(id:string, site:string, state:SiteRunState, revision?:string) {
 		const params:UpdateItemInput = {
 			TableName: process.env.RUN_TABLE,
@@ -96,7 +107,7 @@ export interface WebsiteCheck {
 export interface RunThrough {
 	id:string;
 	time:number;
-	sites:{[site:string]:SiteRun};
+	sites:{ [site:string]:SiteRun };
 	runState:RunThroughState;
 }
 

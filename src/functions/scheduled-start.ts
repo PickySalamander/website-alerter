@@ -22,7 +22,7 @@ class ScheduledStart extends LambdaBase {
 		const runThrough:RunThrough = {
 			id: v4(),
 			time: new Date().getTime(),
-			state: RunThroughState.Open,
+			runState: RunThroughState.Open,
 			sites: {}
 		};
 
@@ -41,8 +41,7 @@ class ScheduledStart extends LambdaBase {
 			}
 
 			runThrough.sites[siteConfig.site] = {
-				state: SiteRunState.Open,
-				messages: []
+				siteState: SiteRunState.Open
 			};
 
 			const event:SqsSiteEvent = {
