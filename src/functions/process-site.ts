@@ -62,7 +62,10 @@ class ProcessSite extends LambdaBase {
 		const page = await this.browser.newPage();
 
 		await page.setViewport({width: 1920, height: 1080});
-		await page.goto(siteEvent.site, {waitUntil: "load", timeout: 30000});
+		await page.goto(siteEvent.site, {
+			waitUntil: ["load", "domcontentloaded", "networkidle2"],
+			timeout: 30000
+		});
 
 		const content = await page.content();
 		const screenshot = await page.screenshot({fullPage: true}) as Buffer;

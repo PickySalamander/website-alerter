@@ -1,4 +1,4 @@
-import {Duration, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
+import {CfnParameter, Duration, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
 import {DockerImageCode, DockerImageFunction, Runtime} from "aws-cdk-lib/aws-lambda";
@@ -10,6 +10,8 @@ import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {Effect, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {RetentionDays} from "aws-cdk-lib/aws-logs";
+import {Topic} from "aws-cdk-lib/aws-sns";
+import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 
 export class WebsiteAlerterStack extends Stack {
 	constructor(scope:Construct, id:string, props?:StackProps) {
@@ -34,11 +36,19 @@ export class WebsiteAlerterStack extends Stack {
 			queueName: "website-alerter-change"
 		})
 
+		const notificationSns = new Topic(this, "WebsiteAlertNotifications");
+		const emailAddress = new CfnParameter(this, "notificationEmail");
+		notificationSns.addSubscription(new EmailSubscription(emailAddress.valueAsString));
+
 		const configBucket = new Bucket(this, 'ConfigurationBucket', {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
-		const lambdaRole = this.createLambdaRole(websiteTable, websiteQueue, changeQueue, configBucket);
+		const lambdaRole = this.createLambdaRole(websiteTable,
+			websiteQueue,
+			changeQueue,
+			notificationSns,
+			configBucket);
 
 		const scheduledStartFunc = new NodejsFunction(this, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS",
@@ -69,6 +79,7 @@ export class WebsiteAlerterStack extends Stack {
 				"CONFIG_S3": configBucket.bucketName,
 				"WEBSITE_TABLE": websiteTable.tableName,
 				"CHANGE_QUEUE_NAME": changeQueue.queueUrl,
+				"NOTIFICATION_SNS": notificationSns.topicArn,
 				"IS_PRODUCTION": "true"
 			},
 			logRetention: RetentionDays.ONE_MONTH,
@@ -88,6 +99,7 @@ export class WebsiteAlerterStack extends Stack {
 			environment: {
 				"CONFIG_S3": configBucket.bucketName,
 				"WEBSITE_TABLE": websiteTable.tableName,
+				"NOTIFICATION_SNS": notificationSns.topicArn,
 				"IS_PRODUCTION": "true"
 			},
 			events: [
@@ -97,7 +109,7 @@ export class WebsiteAlerterStack extends Stack {
 		});
 	}
 
-	private createLambdaRole(websiteTable:Table, websiteQueue:Queue, changeQueue:Queue, configBucket:Bucket):Role {
+	private createLambdaRole(websiteTable:Table, websiteQueue:Queue, changeQueue:Queue, notificationSns:Topic, configBucket:Bucket):Role {
 		return new Role(this, "LambdaIAMRole", {
 			roleName: "website-alerter-role",
 			description: "Generic role for Lambdas in website-alerter stack",
@@ -158,6 +170,13 @@ export class WebsiteAlerterStack extends Stack {
 								"sqs:SendMessage"
 							],
 							resources: [websiteQueue.queueArn, changeQueue.queueArn]
+						}),
+						new PolicyStatement({
+							effect: Effect.ALLOW,
+							actions: [
+								"sns:Publish"
+							],
+							resources: [notificationSns.topicArn]
 						})
 					]
 				})

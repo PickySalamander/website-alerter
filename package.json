@@ -30,6 +30,7 @@
 		"diff": "^5.1.0",
 		"node-html-parser": "^6.1.5",
 		"source-map-support": "^0.5.21",
-		"uuid": "^9.0.0"
+		"uuid": "^9.0.0",
+		"xml-formatter": "^3.4.1"
 	}
 }

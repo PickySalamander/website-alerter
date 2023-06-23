@@ -1,13 +1,13 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
-import {Browser} from "puppeteer";
 import {LambdaBase} from "../util/lambda-base";
 import {WebsiteCheck} from "../services/database.service";
-import parse from "node-html-parser";
+import parse, {HTMLElement} from "node-html-parser";
 import {SqsSiteEvent} from "../util/sqs-site-event";
-import {createPatch, createTwoFilesPatch, parsePatch, structuredPatch} from "diff";
+import {createTwoFilesPatch, parsePatch} from "diff";
+import formatXml from "xml-formatter";
 
 class DetectChanges extends LambdaBase {
-	private browser:Browser;
+	private combinedMessage:string;
 
 	public handler:SQSHandler = async(event:SQSEvent) => {
 		console.log(`Checking for changes in ${event.Records.length} websites`);
@@ -17,11 +17,17 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
+		this.combinedMessage = "";
+
 		await this.setupServices();
 
 		for(const record of event.Records) {
 			const siteEvent = JSON.parse(record.body) as SqsSiteEvent;
 			await this.checkSite(siteEvent);
+		}
+
+		if(this.combinedMessage.length > 0) {
+			await this.sendNotification("Website Alerter Changes", this.combinedMessage);
 		}
 
 		console.log("Done.")
@@ -49,29 +55,20 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		const currentRev = site.updates[site.updates.length - 1];
-		const lastRev = site.updates[site.updates.length - 2];
+		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.selector);
+		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.selector);
 
-		const currentCheck = await this.getContent(currentRev);
-		const lastCheck = await this.getContent(lastRev);
-
-		const selector = siteConfig.selector ?? "body";
-		const currentSelect = currentCheck.querySelector(selector);
-		const lastSelect = lastCheck.querySelector(selector);
-
-		if(!currentSelect || !lastSelect) {
-			console.error(`Failed to query either current or last revision with the selector "${selector}"`);
-			//TODO send email about this
+		if(!current || !last) {
 			return;
 		}
 
 		const differenceBody = createTwoFilesPatch(
 			"old.html",
 			"new.html",
-			lastSelect.toString(),
-			currentSelect.toString(),
-			new Date(lastRev.time).toString(),
-			new Date(currentRev.time).toString(),
+			last.formatted,
+			current.formatted,
+			new Date(last.revision.time).toString(),
+			new Date(current.revision.time).toString(),
 			{
 				ignoreCase: true,
 				ignoreWhitespace: true
@@ -84,26 +81,56 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		//TODO send email
+		const s3Key = `content/${current.revision.id}.diff`
 
-		console.log(`Found differences, uploading to s3://${this.configPath}/content/${currentRev.id}.diff`);
+		const url =
+			`https://s3.console.aws.amazon.com/s3/object/${this.configPath}?region=us-east-1&prefix=${s3Key}`;
+		this.combinedMessage += `Found some differences for ${siteConfig.site}, outputted them here: ${url}`
+
+		console.log(`Found differences, uploading to s3://${this.configPath}/${s3Key}`);
 
 		await this.s3.putObject({
 			Bucket: this.configPath,
-			Key: `content/${currentRev.id}.diff`,
+			Key: s3Key,
 			Body: differenceBody
 		}).promise();
 	}
 
-	private async getContent(revision:WebsiteCheck) {
+	private async getContent(revision:WebsiteCheck, selector:string = "body"):Promise<Parsed> {
 		const s3Result = await this.s3.getObject({
 			Bucket: this.configPath,
 			Key: `content/${revision.id}.html`
 		}).promise();
 
-		const html = s3Result.Body.toString("utf-8");
-		return parse(html);
+
+		const htmlStr = s3Result.Body.toString("utf-8");
+		const parsed = parse(htmlStr);
+		let queried = parsed.querySelectorAll(selector);
+
+		if(queried.length > 1) {
+			console.warn(`Selector selected too many items ${queried.length}`);
+			this.combinedMessage += `WARN: Selector for ${selector} found too many items on revision ${revision.id}.\n`;
+			return undefined;
+		}
+
+		if(queried.length == 0) {
+			console.warn("Nothing was selected");
+			this.combinedMessage += `WARN: Selector for ${selector} found no items in revision ${revision.id}.\n`;
+			return undefined;
+		}
+
+		return {
+			revision,
+			html: queried[0],
+			formatted: formatXml(queried[0].toString())
+		};
 	}
+}
+
+interface Parsed {
+	revision:WebsiteCheck;
+	formatted:string;
+	html:HTMLElement;
 }
 
 // noinspection JSUnusedGlobalSymbols

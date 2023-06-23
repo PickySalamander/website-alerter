@@ -134,7 +134,7 @@ dist
 .idea/
 .vscode/
 build/
-env.json
+/env.json
 
 # CDK asset staging directory
 .cdk.staging
