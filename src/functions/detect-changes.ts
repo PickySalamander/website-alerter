@@ -26,7 +26,7 @@ class DetectChanges extends LambdaBase {
 	}
 
 	private async checkSite(siteEvent:SqsSiteEvent) {
-		console.log(`Checking the download from ${siteEvent.site} for changes...`);
+		console.log(`Checking the download ${siteEvent.site} from run ${siteEvent.runID} for changes...`);
 
 		let site = await this.database.getWebsite(siteEvent.site);
 		if(!site) {

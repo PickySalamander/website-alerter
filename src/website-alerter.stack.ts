@@ -149,6 +149,7 @@ export class WebsiteAlerterStack extends Stack {
 			entry: "src/functions/scheduled-end.ts",
 			handler: "handler",
 			role: lambdaRole,
+			timeout: Duration.seconds(30),
 			environment: {
 				"CONFIG_S3": this.configBucket.bucketName,
 				"WEBSITE_TABLE": this.websiteTable.tableName,
@@ -201,7 +202,8 @@ export class WebsiteAlerterStack extends Stack {
 							effect: Effect.ALLOW,
 							actions: [
 								"s3:GetObject",
-								"s3:PutObject"
+								"s3:PutObject",
+								"s3:DeleteObject"
 							],
 							resources: [`${this.configBucket.bucketArn}/*`]
 						})

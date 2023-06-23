@@ -45,6 +45,7 @@ export class ConfigurationService {
 }
 
 export interface Config {
+	numRevisions:number;
 	websites:SiteConfig[];
 }
 

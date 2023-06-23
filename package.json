@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "node build.mjs",
-		"clean": "rimraf cdk.out",
+		"clean": "rimraf cdk.out && rimraf build",
 		"deploy": "cdk deploy"
 	},
 	"devDependencies": {

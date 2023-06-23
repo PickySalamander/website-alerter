@@ -55,11 +55,11 @@ export class DatabaseService {
 		return response?.Item as RunThrough;
 	}
 
-	public async updateRunSiteState(id:string, site:string, state:SiteRunState, revision?:string) {
+	public async updateRunSiteState(runID:string, site:string, state:SiteRunState, revision?:string) {
 		const params:UpdateItemInput = {
 			TableName: process.env.RUN_TABLE,
 			Key: {
-				id
+				id: runID
 			},
 			UpdateExpression: "SET sites.#site.siteState = :state",
 			ExpressionAttributeNames: {
@@ -78,11 +78,11 @@ export class DatabaseService {
 		await this.client.update(params).promise();
 	}
 
-	public async updateRunState(id:string, state:RunThroughState) {
+	public async updateRunState(runID:string, state:RunThroughState) {
 		await this.client.update({
 			TableName: process.env.RUN_TABLE,
 			Key: {
-				id
+				id: runID
 			},
 			UpdateExpression: "SET runState = :state",
 			ExpressionAttributeValues: {

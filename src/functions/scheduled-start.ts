@@ -67,6 +67,8 @@ class ScheduledStart extends LambdaBase {
 				MessageBody: `{\"runID\":\"${runThrough.id}\"}`
 			}).promise();
 		}
+
+		console.log(`Started run ${runThrough.id}.`);
 	}
 }
 

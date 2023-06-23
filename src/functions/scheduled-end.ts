@@ -1,6 +1,6 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../util/lambda-base";
-import {SiteRunState} from "../services/database.service";
+import {RunThroughState, SiteRunState} from "../services/database.service";
 import {SNS} from "aws-sdk";
 import {Utils} from "../util/utils";
 
@@ -17,6 +17,8 @@ class ScheduledEnd extends LambdaBase {
 			await this.processEnd(endEvent.runID);
 		}
 
+		await this.performMaintenance();
+
 		console.log("Done.")
 	}
 
@@ -28,15 +30,19 @@ class ScheduledEnd extends LambdaBase {
 
 		let email = `Finished run through of ${sites.length} sites. Output follows:\n\n`;
 
+		let finalState:RunThroughState = RunThroughState.Complete;
+
 		for(const [site, run] of sites) {
 			email += `${site}: `;
 
 			switch(run.siteState) {
 				case SiteRunState.Open:
 					email += "OPEN\n\tPolling the website failed.";
+					finalState = RunThroughState.Expired;
 					break;
 				case SiteRunState.Polled:
 					email += "POLLED\n\tDetecting changes on the website failed.";
+					finalState = RunThroughState.Expired;
 					break;
 				case SiteRunState.Complete:
 					email += "COMPLETE\n";
@@ -68,6 +74,44 @@ class ScheduledEnd extends LambdaBase {
 			}).promise();
 		} else {
 			console.log(`This isn't production otherwise would have emailed:\n\n${email}`)
+		}
+
+		await this.database.updateRunState(runID, finalState);
+	}
+
+	private async performMaintenance() {
+		console.log("Performing maintenance");
+
+		for(const siteConfig of this.config.websites) {
+			const website = await this.database.getWebsite(siteConfig.site);
+
+			if(website.updates.length > this.config.numRevisions) {
+				const numDelete = website.updates.length - this.config.numRevisions;
+
+				console.log(`Deleting ${numDelete} old updates from site ${siteConfig.site}`);
+
+				for(let i=0; i<numDelete; i++) {
+					const toDelete = website.updates.shift();
+					console.log(`Deleting revision ${toDelete.id}`);
+
+					await this.deleteObject(toDelete.id, "diff");
+					await this.deleteObject(toDelete.id, "png");
+					await this.deleteObject(toDelete.id, "html");
+				}
+
+				await this.database.putWebsite(website);
+			}
+		}
+	}
+
+	private async deleteObject(id:string, ext:string) {
+		try {
+			await this.s3.deleteObject({
+				Bucket: this.configPath,
+				Key: `content/${id}.${ext}`
+			}).promise();
+		} catch(e) {
+			console.warn(`Failed to delete s3://${this.configPath}/content/${id}.${ext} from s3`);
 		}
 	}
 }

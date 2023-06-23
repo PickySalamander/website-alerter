@@ -50,7 +50,7 @@ class ProcessSite extends LambdaBase {
 	}
 
 	private async parseSite(siteEvent:SqsSiteEvent) {
-		console.log(`Parsing website ${siteEvent.site}`);
+		console.log(`Parsing website ${siteEvent.site} from run ${siteEvent.runID}`);
 
 		let site = await this.database.getWebsite(siteEvent.site);
 		if(!site) {
@@ -103,10 +103,10 @@ class ProcessSite extends LambdaBase {
 
 		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Polled);
 
-		await this.queueWebsiteCheck(site);
+		await this.queueWebsiteCheck(siteEvent);
 	}
 
-	private async queueWebsiteCheck(site:SiteConfig) {
+	private async queueWebsiteCheck(site:SqsSiteEvent) {
 		if(!Utils.isProduction) {
 			console.log(`Would have queued ${JSON.stringify(site)} to be checked, but this isn't production.`);
 			return;
