@@ -1,5 +1,5 @@
 import {DatabaseService} from "../services/database.service";
-import {S3, SNS, SQS} from "aws-sdk";
+import {S3, SQS} from "aws-sdk";
 import {Config, ConfigurationService} from "../services/configuration.service";
 
 export abstract class LambdaBase {
@@ -8,7 +8,6 @@ export abstract class LambdaBase {
 	private _s3:S3;
 	private _config:Config;
 	private _sqs:SQS;
-	private _sns:SNS;
 
 	private init:boolean = false;
 
@@ -22,19 +21,19 @@ export abstract class LambdaBase {
 		}
 	}
 
-	protected async sendNotification(subject:string, message:string):Promise<void> {
-		const notificationArn = process.env.NOTIFICATION_SNS;
-		if(!notificationArn) {
-			console.error("Can't send a notification since the 'NOTIFICATION_SNS' env was not set.");
-			return;
-		}
-
-		await this.sns.publish({
-			Message: message,
-			Subject: subject,
-			TopicArn: notificationArn
-		}).promise();
-	}
+	// protected async sendNotification(subject:string, message:string):Promise<void> {
+	// 	const notificationArn = process.env.NOTIFICATION_SNS;
+	// 	if(!notificationArn) {
+	// 		console.error("Can't send a notification since the 'NOTIFICATION_SNS' env was not set.");
+	// 		return;
+	// 	}
+	//
+	// 	await this.sns.publish({
+	// 		Message: message,
+	// 		Subject: subject,
+	// 		TopicArn: notificationArn
+	// 	}).promise();
+	// }
 
 	get configPath() {
 		return this._configService.configPath;
@@ -62,13 +61,5 @@ export abstract class LambdaBase {
 		}
 
 		return this._sqs;
-	}
-
-	get sns() {
-		if(!this._sns) {
-			this._sns = new SNS();
-		}
-
-		return this._sns;
 	}
 }

@@ -1,14 +1,12 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../util/lambda-base";
-import {WebsiteCheck} from "../services/database.service";
+import {SiteRunState, WebsiteCheck} from "../services/database.service";
 import parse, {HTMLElement} from "node-html-parser";
 import {SqsSiteEvent} from "../util/sqs-site-event";
 import {createTwoFilesPatch, parsePatch} from "diff";
 import formatXml from "xml-formatter";
 
 class DetectChanges extends LambdaBase {
-	private combinedMessage:string;
-
 	public handler:SQSHandler = async(event:SQSEvent) => {
 		console.log(`Checking for changes in ${event.Records.length} websites`);
 
@@ -17,17 +15,11 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		this.combinedMessage = "";
-
 		await this.setupServices();
 
 		for(const record of event.Records) {
 			const siteEvent = JSON.parse(record.body) as SqsSiteEvent;
 			await this.checkSite(siteEvent);
-		}
-
-		if(this.combinedMessage.length > 0) {
-			await this.sendNotification("Website Alerter Changes", this.combinedMessage);
 		}
 
 		console.log("Done.")
@@ -78,14 +70,12 @@ class DetectChanges extends LambdaBase {
 
 		if(difference[0].hunks.length == 0) {
 			console.log("Found no differences, moving on");
+
+			await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete);
 			return;
 		}
 
 		const s3Key = `content/${current.revision.id}.diff`
-
-		const url =
-			`https://s3.console.aws.amazon.com/s3/object/${this.configPath}?region=us-east-1&prefix=${s3Key}`;
-		this.combinedMessage += `Found some differences for ${siteConfig.site}, outputted them here: ${url}`
 
 		console.log(`Found differences, uploading to s3://${this.configPath}/${s3Key}`);
 
@@ -94,6 +84,9 @@ class DetectChanges extends LambdaBase {
 			Key: s3Key,
 			Body: differenceBody
 		}).promise();
+
+		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
+			current.revision.id);
 	}
 
 	private async getContent(revision:WebsiteCheck, selector:string = "body"):Promise<Parsed> {
@@ -109,13 +102,11 @@ class DetectChanges extends LambdaBase {
 
 		if(queried.length > 1) {
 			console.warn(`Selector selected too many items ${queried.length}`);
-			this.combinedMessage += `WARN: Selector for ${selector} found too many items on revision ${revision.id}.\n`;
 			return undefined;
 		}
 
 		if(queried.length == 0) {
 			console.warn("Nothing was selected");
-			this.combinedMessage += `WARN: Selector for ${selector} found no items in revision ${revision.id}.\n`;
 			return undefined;
 		}
 

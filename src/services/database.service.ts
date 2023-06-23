@@ -1,6 +1,7 @@
 import {Utils} from "../util/utils";
 import {DocumentClient} from "aws-sdk/clients/dynamodb";
 import {DynamoDB} from "aws-sdk";
+import UpdateItemInput = DocumentClient.UpdateItemInput;
 
 export class DatabaseService {
 	private client:DocumentClient;
@@ -35,6 +36,49 @@ export class DatabaseService {
 			Item: item
 		}).promise();
 	}
+
+	public async putRunThrough(runThrough:RunThrough) {
+		await this.client.put({
+			TableName: process.env.RUN_TABLE,
+			Item: runThrough
+		}).promise();
+	}
+
+	public async updateRunSiteState(id:string, site:string, state:SiteRunState, revision?:string) {
+		const params:UpdateItemInput = {
+			TableName: process.env.RUN_TABLE,
+			Key: {
+				id
+			},
+			UpdateExpression: "SET sites.#site.siteState = :state",
+			ExpressionAttributeNames: {
+				"#site": site
+			},
+			ExpressionAttributeValues: {
+				":state": state
+			}
+		};
+
+		if(typeof revision == "string") {
+			params.UpdateExpression += ", sites.#site.revision = :revision";
+			params.ExpressionAttributeValues[":revision"] = revision;
+		}
+
+		await this.client.update(params).promise();
+	}
+
+	public async updateRunState(id:string, state:RunThroughState) {
+		await this.client.update({
+			TableName: process.env.RUN_TABLE,
+			Key: {
+				id
+			},
+			UpdateExpression: "SET runState = :state",
+			ExpressionAttributeValues: {
+				":state": state
+			}
+		}).promise()
+	}
 }
 
 export interface WebsiteItem {
@@ -47,4 +91,28 @@ export interface WebsiteItem {
 export interface WebsiteCheck {
 	time:number;
 	id:string;
+}
+
+export interface RunThrough {
+	id:string;
+	time:number;
+	sites:{[site:string]:SiteRun};
+	runState:RunThroughState;
+}
+
+export interface SiteRun {
+	siteState:SiteRunState,
+	revision?:string;
+}
+
+export enum RunThroughState {
+	Open,
+	Complete,
+	Expired
+}
+
+export enum SiteRunState {
+	Open,
+	Polled,
+	Complete
 }

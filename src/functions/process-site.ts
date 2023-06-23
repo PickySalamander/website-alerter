@@ -6,6 +6,7 @@ import {v4 as uuidV4} from "uuid";
 import {LambdaBase} from "../util/lambda-base";
 import {Utils} from "../util/utils";
 import {SqsSiteEvent} from "../util/sqs-site-event";
+import {SiteRunState} from "../services/database.service";
 
 class ProcessSite extends LambdaBase {
 	private browser:Browser;
@@ -100,12 +101,14 @@ class ProcessSite extends LambdaBase {
 		site.lastCheck = time;
 		await this.database.putWebsite(site);
 
+		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Polled);
+
 		await this.queueWebsiteCheck(site);
 	}
 
 	private async queueWebsiteCheck(site:SiteConfig) {
 		if(!Utils.isProduction) {
-			console.log(`Would have queued ${site} to be checked, but this isn't production.`);
+			console.log(`Would have queued ${JSON.stringify(site)} to be checked, but this isn't production.`);
 			return;
 		}
 

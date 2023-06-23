@@ -3,7 +3,7 @@
 		{
 			"messageId": "19dd0b57-b21e-4ac1-bd88-01bbb068cb78",
 			"receiptHandle": "MessageReceiptHandle",
-			"body": "{\"site\":\"https://github.com\"}",
+			"body": "{\"site\":\"https://github.com\",\"runID\":\"a518b57d-b8de-46b3-9107-bcd0eb50a428\"}",
 			"attributes": {
 				"ApproximateReceiveCount": "1",
 				"SentTimestamp": "1523232000000",

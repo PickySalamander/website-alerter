@@ -14,10 +14,18 @@ import {Topic} from "aws-cdk-lib/aws-sns";
 import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 
 export class WebsiteAlerterStack extends Stack {
+	private readonly websiteTable:Table;
+	private readonly runThroughTable:Table;
+	private readonly websiteQueue:Queue;
+	private readonly changeQueue:Queue;
+	private readonly notificationSns:Topic;
+	private readonly configBucket:Bucket;
+	private readonly endQueue:Queue;
+
 	constructor(scope:Construct, id:string, props?:StackProps) {
 		super(scope, id, props);
 
-		const websiteTable = new Table(this, "WebsiteTable", {
+		this.websiteTable = new Table(this, "WebsiteTable", {
 			tableName: "website-alerter-sites",
 			partitionKey: {
 				name: "site",
@@ -27,28 +35,53 @@ export class WebsiteAlerterStack extends Stack {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
-		const websiteQueue = new Queue(this, "WebsiteQueue", {
-			queueName: "website-alerter-queue",
-			visibilityTimeout: Duration.minutes(2)
-		});
-
-		const changeQueue = new Queue(this, "ChangeQueue", {
-			queueName: "website-alerter-change"
-		})
-
-		const notificationSns = new Topic(this, "WebsiteAlertNotifications");
-		const emailAddress = new CfnParameter(this, "notificationEmail");
-		notificationSns.addSubscription(new EmailSubscription(emailAddress.valueAsString));
-
-		const configBucket = new Bucket(this, 'ConfigurationBucket', {
+		this.runThroughTable = new Table(this, "RunThroughTable", {
+			tableName: "website-alerter-run",
+			partitionKey: {
+				name: "id",
+				type: AttributeType.STRING,
+			},
+			billingMode: BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
-		const lambdaRole = this.createLambdaRole(websiteTable,
-			websiteQueue,
-			changeQueue,
-			notificationSns,
-			configBucket);
+		const deadQueue = new Queue(this, "WebsiteDeadQueue");
+
+		this.websiteQueue = new Queue(this, "WebsiteQueue", {
+			queueName: "website-alerter-queue",
+			visibilityTimeout: Duration.minutes(2),
+			deadLetterQueue: {
+				queue: deadQueue,
+				maxReceiveCount: 3
+			}
+		});
+
+		this.changeQueue = new Queue(this, "ChangeQueue", {
+			queueName: "website-alerter-change",
+			deadLetterQueue: {
+				queue: deadQueue,
+				maxReceiveCount: 3
+			}
+		})
+
+		this.endQueue = new Queue(this, "EndQueue", {
+			queueName: "website-alerter-end",
+			deliveryDelay: Duration.minutes(10),
+			deadLetterQueue: {
+				queue: deadQueue,
+				maxReceiveCount: 3
+			}
+		})
+
+		this.notificationSns = new Topic(this, "WebsiteAlertNotifications");
+		const emailAddress = new CfnParameter(this, "notificationEmail");
+		this.notificationSns.addSubscription(new EmailSubscription(emailAddress.valueAsString));
+
+		this.configBucket = new Bucket(this, 'ConfigurationBucket', {
+			removalPolicy: RemovalPolicy.DESTROY
+		});
+
+		const lambdaRole = this.createLambdaRole();
 
 		const scheduledStartFunc = new NodejsFunction(this, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all the sites to SQS",
@@ -57,9 +90,11 @@ export class WebsiteAlerterStack extends Stack {
 			handler: "handler",
 			role: lambdaRole,
 			environment: {
-				"CONFIG_S3": configBucket.bucketName,
-				"WEBSITE_TABLE": websiteTable.tableName,
-				"WEBSITE_QUEUE_NAME": websiteQueue.queueUrl,
+				"CONFIG_S3": this.configBucket.bucketName,
+				"WEBSITE_TABLE": this.websiteTable.tableName,
+				"WEBSITE_QUEUE_NAME": this.websiteQueue.queueUrl,
+				"RUN_TABLE": this.runThroughTable.tableName,
+				"END_QUEUE": this.endQueue.queueUrl,
 				"IS_PRODUCTION": "true"
 			},
 			logRetention: RetentionDays.ONE_MONTH
@@ -76,15 +111,15 @@ export class WebsiteAlerterStack extends Stack {
 			description: "Scheduled call to the function to start scrapping process",
 			role: lambdaRole,
 			environment: {
-				"CONFIG_S3": configBucket.bucketName,
-				"WEBSITE_TABLE": websiteTable.tableName,
-				"CHANGE_QUEUE_NAME": changeQueue.queueUrl,
-				"NOTIFICATION_SNS": notificationSns.topicArn,
+				"CONFIG_S3": this.configBucket.bucketName,
+				"WEBSITE_TABLE": this.websiteTable.tableName,
+				"CHANGE_QUEUE_NAME": this.changeQueue.queueUrl,
+				"RUN_TABLE": this.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
 			logRetention: RetentionDays.ONE_MONTH,
 			events: [
-				new SqsEventSource(websiteQueue)
+				new SqsEventSource(this.websiteQueue)
 			],
 			memorySize: 1024,
 			timeout: Duration.minutes(1)
@@ -97,19 +132,38 @@ export class WebsiteAlerterStack extends Stack {
 			handler: "handler",
 			role: lambdaRole,
 			environment: {
-				"CONFIG_S3": configBucket.bucketName,
-				"WEBSITE_TABLE": websiteTable.tableName,
-				"NOTIFICATION_SNS": notificationSns.topicArn,
+				"CONFIG_S3": this.configBucket.bucketName,
+				"WEBSITE_TABLE": this.websiteTable.tableName,
+				"RUN_TABLE": this.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
 			events: [
-				new SqsEventSource(changeQueue)
+				new SqsEventSource(this.changeQueue)
+			],
+			logRetention: RetentionDays.ONE_MONTH
+		});
+
+		new NodejsFunction(this, "ScheduledEnd", {
+			description: "Detect the changes from the browser processing and notify",
+			runtime: Runtime.NODEJS_18_X,
+			entry: "src/functions/scheduled-end.ts",
+			handler: "handler",
+			role: lambdaRole,
+			environment: {
+				"CONFIG_S3": this.configBucket.bucketName,
+				"WEBSITE_TABLE": this.websiteTable.tableName,
+				"RUN_TABLE": this.runThroughTable.tableName,
+				"NOTIFICATION_SNS": this.notificationSns.topicArn,
+				"IS_PRODUCTION": "true"
+			},
+			events: [
+				new SqsEventSource(this.endQueue)
 			],
 			logRetention: RetentionDays.ONE_MONTH
 		});
 	}
 
-	private createLambdaRole(websiteTable:Table, websiteQueue:Queue, changeQueue:Queue, notificationSns:Topic, configBucket:Bucket):Role {
+	private createLambdaRole():Role {
 		return new Role(this, "LambdaIAMRole", {
 			roleName: "website-alerter-role",
 			description: "Generic role for Lambdas in website-alerter stack",
@@ -138,21 +192,18 @@ export class WebsiteAlerterStack extends Stack {
 								"dynamodb:ListTables",
 								"dynamodb:DescribeTable",
 								"dynamodb:GetItem",
-								"dynamodb:DeleteItem",
-								"dynamodb:PutItem",
-								"dynamodb:Query",
-								"dynamodb:UpdateItem"
+								"dynamodb:UpdateItem",
+								"dynamodb:PutItem"
 							],
-							resources: [websiteTable.tableArn]
+							resources: [this.websiteTable.tableArn, this.runThroughTable.tableArn]
 						}),
 						new PolicyStatement({
 							effect: Effect.ALLOW,
 							actions: [
 								"s3:GetObject",
-								"s3:PutObject",
-								"s3:DeleteObject"
+								"s3:PutObject"
 							],
-							resources: [`${configBucket.bucketArn}/*`]
+							resources: [`${this.configBucket.bucketArn}/*`]
 						})
 					]
 				}),
@@ -169,14 +220,18 @@ export class WebsiteAlerterStack extends Stack {
 								"sqs:GetQueueUrl",
 								"sqs:SendMessage"
 							],
-							resources: [websiteQueue.queueArn, changeQueue.queueArn]
+							resources: [
+								this.websiteQueue.queueArn,
+								this.changeQueue.queueArn,
+								this.endQueue.queueArn
+							]
 						}),
 						new PolicyStatement({
 							effect: Effect.ALLOW,
 							actions: [
 								"sns:Publish"
 							],
-							resources: [notificationSns.topicArn]
+							resources: [this.notificationSns.topicArn]
 						})
 					]
 				})
