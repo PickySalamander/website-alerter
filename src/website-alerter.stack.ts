@@ -13,6 +13,7 @@ import {RetentionDays} from "aws-cdk-lib/aws-logs";
 import {Topic} from "aws-cdk-lib/aws-sns";
 import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 
+/** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
 	private readonly websiteTable:Table;
 	private readonly runThroughTable:Table;

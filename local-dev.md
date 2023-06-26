@@ -6,7 +6,7 @@ Here are the instructions for developing and running this project locally. Build
 - Docker
 - [CDK CLI](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 - [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
-- [DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html)
+- [Local Docker DynamoDB](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html)
 
 # Initial Setup
 Here's the first time setup for developing locally:
