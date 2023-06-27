@@ -62,10 +62,6 @@ export class DatabaseService {
 		//get the time of the latest revision
 		const revisionTime = revision.time;
 
-		//marshall the object into a dynamo object notation
-		const marshalled = DynamoDB.Converter.marshall(revision);
-		console.log(`Running with marshalled ${JSON.stringify(marshalled)}`);
-
 		//run the update
 		await this.client.update({
 			TableName: process.env.WEBSITE_TABLE,
