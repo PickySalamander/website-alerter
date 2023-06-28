@@ -1,7 +1,6 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../util/lambda-base";
 import {SiteRunState, WebsiteCheck} from "../services/database.service";
-import parse, {HTMLElement} from "node-html-parser";
 import {SqsSiteEvent} from "../util/sqs-site-event";
 import {createTwoFilesPatch, parsePatch} from "diff";
 import formatXml from "xml-formatter";
@@ -44,13 +43,6 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		//get the site's configuration from S3
-		const siteConfig = this.configService.getConfig(siteEvent.site);
-		if(!siteConfig) {
-			console.error(`Site ${siteEvent.site} doesn't exist in the config, aborting`);
-			return;
-		}
-
 		console.log("Getting content changes");
 
 		//if there aren't enough revisions yet then abort
@@ -60,8 +52,8 @@ class DetectChanges extends LambdaBase {
 		}
 
 		//get the current HTML revision and the previous
-		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.selector);
-		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.selector);
+		const current = await this.getContent(site.updates[site.updates.length - 1]);
+		const last = await this.getContent(site.updates[site.updates.length - 2]);
 
 		//if either aren't there (usually because of an error), abort
 		if(!current || !last) {
@@ -110,40 +102,25 @@ class DetectChanges extends LambdaBase {
 	}
 
 	/**
-	 * Retrieve the relevant HTML from S3 and use the CSS selector to get DOM to consider for changes
+	 * Retrieve the relevant HTML from S3
 	 * @param revision the revision of HTML and where it is located
-	 * @param selector the CSS selector to use (Defaults to "body" if not provided)
 	 * @return the parsed HTML and the revision
 	 */
-	private async getContent(revision:WebsiteCheck, selector:string = "body"):Promise<Parsed> {
+	private async getContent(revision:WebsiteCheck):Promise<Parsed> {
 		//get the html from S3
 		const s3Result = await this.s3.getObject({
 			Bucket: this.configPath,
 			Key: `content/${revision.id}.html`
 		}).promise();
 
-		//Parse the HTML and query it with the CSS selector provided in the configuration
-		const htmlStr = s3Result.Body.toString("utf-8");
-		const parsed = parse(htmlStr);
-		let queried = parsed.querySelectorAll(selector);
-
-		//don't continue if too many things selected
-		if(queried.length > 1) {
-			console.warn(`Selector selected too many items ${queried.length}`);
-			return undefined;
-		}
-
-		//don't continue if nothing was selected
-		if(queried.length == 0) {
-			console.warn("Nothing was selected");
-			return undefined;
-		}
+		//get the html string
+		const html = s3Result.Body.toString("utf-8");
 
 		//return the html and pretty print it
 		return {
 			revision,
-			html: queried[0],
-			formatted: formatXml(queried[0].toString())
+			html,
+			formatted: formatXml(html)
 		};
 	}
 }
@@ -155,8 +132,8 @@ interface Parsed {
 	/** The original revision to check */
 	revision:WebsiteCheck;
 
-	/** The parsed DOM of the HTML from the CSS selector */
-	html:HTMLElement;
+	/** The parsed DOM of the HTML from the site polling */
+	html:string;
 
 	/** Pretty printed HTML from the {@link html} property */
 	formatted:string;

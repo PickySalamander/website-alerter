@@ -7,6 +7,7 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "node build.mjs",
+		"build:local": "node build.mjs && cdk synth --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
 		"clean": "rimraf cdk.out && rimraf build",
 		"deploy": "cdk deploy"
 	},
@@ -28,7 +29,6 @@
 		"aws-cdk-lib": "2.85.0",
 		"constructs": "^10.0.0",
 		"diff": "^5.1.0",
-		"node-html-parser": "^6.1.5",
 		"source-map-support": "^0.5.21",
 		"uuid": "^9.0.0",
 		"xml-formatter": "^3.4.1"

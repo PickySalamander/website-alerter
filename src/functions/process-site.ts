@@ -74,28 +74,55 @@ class ProcessSite extends LambdaBase {
 			return;
 		}
 
+		//get the site's config for the selector
+		const selector = this.configService.getConfig(site.site).selector;
+
 		console.log("Navigating to page in browser...");
 
 		//open a new page in the browser
 		const page = await this.browser.newPage();
 		await page.setViewport({width: 1920, height: 1080});
 
-		//go to the page and wait for it to render on a timeout of 30s
-		await page.goto(siteEvent.site, {
-			waitUntil: ["load", "domcontentloaded", "networkidle2"],
-			timeout: 30000
-		});
+		//the finally loaded DOM
+		let content:string;
 
-		//get the HTML content of the page and take a PNG screenshot
-		const content = await page.content();
+		// if a selector is defined then select with it, otherwise we just wait for the network to load and select the
+		// body
+		if(selector) {
+			//go to the page and wait for it to render
+			await page.goto(siteEvent.site, {
+				waitUntil: ["load", "domcontentloaded"],
+				timeout: 15000
+			});
+
+			//wait for the css selector to be visible on the page
+			const element = await page.waitForSelector(selector, {
+				timeout: 15000,
+				visible: true
+			});
+
+			//get the outer html when it is available
+			content = await element.evaluate(el => el.outerHTML);
+		} else {
+			//go to the page and wait for it to render
+			await page.goto(siteEvent.site, {
+				waitUntil: ["load", "domcontentloaded", "networkidle2"],
+				timeout: 30000
+			});
+
+			//get the outer html of the body
+			content = await page.$eval("body", el => el.outerHTML);
+		}
+
+		//take a PNG screenshot for posterity
 		const screenshot = await page.screenshot({fullPage: true}) as Buffer;
 
 		//close the page
 		await page.close();
 
-		console.log("Done with page, uploading changes");
-
 		const changeID = uuidV4();
+
+		console.log(`Done with page, uploading changes:${changeID}`);
 
 		//put the HTML in S3
 		await this.s3.putObject({

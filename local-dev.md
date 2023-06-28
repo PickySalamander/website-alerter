@@ -17,7 +17,8 @@ Here's the first time setup for developing locally:
 
 # Building and Running
 
-1. Build the project: `npm run build`
-2. Compile the CDK for SAM: `cdk synth --no-staging`
-3. Build the Docker image: `sam build -t cdk.out/WebsiteAlerter.template.json`
-4. Run the project with SAM: `sam local invoke ScheduledStart -e sample/scheduled-start.json -n env.json -t cdk.out/WebsiteAlerter.template.json`. Sample Lambda events exist in the [sample](sample) folder.
+1. Build the project with `npm run build:local`, this will do the following three things:
+   1. Build `process-site.js` for the Docker image and copy required files.
+   2. Generate the CDK template.
+   3. Build with SAM, which will build the Docker image.
+2. Run a lambda function with SAM: `sam local invoke ScheduledStart -e sample/scheduled-start.json -n env.json -t cdk.out/WebsiteAlerter.template.json`. Sample Lambda events exist in the [sample](sample) folder.

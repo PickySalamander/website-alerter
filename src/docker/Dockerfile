@@ -12,6 +12,6 @@ RUN yum install -y chromium
 COPY package.json app.js puppeteer.config.js ./
 
 # Install Puppeteer and any other dependencies not built into the app.js
-RUN npm install
+RUN npm install --silent
 
 CMD [ "app.handler" ]
