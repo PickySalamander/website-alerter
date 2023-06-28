@@ -122,6 +122,7 @@ export class WebsiteAlerterStack extends Stack {
 				"END_QUEUE": this.endQueue.queueUrl,
 				"IS_PRODUCTION": "true"
 			},
+			timeout: Duration.seconds(30),
 			logRetention: RetentionDays.ONE_MONTH
 		});
 
@@ -170,6 +171,7 @@ export class WebsiteAlerterStack extends Stack {
 			events: [
 				new SqsEventSource(this.changeQueue)
 			],
+			timeout: Duration.seconds(30),
 			logRetention: RetentionDays.ONE_MONTH
 		});
 
@@ -181,7 +183,6 @@ export class WebsiteAlerterStack extends Stack {
 			entry: "src/functions/scheduled-end.ts",
 			handler: "handler",
 			role: lambdaRole,
-			timeout: Duration.seconds(30),
 			environment: {
 				"CONFIG_S3": this.configBucket.bucketName,
 				"WEBSITE_TABLE": this.websiteTable.tableName,
@@ -192,6 +193,7 @@ export class WebsiteAlerterStack extends Stack {
 			events: [
 				new SqsEventSource(this.endQueue)
 			],
+			timeout: Duration.seconds(30),
 			logRetention: RetentionDays.ONE_MONTH
 		});
 	}
