@@ -27,6 +27,8 @@ export abstract class LambdaBase {
 			this._configService = new ConfigurationService(this.s3);
 
 			await this._configService.load();
+
+			this.init = true;
 		}
 	}
 
