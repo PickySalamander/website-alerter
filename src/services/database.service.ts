@@ -1,19 +1,21 @@
 import {Utils} from "../util/utils";
-import {DocumentClient} from "aws-sdk/clients/dynamodb";
-import {DynamoDB} from "aws-sdk";
-import UpdateItemInput = DocumentClient.UpdateItemInput;
+import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
+import {DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, UpdateCommandInput} from "@aws-sdk/lib-dynamodb";
+
 
 /**
  * Helper service for interfacing with a DynamoDB database storing tables for the tool.
  */
 export class DatabaseService {
 	/** Stored client to use */
-	private client:DocumentClient;
+	private client:DynamoDBDocumentClient;
 
 	constructor() {
+		let client:DynamoDBClient;
+
 		//if production we use the account's database
 		if(Utils.isProduction) {
-			this.client = new DynamoDB.DocumentClient();
+			client = new DynamoDBClient({});
 		}
 
 		//if not production use the local docker dynamodb
@@ -21,10 +23,12 @@ export class DatabaseService {
 			console.log("Dynamo connecting to localhost");
 
 			//if a dev environment try to connect to docker
-			this.client = new DynamoDB.DocumentClient({
+			client = new DynamoDBClient({
 				endpoint: 'http://host.docker.internal:8000'
 			});
 		}
+
+		this.client = DynamoDBDocumentClient.from(client);
 	}
 
 	/**
@@ -32,12 +36,12 @@ export class DatabaseService {
 	 * @param siteName the url of the site to get
 	 */
 	public async getWebsite(siteName:string) {
-		const response = await this.client.get({
+		const response = await this.client.send(new GetCommand({
 			TableName: process.env.WEBSITE_TABLE,
 			Key: {
 				site: siteName
 			}
-		}).promise();
+		}));
 
 		return response.Item as WebsiteItem;
 	}
@@ -47,10 +51,10 @@ export class DatabaseService {
 	 * @param item the new website's configuration
 	 */
 	public async putWebsite(item:WebsiteItem) {
-		await this.client.put({
+		await this.client.send(new PutCommand({
 			TableName: process.env.WEBSITE_TABLE,
 			Item: item
-		}).promise();
+		}));
 	}
 
 	/**
@@ -63,7 +67,7 @@ export class DatabaseService {
 		const revisionTime = revision.time;
 
 		//run the update
-		await this.client.update({
+		await this.client.send(new UpdateCommand({
 			TableName: process.env.WEBSITE_TABLE,
 			Key: {
 				site
@@ -76,7 +80,7 @@ export class DatabaseService {
 			ExpressionAttributeNames: {
 				"#updates": "updates"
 			}
-		}).promise();
+		}));
 	}
 
 	/**
@@ -84,10 +88,10 @@ export class DatabaseService {
 	 * @param runThrough the new run to add
 	 */
 	public async putRunThrough(runThrough:RunThrough) {
-		await this.client.put({
+		await this.client.send(new PutCommand({
 			TableName: process.env.RUN_TABLE,
 			Item: runThrough
-		}).promise();
+		}));
 	}
 
 	/**
@@ -95,12 +99,12 @@ export class DatabaseService {
 	 * @param runID the run's id to get
 	 */
 	public async getRunThrough(runID:string) {
-		const response = await this.client.get({
+		const response = await this.client.send(new GetCommand({
 			TableName: process.env.RUN_TABLE,
 			Key: {
 				id: runID
 			}
-		}).promise();
+		}));
 
 		return response?.Item as RunThrough;
 	}
@@ -113,7 +117,7 @@ export class DatabaseService {
 	 * @param revision a revision id if the site changed
 	 */
 	public async updateRunSiteState(runID:string, site:string, state:SiteRunState, revision?:string) {
-		const params:UpdateItemInput = {
+		const command:UpdateCommandInput = {
 			TableName: process.env.RUN_TABLE,
 			Key: {
 				id: runID
@@ -129,11 +133,11 @@ export class DatabaseService {
 
 		//if the revision was set add it to the update
 		if(typeof revision == "string") {
-			params.UpdateExpression += ", sites.#site.revision = :revision";
-			params.ExpressionAttributeValues[":revision"] = revision;
+			command.UpdateExpression += ", sites.#site.revision = :revision";
+			command.ExpressionAttributeValues[":revision"] = revision;
 		}
 
-		await this.client.update(params).promise();
+		await this.client.send(new UpdateCommand(command));
 	}
 
 	/**
@@ -142,7 +146,7 @@ export class DatabaseService {
 	 * @param state the state to set to
 	 */
 	public async updateRunState(runID:string, state:RunThroughState) {
-		await this.client.update({
+		await this.client.send(new UpdateCommand({
 			TableName: process.env.RUN_TABLE,
 			Key: {
 				id: runID
@@ -151,7 +155,7 @@ export class DatabaseService {
 			ExpressionAttributeValues: {
 				":state": state
 			}
-		}).promise()
+		}));
 	}
 }
 

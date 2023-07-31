@@ -1,8 +1,9 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../util/lambda-base";
 import {RunThroughState, SiteRunState} from "../services/database.service";
-import {SNS} from "aws-sdk";
 import {Utils} from "../util/utils";
+import {DeleteObjectCommand} from "@aws-sdk/client-s3";
+import {PublishCommand, SNSClient} from "@aws-sdk/client-sns";
 
 /**
  * Function that is called when the whole website polling queue is supposed to be complete. This will finish up any
@@ -10,7 +11,7 @@ import {Utils} from "../util/utils";
  */
 class ScheduledEnd extends LambdaBase {
 	/** SNS notifications to send emails through */
-	private sns:SNS;
+	private sns:SNSClient;
 
 	public handler:SQSHandler = async(event:SQSEvent) => {
 		console.log("Performing maintenance");
@@ -83,16 +84,16 @@ class ScheduledEnd extends LambdaBase {
 		//if in production send an email to the user via SNS
 		if(Utils.isProduction) {
 			if(!this.sns) {
-				this.sns = new SNS();
+				this.sns = new SNSClient({});
 			}
 
 			console.log("Sending email");
 
-			await this.sns.publish({
+			await this.sns.send(new PublishCommand({
 				TopicArn: process.env.NOTIFICATION_SNS,
 				Subject: `Finished website changes check ${runID}`,
 				Message: email
-			}).promise();
+			}));
 		} else {
 			console.log(`This isn't production otherwise would have emailed:\n\n${email}`)
 		}
@@ -141,10 +142,10 @@ class ScheduledEnd extends LambdaBase {
 	 */
 	private async deleteObject(id:string, ext:string) {
 		try {
-			await this.s3.deleteObject({
+			await this.s3.send(new DeleteObjectCommand({
 				Bucket: this.configPath,
 				Key: `content/${id}.${ext}`
-			}).promise();
+			}));
 		} catch(e) {
 			console.warn(`Failed to delete s3://${this.configPath}/content/${id}.${ext} from s3`);
 		}

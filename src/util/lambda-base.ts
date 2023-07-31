@@ -1,6 +1,7 @@
 import {DatabaseService} from "../services/database.service";
-import {S3, SQS} from "aws-sdk";
-import {Config, ConfigurationService} from "../services/configuration.service";
+import {ConfigurationService} from "../services/configuration.service";
+import {S3Client} from "@aws-sdk/client-s3";
+import {SQSClient} from "@aws-sdk/client-sqs";
 
 /** Base class for all Lambda functions in tool */
 export abstract class LambdaBase {
@@ -11,10 +12,10 @@ export abstract class LambdaBase {
 	private _database:DatabaseService;
 
 	/** Cached S3 client */
-	private _s3:S3;
+	private _s3:S3Client;
 
 	/** Cached SQS client */
-	private _sqs:SQS;
+	private _sqs:SQSClient;
 
 	/** Have all the services been loaded? */
 	private init:boolean = false;
@@ -23,7 +24,7 @@ export abstract class LambdaBase {
 	protected async setupServices():Promise<void> {
 		if(!this.init) {
 			this._database = new DatabaseService();
-			this._s3 = new S3();
+			this._s3 = new S3Client({});
 			this._configService = new ConfigurationService(this.s3);
 
 			await this._configService.load();
@@ -60,7 +61,7 @@ export abstract class LambdaBase {
 	/** Cached SQS client */
 	get sqs() {
 		if(!this._sqs) {
-			this._sqs = new SQS();
+			this._sqs = new SQSClient({});
 		}
 
 		return this._sqs;

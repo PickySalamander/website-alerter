@@ -4,6 +4,7 @@ import {LambdaBase} from "../util/lambda-base";
 import {RunThrough, RunThroughState, SiteRunState} from "../services/database.service";
 import {v4} from "uuid";
 import {SqsSiteEvent} from "../util/sqs-site-event";
+import {SendMessageCommand} from "@aws-sdk/client-sqs";
 
 /**
  * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON
@@ -68,17 +69,17 @@ class ScheduledStart extends LambdaBase {
 
 		if(Utils.isProduction) {
 			//queue the maintenance check of the whole flow
-			await this.sqs.sendMessage({
+			await this.sqs.send(new SendMessageCommand({
 				QueueUrl: process.env.END_QUEUE,
 				MessageBody: `{\"runID\":\"${runThrough.id}\"}`
-			}).promise();
+			}));
 
 			//queue each of the sites to be polled
 			for(const event of events) {
-				await this.sqs.sendMessage({
+				await this.sqs.send(new SendMessageCommand({
 					QueueUrl: process.env.WEBSITE_QUEUE_NAME,
 					MessageBody: JSON.stringify(event)
-				}).promise();
+				}));
 			}
 		} else {
 			console.log(`Would have queued ${events.length} events to be checked, but this isn't production.`);

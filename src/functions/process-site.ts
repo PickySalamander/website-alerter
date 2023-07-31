@@ -6,6 +6,8 @@ import {LambdaBase} from "../util/lambda-base";
 import {Utils} from "../util/utils";
 import {SqsSiteEvent} from "../util/sqs-site-event";
 import {SiteRunState} from "../services/database.service";
+import {PutObjectCommand} from "@aws-sdk/client-s3";
+import {SendMessageCommand} from "@aws-sdk/client-sqs";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -125,18 +127,18 @@ class ProcessSite extends LambdaBase {
 		console.log(`Done with page, uploading changes:${changeID}`);
 
 		//put the HTML in S3
-		await this.s3.putObject({
+		await this.s3.send(new PutObjectCommand({
 			Bucket: this.configPath,
 			Key: `content/${changeID}.html`,
 			Body: content
-		}).promise();
+		}));
 
 		//put the PNG in S3
-		await this.s3.putObject({
+		await this.s3.send(new PutObjectCommand({
 			Bucket: this.configPath,
 			Key: `content/${changeID}.png`,
 			Body: screenshot
-		}).promise();
+		}));
 
 		console.log("All done, updating database");
 
@@ -165,10 +167,10 @@ class ProcessSite extends LambdaBase {
 		}
 
 		//send to sqs
-		await this.sqs.sendMessage({
+		await this.sqs.send(new SendMessageCommand({
 			QueueUrl: process.env.CHANGE_QUEUE_NAME,
 			MessageBody: JSON.stringify(site)
-		}).promise();
+		}));
 	}
 }
 

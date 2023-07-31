@@ -4,6 +4,7 @@ import {SiteRunState, WebsiteCheck} from "../services/database.service";
 import {SqsSiteEvent} from "../util/sqs-site-event";
 import {createTwoFilesPatch, parsePatch} from "diff";
 import formatXml from "xml-formatter";
+import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
@@ -90,11 +91,11 @@ class DetectChanges extends LambdaBase {
 
 		console.log(`Found differences, uploading to s3://${this.configPath}/${s3Key}`);
 
-		await this.s3.putObject({
+		await this.s3.send(new PutObjectCommand({
 			Bucket: this.configPath,
 			Key: s3Key,
 			Body: differenceBody
-		}).promise();
+		}));
 
 		//update the database that there are changes
 		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
@@ -108,13 +109,13 @@ class DetectChanges extends LambdaBase {
 	 */
 	private async getContent(revision:WebsiteCheck):Promise<Parsed> {
 		//get the html from S3
-		const s3Result = await this.s3.getObject({
+		const s3Result = await this.s3.send(new GetObjectCommand({
 			Bucket: this.configPath,
 			Key: `content/${revision.id}.html`
-		}).promise();
+		}));
 
 		//get the html string
-		const html = s3Result.Body.toString("utf-8");
+		const html = await s3Result.Body.transformToString("utf8");
 
 		//return the html and pretty print it
 		return {
