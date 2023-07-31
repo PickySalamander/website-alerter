@@ -1,4 +1,4 @@
-// noinspection HtmlUnknownAttribute
+// noinspection HtmlUnknownAttribute,CssInvalidHtmlTagReference,JSUnresolvedReference
 
 import * as path from "path";
 import * as fs from "fs/promises";
@@ -27,30 +27,36 @@ describe("Detect Changes", () => {
 		expect(parsed.formatted).toContain("id=\"123\"");
 		expect(parsed.formatted).toContain("style=\"style1 style2 style3\"");
 		expect(parsed.formatted).toContain("attr=\"attr1 attr2\"");
+		expect(parsed.formatted).toContain("<style>test</style>");
+		expect(parsed.formatted).toContain("<script>IGNORED</script>");
 
-		const parseNoAttr = new Parsed({
+		const parse2 = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file1, "attributes");
+		}, file1, {ignoreAttributes:true});
 
-		expect(parseNoAttr.formatted).not.toBeNull();
-		expect(parseNoAttr.html).not.toBeNull();
-		expect(parseNoAttr.formatted).not.toContain("class=\"class1 class2 class3\"");
-		expect(parseNoAttr.formatted).not.toContain("id=\"123\"");
-		expect(parseNoAttr.formatted).not.toContain("style=\"style1 style2 style3\"");
-		expect(parseNoAttr.formatted).not.toContain("attr=\"attr1 attr2\"");
+		expect(parse2.formatted).not.toBeNull();
+		expect(parse2.html).not.toBeNull();
+		expect(parse2.formatted).not.toContain("class=\"class1 class2 class3\"");
+		expect(parse2.formatted).not.toContain("id=\"123\"");
+		expect(parse2.formatted).not.toContain("style=\"style1 style2 style3\"");
+		expect(parse2.formatted).not.toContain("attr=\"attr1 attr2\"");
+		expect(parse2.formatted).toContain("<style>test</style>");
+		expect(parse2.formatted).toContain("<script>IGNORED</script>");
 
-		const parsedClassesAndStyles = new Parsed({
+		const parse3 = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file1, "classesAndStyles");
+		}, file1, {ignoreCss:true, ignoreScripts:false});
 
-		expect(parsedClassesAndStyles.formatted).not.toBeNull();
-		expect(parsedClassesAndStyles.html).not.toBeNull();
-		expect(parsedClassesAndStyles.formatted).not.toContain("class=\"class1 class2 class3\"");
-		expect(parsedClassesAndStyles.formatted).toContain("id=\"123\"");
-		expect(parsedClassesAndStyles.formatted).not.toContain("style=\"style1 style2 style3\"");
-		expect(parsedClassesAndStyles.formatted).toContain("attr=\"attr1 attr2\"");
+		expect(parse3.formatted).not.toBeNull();
+		expect(parse3.html).not.toBeNull();
+		expect(parse3.formatted).not.toContain("class=\"class1 class2 class3\"");
+		expect(parse3.formatted).toContain("id=\"123\"");
+		expect(parse3.formatted).not.toContain("style=\"style1 style2 style3\"");
+		expect(parse3.formatted).toContain("attr=\"attr1 attr2\"");
+		expect(parse3.formatted).toContain("<style>IGNORED</style>");
+		expect(parse3.formatted).toContain("<script>test1</script>");
 	});
 
 	test("Equal", async() => {
@@ -89,9 +95,8 @@ describe("Detect Changes", () => {
 		}, file2);
 
 		const diff0 = createChangeDetector(last, current);
-
 		const lines = diff0.hunks[0].lines;
-		expect(lines).toHaveLength(17);
+		expect(lines).toHaveLength(19);
 
 		expect(lines).toContain("-<div class=\"class1 class2 class3\" attr=\"attr1 attr2 attr3\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore");
 		expect(lines).toContain("+<div class=\"class1 class2 class3\" attr=\"attr1 attr3\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore");
@@ -110,17 +115,16 @@ describe("Detect Changes", () => {
 		const last = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file1, "classesAndStyles");
+		}, file1, {ignoreCss:true, ignoreScripts:false});
 
 		const current = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file2, "classesAndStyles");
+		}, file2, {ignoreCss:true, ignoreScripts:false});
 
 		const diff0 = createChangeDetector(last, current);
-
 		const lines = diff0.hunks[0].lines;
-		expect(lines).toHaveLength(16);
+		expect(lines).toHaveLength(19);
 
 		expect(lines).toContain("-<div class=\"IGNORED\" attr=\"attr1 attr2 attr3\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore");
 		expect(lines).toContain("+<div class=\"IGNORED\" attr=\"attr1 attr3\">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore");
@@ -130,23 +134,25 @@ describe("Detect Changes", () => {
 
 		expect(lines).toContain("-<span id=\"1234\">test</span>");
 		expect(lines).toContain("+<span id=\"123\">test</span>");
+
+		expect(lines).toContain("-<script>test1</script>");
+		expect(lines).toContain("+<script>test2</script>");
 	});
 
 	test("NotEqual Attributes", async() => {
 		const last = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file1, "attributes");
+		}, file1, {ignoreAttributes:true});
 
 		const current = new Parsed({
 			time: new Date().getTime(),
 			id: "a"
-		}, file2, "attributes");
+		}, file2, {ignoreAttributes:true});
 
 		const diff0 = createChangeDetector(last, current);
-
 		const lines = diff0.hunks[0].lines;
-		expect(lines).toHaveLength(9);
+		expect(lines).toHaveLength(10);
 
 		expect(lines).toContain("-pariatur. Excepteur occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est");
 		expect(lines).toContain("+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est");

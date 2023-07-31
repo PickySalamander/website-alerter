@@ -14,7 +14,7 @@ export class Parsed {
 	 * @param html The parsed DOM of the HTML from the site polling
 	 * @param ignore potential ignored values, leave empty to not ignore
 	 */
-	constructor(public readonly revision:WebsiteCheck, public readonly html:string, ignore?:DetectorIgnore) {
+	constructor(public readonly revision:WebsiteCheck, public readonly html:string, ignore?:ChangeOptions) {
 		//setup options for parsing and output
 		const options:X2jOptionsOptional | XmlBuilderOptionsOptional = {
 			ignoreAttributes: false,
@@ -23,20 +23,40 @@ export class Parsed {
 			format: true
 		};
 
-		switch(ignore) {
-			case "classesAndStyles":
-				//ignore the attributes when they come up in the parsing
-				options.attributeValueProcessor = (name:string, value:any):string => {
-					if(name.toLowerCase() == "style" || name.toLowerCase() == "class") {
-						return "IGNORED";
-					}
+		//set default arguments
+		ignore = Object.assign({
+			ignoreCss: false,
+			ignoreScripts: true,
+			ignoreAttributes: false
+		}, ignore);
 
-					return value;
-				};
-				break;
-			case "attributes":
-				options.ignoreAttributes = true;
-				break;
+		//if ignore attributes then just ignore them all, otherwise for just css we ignore certain attributes
+		if(ignore.ignoreAttributes) {
+			options.ignoreAttributes = true;
+		} else if(ignore.ignoreCss) {
+			//ignore the attributes when they come up in the parsing
+			options.attributeValueProcessor = (name:string, value:any):string => {
+				if(name.toLowerCase() == "style" || name.toLowerCase() == "class") {
+					return "IGNORED";
+				}
+
+				return value;
+			};
+		}
+
+		//if scripts or css we ignore the style and script tags if found
+		if(ignore.ignoreScripts || ignore.ignoreCss) {
+			options.tagValueProcessor = (tagName:string, tagValue:any) => {
+				if(tagName.toLowerCase() == "script" && ignore.ignoreScripts) {
+					return "IGNORED";
+				}
+
+				if(tagName.toLowerCase() == "style" && ignore.ignoreCss) {
+					return "IGNORED";
+				}
+
+				return tagValue;
+			}
 		}
 
 		//parse it
@@ -50,13 +70,14 @@ export class Parsed {
 
 }
 
-/**
- * When comparing site changes should anything be ignored? Omitting this will ignore nothing. It can be set to the
- * following:
- *
- * <ul>
- *     <li>"classesAndStyles": "class" and "style" attributes in the dom will be ignored</li>
- *     <li>"attributes": all DOM attributes will be ignored</li>
- * </ul>
- */
-export type DetectorIgnore = "attributes" | "classesAndStyles";
+/** Options for detecting changes on the page */
+export interface ChangeOptions {
+	/** Ignore CSS on the page (anything in "class" and "style" attributes, plus "style" tags) (default:false) */
+	ignoreCss?:boolean;
+
+	/** Ignore <b>all</b> html attributes (default:false)*/
+	ignoreAttributes?:boolean;
+
+	/** ignore script tags on the page (default:true) */
+	ignoreScripts?:boolean;
+}

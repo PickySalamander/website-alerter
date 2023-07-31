@@ -4,7 +4,7 @@ import {SiteRunState, WebsiteCheck} from "../services/database.service";
 import {SqsSiteEvent} from "../util/sqs-site-event";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../util/change-detector";
-import {DetectorIgnore, Parsed} from "../util/parsed-html";
+import {ChangeOptions, Parsed} from "../util/parsed-html";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
@@ -44,7 +44,10 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		console.log("Getting content changes");
+		//get the current site config for the ignore
+		const siteConfig = this.configService.getConfig(site.site);
+
+		console.log(`Getting content changes (ignore ${siteConfig.options ? JSON.stringify(siteConfig.options) : "unset"})`);
 
 		//if there aren't enough revisions yet then abort
 		if(site.updates.length < 2) {
@@ -52,12 +55,9 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
-		//get the current site config for the ignore
-		const siteConfig = this.configService.getConfig(site.site);
-
 		//get the current HTML revision and the previous
-		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.ignore);
-		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.ignore);
+		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.options);
+		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.options);
 
 		//detect changes in the versions
 		const detection = new ChangeDetector(last, current);
@@ -90,10 +90,10 @@ class DetectChanges extends LambdaBase {
 	/**
 	 * Retrieve the relevant HTML from S3
 	 * @param revision the revision of HTML and where it is located
-	 * @param ignore changes to ignore
+	 * @param options options for detecting changes on the page
 	 * @return the parsed HTML and the revision
 	 */
-	private async getContent(revision:WebsiteCheck, ignore?:DetectorIgnore):Promise<Parsed> {
+	private async getContent(revision:WebsiteCheck, options?:ChangeOptions):Promise<Parsed> {
 		//get the html from S3
 		const s3Result = await this.s3.send(new GetObjectCommand({
 			Bucket: this.configPath,
@@ -104,7 +104,7 @@ class DetectChanges extends LambdaBase {
 		const html = await s3Result.Body.transformToString("utf8");
 
 		//return the html and pretty print it
-		return new Parsed(revision, html, ignore);
+		return new Parsed(revision, html, options);
 	}
 }
 

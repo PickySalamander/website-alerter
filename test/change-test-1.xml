@@ -16,4 +16,8 @@
 	</div>
 
 	<span id="1234">test</span>
+
+	<script>test1</script>
+
+	<style>test</style>
 </div>
