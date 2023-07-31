@@ -1,13 +1,17 @@
-import {WebsiteCheck} from "../services/database.service";
 import {createTwoFilesPatch, ParsedDiff, parsePatch} from "diff";
+import {Parsed} from "./parsed-html";
 
 /**
- * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
- * into a unified diff and uploaded to S3 for the user to check later.
+ * Detects changes in two parsed versions of a website
  */
 export class ChangeDetector {
+	/** The raw body of the unified diff */
 	private readonly _body:string;
+
+	/** The unified diff structure */
 	private readonly _difference:ParsedDiff[];
+
+	/** Were changes detected? */
 	private readonly _isChanged:boolean;
 
 	constructor(private lastRevision:Parsed, private currentRevision:Parsed) {
@@ -32,55 +36,22 @@ export class ChangeDetector {
 		//Get the changes from the diff
 		this._difference = parsePatch(this._body);
 
+		//are there any changes?
 		this._isChanged = this._difference[0].hunks.length != 0;
 	}
 
-	/**
-	 * Retrieve the relevant HTML from S3
-	 * @param revision the revision of HTML and where it is located
-	 * @return the parsed HTML and the revision
-	 */
-	// public static getContent(revision:S3.Body):Promise<Parsed> {
-	// 	//get the html from S3
-	// 	const s3Result = await this.s3.getObject({
-	// 		Bucket: this.configPath,
-	// 		Key: `content/${revision.id}.html`
-	// 	}).promise();
-	//
-	// 	//get the html string
-	// 	const html = s3Result.Body.toString("utf-8");
-	//
-	// 	//return the html and pretty print it
-	// 	return {
-	// 		revision,
-	// 		html,
-	// 		formatted: formatXml(html)
-	// 	};
-	// }
-
+	/** The unified diff structure */
 	get difference():ParsedDiff[] {
 		return this._difference;
 	};
 
+	/** Were changes detected? */
 	get isChanged():boolean {
 		return this._isChanged;
 	}
 
+	/** The raw body of the unified diff */
 	get body():string {
 		return this._body;
 	}
-}
-
-/**
- * Parsed HTML from S3
- */
-export interface Parsed {
-	/** The original revision to check */
-	revision:WebsiteCheck;
-
-	/** The parsed DOM of the HTML from the site polling */
-	html:string;
-
-	/** Pretty printed HTML from the {@link html} property */
-	formatted:string;
 }

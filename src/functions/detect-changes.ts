@@ -2,9 +2,9 @@ import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../util/lambda-base";
 import {SiteRunState, WebsiteCheck} from "../services/database.service";
 import {SqsSiteEvent} from "../util/sqs-site-event";
-import {createTwoFilesPatch, parsePatch} from "diff";
-import formatXml from "xml-formatter";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
+import {ChangeDetector} from "../util/change-detector";
+import {DetectorIgnore, Parsed} from "../util/parsed-html";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
@@ -52,33 +52,18 @@ class DetectChanges extends LambdaBase {
 			return;
 		}
 
+		//get the current site config for the ignore
+		const siteConfig = this.configService.getConfig(site.site);
+
 		//get the current HTML revision and the previous
-		const current = await this.getContent(site.updates[site.updates.length - 1]);
-		const last = await this.getContent(site.updates[site.updates.length - 2]);
+		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.ignore);
+		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.ignore);
 
-		//if either aren't there (usually because of an error), abort
-		if(!current || !last) {
-			return;
-		}
-
-		//using the diff library create a unified diff of the two HTML revisions
-		const differenceBody = createTwoFilesPatch(
-			"old.html",
-			"new.html",
-			last.formatted,
-			current.formatted,
-			new Date(last.revision.time).toString(),
-			new Date(current.revision.time).toString(),
-			{
-				ignoreCase: true,
-				ignoreWhitespace: true
-			});
-
-		//Get the changes from the diff
-		const difference = parsePatch(differenceBody);
+		//detect changes in the versions
+		const detection = new ChangeDetector(last, current);
 
 		//If there are no changes then update the database and finish up
-		if(difference[0].hunks.length == 0) {
+		if(!detection.isChanged) {
 			console.log("Found no differences, moving on");
 
 			//update the database that there aren't changes
@@ -94,7 +79,7 @@ class DetectChanges extends LambdaBase {
 		await this.s3.send(new PutObjectCommand({
 			Bucket: this.configPath,
 			Key: s3Key,
-			Body: differenceBody
+			Body: detection.body
 		}));
 
 		//update the database that there are changes
@@ -105,9 +90,10 @@ class DetectChanges extends LambdaBase {
 	/**
 	 * Retrieve the relevant HTML from S3
 	 * @param revision the revision of HTML and where it is located
+	 * @param ignore changes to ignore
 	 * @return the parsed HTML and the revision
 	 */
-	private async getContent(revision:WebsiteCheck):Promise<Parsed> {
+	private async getContent(revision:WebsiteCheck, ignore?:DetectorIgnore):Promise<Parsed> {
 		//get the html from S3
 		const s3Result = await this.s3.send(new GetObjectCommand({
 			Bucket: this.configPath,
@@ -118,26 +104,8 @@ class DetectChanges extends LambdaBase {
 		const html = await s3Result.Body.transformToString("utf8");
 
 		//return the html and pretty print it
-		return {
-			revision,
-			html,
-			formatted: formatXml(html)
-		};
+		return new Parsed(revision, html, ignore);
 	}
-}
-
-/**
- * Parsed HTML from S3
- */
-interface Parsed {
-	/** The original revision to check */
-	revision:WebsiteCheck;
-
-	/** The parsed DOM of the HTML from the site polling */
-	html:string;
-
-	/** Pretty printed HTML from the {@link html} property */
-	formatted:string;
 }
 
 // noinspection JSUnusedGlobalSymbols

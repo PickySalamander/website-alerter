@@ -1,5 +1,5 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
-
+import {DetectorIgnore} from "../util/parsed-html";
 
 /**
  * Helper service for getting the configuration JSON from S3. It won't reload a fresh JSON if already loaded.
@@ -83,14 +83,6 @@ export interface SiteConfig {
 	 */
 	selector?:string;
 
-	/**
-	 * When comparing site changes should anything be ignored? Omitting this will ignore nothing. It can be set to the
-	 * following:
-	 *
-	 * <ul>
-	 *     <li>"classesAndStyles": "class" and "style" attributes in the dom will be ignored</li>
-	 *     <li>"attributes": all DOM attributes will be ignored</li>
-	 * </ul>
-	 */
-	ignore?:"attributes" | "classesAndStyles";
+	/** When comparing site changes should anything be ignored? */
+	ignore?:DetectorIgnore;
 }
