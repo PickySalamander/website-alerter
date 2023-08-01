@@ -6,7 +6,11 @@
 			"selector": "#productivity > div > div.position-relative.z-1 > card-skew > div > div.d-md-flex.flex-column.flex-1.p-5.p-sm-6.py-lg-8.pl-lg-8.pr-lg-12.col-md-6.flex-justify-between > p"
 		},
 		{
-			"site": "https://stackoverflow.com"
+			"site": "https://stackoverflow.com",
+			"options": {
+				"ignoreCss": true,
+				"ignoreAttributes": true
+			}
 		}
 	]
 }
