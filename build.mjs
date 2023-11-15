@@ -11,7 +11,7 @@ await esbuild.build({
 	bundle: true,
 	minify: true,
 	sourcemap: true,
-	outfile: 'build/process-site/app.js',
+	outfile: 'build/process-site/index.js',
 	target: "es2020",
 	platform: "node",
 	external: [ "vm2" ] //vm2 really wasn't built to be packaged with typescript, so it needs to be external
@@ -22,3 +22,12 @@ await fs.copyFile("src/docker/Dockerfile", "build/process-site/Dockerfile");
 await fs.copyFile("src/docker/package.json", "build/process-site/package.json");
 await fs.copyFile("src/docker/puppeteer.config.js", "build/process-site/puppeteer.config.js");
 
+await esbuild.build({
+	entryPoints: ["src/functions/scheduled-start.ts"],
+	bundle: true,
+	minify: true,
+	sourcemap: true,
+	outfile: 'build/scheduled-start/index.js',
+	target: "es2020",
+	platform: "node"
+});
