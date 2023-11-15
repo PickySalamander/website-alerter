@@ -1,3 +1,7 @@
+locals {
+  process-site-dir = "../build/process-site"
+}
+
 # create the scheduled start function which starts the whole process when hit with the event bridge rule
 module "scheduled_start" {
   source = "terraform-aws-modules/lambda/aws"
@@ -36,9 +40,17 @@ module "process_site" {
   memory_size = 1024  # bigger memory size and timeout to give a chance for puppeteer to run
   timeout = 60
 
+  environment_variables = {
+    CONFIG_S3 = aws_s3_bucket.config_bucket.bucket
+    WEBSITE_TABLE = aws_dynamodb_table.dynamo_db_table_website_table.name
+    CHANGE_QUEUE_NAME = aws_sqs_queue.change_queue.url
+    RUN_TABLE = aws_dynamodb_table.dynamo_db_table_run_through_table.name
+    IS_PRODUCTION = "true"
+  }
+
   event_source_mapping = {
     sqs = {
-      event_source_arn = aws_sqs_queue.change_queue.arn
+      event_source_arn = aws_sqs_queue.website_queue.arn
     }
   }
 }
@@ -51,10 +63,13 @@ module "process_site_docker" {
 
   use_image_tag = false
 
-  source_path = "../build/process-site"
+  source_path = local.process-site-dir
 
-  # TODO do I need a trigger here?
   # TODO lifecycle policy?
+
+  triggers = {
+    dir_sha1 = sha1(join("", [for f in fileset(local.process-site-dir, "*"): filesha1("${local.process-site-dir}/${f}")]))
+  }
 }
 
 # detect changes from the recently polled website
