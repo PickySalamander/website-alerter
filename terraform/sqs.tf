@@ -25,6 +25,7 @@ resource "aws_sqs_queue" "change_queue" {
 # create the final maintenance queue with a 10 minute delay
 resource "aws_sqs_queue" "end_queue" {
   name = "website-alerter-end-${local.suffix_id}"
+  delay_seconds = 600
   visibility_timeout_seconds = var.sqs_timeout
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.website_dead.arn

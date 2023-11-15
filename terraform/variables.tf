@@ -15,3 +15,8 @@ variable "sqs_timeout" {
   type = number
   default = 120
 }
+
+variable "lambda_log_retention" {
+  description = "The number of days log events are kept in CloudWatch Logs. When updating this property, unsetting it doesn't remove the log retention policy. To remove the retention policy, set the value to INFINITE."
+  default = 14
+}

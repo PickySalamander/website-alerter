@@ -9,9 +9,9 @@ RUN amazon-linux-extras install epel -y
 RUN yum install -y chromium
 
 # Copy the compiled Typescript, package, and Puppeteer config over
-COPY package.json app.js puppeteer.config.js ./
+COPY package.json index.js puppeteer.config.js ./
 
-# Install Puppeteer and any other dependencies not built into the app.js
+# Install Puppeteer and any other dependencies not built into the index.js
 RUN npm install --silent
 
-CMD [ "app.handler" ]
+CMD [ "index.handler" ]

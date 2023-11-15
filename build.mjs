@@ -10,7 +10,6 @@ await esbuild.build({
 	entryPoints: ["src/functions/process-site.ts"],
 	bundle: true,
 	minify: true,
-	sourcemap: true,
 	outfile: 'build/process-site/index.js',
 	target: "es2020",
 	platform: "node",
@@ -26,8 +25,25 @@ await esbuild.build({
 	entryPoints: ["src/functions/scheduled-start.ts"],
 	bundle: true,
 	minify: true,
-	sourcemap: true,
 	outfile: 'build/scheduled-start/index.js',
+	target: "es2020",
+	platform: "node"
+});
+
+await esbuild.build({
+	entryPoints: ["src/functions/scheduled-end.ts"],
+	bundle: true,
+	minify: true,
+	outfile: 'build/scheduled-end/index.js',
+	target: "es2020",
+	platform: "node"
+});
+
+await esbuild.build({
+	entryPoints: ["src/functions/detect-changes.ts"],
+	bundle: true,
+	minify: true,
+	outfile: 'build/detect-changes/index.js',
 	target: "es2020",
 	platform: "node"
 });
