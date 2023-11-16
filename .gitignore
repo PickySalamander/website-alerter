@@ -134,6 +134,7 @@ dist
 .idea/
 .vscode/
 build/
+builds/
 /env.json
 
 # CDK asset staging directory
@@ -142,7 +143,6 @@ cdk.out
 
 # Local .terraform directories
 **/.terraform/*
-terraform/builds
 
 # .tfstate files
 *.tfstate
