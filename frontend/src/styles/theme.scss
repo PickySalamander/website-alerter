@@ -1,0 +1,72 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$dark-primary-text: rgba(black, 0.87);
+$dark-accent-text: rgba(black, 0.54);
+$dark-disabled-text: rgba(black, 0.38);
+$dark-dividers: rgba(black, 0.12);
+$dark-focused: rgba(black, 0.12);
+$light-primary-text: white;
+$light-accent-text: rgba(white, 0.7);
+$light-disabled-text: rgba(white, 0.5);
+$light-dividers: rgba(white, 0.12);
+$light-focused: rgba(white, 0.12);
+
+$primary-colors: (
+	main: #3d5a80,
+	lighter: #c5ced9,
+	darker: #273f63,
+	200: #3d5a80, // For slide toggle,
+	contrast : (
+		main: $light-primary-text,
+		lighter: $dark-primary-text,
+		darker: $light-primary-text,
+	)
+);
+
+$primary-palette: mat.define-palette($primary-colors, main, lighter, darker);
+
+$accent-colors: (
+	main: #ee6c4d,
+	lighter: #fad3ca,
+	darker: #e74f34,
+	200: #ee6c4d, // For slide toggle,
+	contrast : (
+		main: $dark-primary-text,
+		lighter: $dark-primary-text,
+		darker: $light-primary-text,
+	)
+);
+
+$accent-palette: mat.define-palette($accent-colors,  main, lighter, darker);
+
+$warn-colors: (
+	main: #d90429,
+	lighter: #f4b4bf,
+	darker: #ca0219,
+	200: #d90429, // For slide toggle,
+	contrast : (
+		main: $light-primary-text,
+		lighter: $dark-primary-text,
+		darker: $light-primary-text,
+	)
+);
+
+$warn-palette: mat.define-palette($warn-colors, main, lighter, darker);
+
+$typography: mat.define-typography-config($font-family: "Roboto Slab");
+
+$theme: mat.define-light-theme((
+	color: (
+		primary: $primary-palette,
+		accent: $accent-palette,
+		warn: $warn-palette,
+	),
+	typography: $typography,
+	density: 0,
+));
+
+// Theme Init
+@include mat.all-component-typographies($typography);
+@include mat.all-component-themes($theme);

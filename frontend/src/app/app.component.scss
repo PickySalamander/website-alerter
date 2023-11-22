@@ -2,38 +2,15 @@
 	height: 100%;
 	display: flex;
 	flex-direction: column;
-	background-color: #17141a;
-}
-
-#content {
-	position: relative;
-	height: 100%;
-	width: 100%;
-	display: flex;
-	flex-direction: column;
-	z-index: 0;
-
-	.background {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		left: 0;
-		z-index: 1;
-		pointer-events: none;
-
-		background: radial-gradient(circle, rgb(56, 56, 56, 0.2) 20%, rgba(100, 100, 100, 0.3) 100%);
-		box-shadow: inset 0 0 30px 10px #000000;
-	}
+	background-color: #FFFCF2;
 }
 
 #main-content {
 	display: flex;
-	padding: 1rem 2rem 2rem 2rem;
+	padding: 2em;
 	width: 100%;
 	height: 100%;
 	overflow-y: auto;
 	overflow-x: hidden;
+	justify-content: center;
 }
-
-
