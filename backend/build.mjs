@@ -20,30 +20,3 @@ await esbuild.build({
 await fs.copyFile("src/docker/Dockerfile", "build/process-site/Dockerfile");
 await fs.copyFile("src/docker/package.json", "build/process-site/package.json");
 await fs.copyFile("src/docker/puppeteer.config.js", "build/process-site/puppeteer.config.js");
-
-await esbuild.build({
-	entryPoints: ["src/functions/scheduled-start.ts"],
-	bundle: true,
-	minify: true,
-	outfile: 'build/scheduled-start/index.js',
-	target: "es2020",
-	platform: "node"
-});
-
-await esbuild.build({
-	entryPoints: ["src/functions/scheduled-end.ts"],
-	bundle: true,
-	minify: true,
-	outfile: 'build/scheduled-end/index.js',
-	target: "es2020",
-	platform: "node"
-});
-
-await esbuild.build({
-	entryPoints: ["src/functions/detect-changes.ts"],
-	bundle: true,
-	minify: true,
-	outfile: 'build/detect-changes/index.js',
-	target: "es2020",
-	platform: "node"
-});

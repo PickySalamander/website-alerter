@@ -4,6 +4,7 @@ import {DockerImageCode, DockerImageFunction, FunctionBase, Runtime} from "aws-c
 import {Duration} from "aws-cdk-lib";
 import {RetentionDays} from "aws-cdk-lib/aws-logs";
 import {SqsEventSource} from "aws-cdk-lib/aws-lambda-event-sources";
+import {Construct} from "constructs";
 
 export class LambdaStack {
 	public readonly scheduledStart:FunctionBase;
@@ -13,6 +14,8 @@ export class LambdaStack {
 	public readonly detectChanges:FunctionBase;
 
 	public readonly scheduledEnd:FunctionBase;
+
+	public readonly login:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
 		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
@@ -25,9 +28,9 @@ export class LambdaStack {
 			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.websiteTable.tableName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 				"WEBSITE_QUEUE_NAME": stack.sqs.websiteQueue.queueUrl,
-				"RUN_TABLE": stack.runThroughTable.tableName,
+				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"END_QUEUE": stack.sqs.endQueue.queueUrl,
 				"IS_PRODUCTION": "true"
 			},
@@ -51,9 +54,9 @@ export class LambdaStack {
 			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.websiteTable.tableName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 				"CHANGE_QUEUE_NAME": stack.sqs.changeQueue.queueUrl,
-				"RUN_TABLE": stack.runThroughTable.tableName,
+				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
 			logRetention: RetentionDays.ONE_MONTH,
@@ -74,8 +77,8 @@ export class LambdaStack {
 			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.websiteTable.tableName,
-				"RUN_TABLE": stack.runThroughTable.tableName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
 			events: [
@@ -95,14 +98,27 @@ export class LambdaStack {
 			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.websiteTable.tableName,
-				"RUN_TABLE": stack.runThroughTable.tableName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
 			events: [
 				new SqsEventSource(stack.sqs.endQueue)
 			],
 			timeout: Duration.seconds(30),
+			logRetention: RetentionDays.ONE_MONTH
+		});
+
+		this.login = new NodejsFunction(stack, "Login", {
+			description: "Login with JWT process",
+			runtime: Runtime.NODEJS_18_X,
+			entry: "src/functions/login.ts",
+			handler: "handler",
+			role: stack.iam.role,
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"IS_PRODUCTION": "true"
+			},
 			logRetention: RetentionDays.ONE_MONTH
 		});
 	}

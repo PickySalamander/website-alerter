@@ -3,7 +3,7 @@ import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {LoginRequest} from "../../../shared/src/util/login-request";
 
 class Login extends LambdaBase {
-	protected async handle(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
+	async handler(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
 		//make sure there was a body
 		if(!event.body) {
 			throw new Error("Body was not specified");
@@ -14,3 +14,6 @@ class Login extends LambdaBase {
 		throw new Error("not supported")
 	}
 }
+
+// noinspection JSUnusedGlobalSymbols
+export const handler = new Login().handler;

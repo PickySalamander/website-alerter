@@ -1,19 +1,14 @@
 import {RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {Bucket} from "aws-cdk-lib/aws-s3";
-import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {IamStack} from "./stack/iam.stack";
 import {SqsStack} from "./stack/sqs.stack";
 import {LambdaStack} from "./stack/lambda.stack";
+import {ApiStack} from "./stack/api.stack";
+import {DynamoStack} from "./stack/dynamo.stack";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
-	/** Website dynamo table*/
-	public readonly websiteTable:Table;
-
-	/** Alerter run dynamo table*/
-	public readonly runThroughTable:Table;
-
 	/** S3 bucket for configuration and storage of files */
 	public readonly configBucket:Bucket;
 
@@ -23,30 +18,12 @@ export class WebsiteAlerterStack extends Stack {
 
 	public readonly lambda:LambdaStack;
 
+	public readonly dynamo:DynamoStack;
+
 	constructor(scope:Construct, id:string, props?:StackProps) {
 		super(scope, id, props);
 
-		// create the website table
-		this.websiteTable = new Table(this, "WebsiteTable", {
-			tableName: "website-alerter-sites",
-			partitionKey: {
-				name: "site",
-				type: AttributeType.STRING
-			},
-			billingMode: BillingMode.PAY_PER_REQUEST,
-			removalPolicy: RemovalPolicy.DESTROY
-		});
-
-		// create the run table
-		this.runThroughTable = new Table(this, "RunThroughTable", {
-			tableName: "website-alerter-run",
-			partitionKey: {
-				name: "id",
-				type: AttributeType.STRING,
-			},
-			billingMode: BillingMode.PAY_PER_REQUEST,
-			removalPolicy: RemovalPolicy.DESTROY
-		});
+		this.dynamo = new DynamoStack(this);
 
 		// create the S3 bucket
 		this.configBucket = new Bucket(this, 'ConfigurationBucket', {
@@ -59,5 +36,7 @@ export class WebsiteAlerterStack extends Stack {
 		this.iam = new IamStack(this);
 
 		this.lambda = new LambdaStack(this);
+
+		new ApiStack(this);
 	}
 }
