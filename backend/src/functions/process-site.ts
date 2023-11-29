@@ -145,7 +145,7 @@ class ProcessSite extends LambdaBase {
 		//add a revision to the database
 		await this.database.addRevision(siteEvent.site, {
 			time: new Date().getTime(),
-			id: changeID
+			revisionID: changeID
 		});
 
 		//update the run that the site was polled

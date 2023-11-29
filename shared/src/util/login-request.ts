@@ -1,4 +1,6 @@
 export interface LoginRequest {
-	user:string;
+	email:string;
 	password:string;
 }
+
+"{\"email\":\"thepotter782@gmail.com\",\"password\":\"test\"}"

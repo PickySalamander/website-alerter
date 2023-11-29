@@ -68,8 +68,8 @@ class ScheduledEnd extends LambdaBase {
 				case SiteRunState.Complete:
 					email += "COMPLETE\n";
 
-					if(run.revision) {
-						const url = `https://s3.console.aws.amazon.com/s3/object/${this.configPath}?region=us-east-1&prefix=content/${run.revision}.diff`;
+					if(run.revisionID) {
+						const url = `https://s3.console.aws.amazon.com/s3/object/${this.configPath}?region=us-east-1&prefix=content/${run.revisionID}.diff`;
 						email += `\tA change was detected, view the change here: ${url}`;
 					} else {
 						email += `\tNo changes detected`;
@@ -122,11 +122,11 @@ class ScheduledEnd extends LambdaBase {
 				//preform delete operations by deleting them from S3
 				for(let i = 0; i < numDelete; i++) {
 					const toDelete = website.updates.shift();
-					console.log(`Deleting revision ${toDelete.id}`);
+					console.log(`Deleting revision ${toDelete.revisionID}`);
 
-					await this.deleteObject(toDelete.id, "diff");
-					await this.deleteObject(toDelete.id, "png");
-					await this.deleteObject(toDelete.id, "html");
+					await this.deleteObject(toDelete.revisionID, "diff");
+					await this.deleteObject(toDelete.revisionID, "png");
+					await this.deleteObject(toDelete.revisionID, "html");
 				}
 
 				//update the database with less revisions

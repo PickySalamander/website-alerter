@@ -1,6 +1,13 @@
 import {Utils} from "../util/utils";
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
-import {DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, UpdateCommandInput} from "@aws-sdk/lib-dynamodb";
+import {
+	DynamoDBDocumentClient,
+	GetCommand,
+	PutCommand,
+	QueryCommand,
+	UpdateCommand,
+	UpdateCommandInput
+} from "@aws-sdk/lib-dynamodb";
 
 
 /**
@@ -29,6 +36,20 @@ export class DatabaseService {
 		}
 
 		this.client = DynamoDBDocumentClient.from(client);
+	}
+
+	public async getUser(email:string):Promise<UserItem> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: process.env.USERS_TABLE,
+			IndexName: "user-name-index",
+			KeyConditionExpression: "email = :email",
+			ExpressionAttributeValues: {
+				":email": email
+			},
+			Limit: 1
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items[0] as UserItem : undefined;
 	}
 
 	/**
@@ -159,8 +180,19 @@ export class DatabaseService {
 	}
 }
 
+export interface UserItem {
+	userID:string;
+
+	email:string;
+
+	password:string;
+}
+
 /** A website's configuration stored in the database */
 export interface WebsiteItem {
+	/** The site's owner */
+	userID:string;
+
 	/** The site's url */
 	site:string;
 
@@ -176,8 +208,11 @@ export interface WebsiteCheck {
 	/** The time it was polled */
 	time:number;
 
-	/** the id of the revision stored in S3 */
-	id:string;
+	/** The id of the revision stored in S3 */
+	revisionID:string;
+
+	/** ID of the run this check was performed in */
+	runID:string;
 }
 
 /** A run through of the website alerter tool in the database */
@@ -189,7 +224,7 @@ export interface RunThrough {
 	time:number;
 
 	/** The sites that were checked */
-	sites:{ [site:string]:SiteRun };
+	sites:SiteRun[];
 
 	/** The state of the entire run */
 	runState:RunThroughState;
@@ -197,11 +232,17 @@ export interface RunThrough {
 
 /** The state of a check of a site in a {@link RunThrough} */
 export interface SiteRun {
+	/** The site's owner */
+	userID:string;
+
+	/** The site's url */
+	site:string;
+
 	/** The state of the site's polling and change detection */
 	siteState:SiteRunState,
 
 	/** the revision of any changes found in S3 */
-	revision?:string;
+	revisionID?:string;
 }
 
 /** The state of an entire {@link RunThrough} */

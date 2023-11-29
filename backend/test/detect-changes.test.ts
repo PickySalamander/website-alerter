@@ -18,7 +18,7 @@ describe("Detect Changes", () => {
 	test("XML Parsing", async() => {
 		const parsed = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1);
 
 		expect(parsed.formatted).not.toBeNull();
@@ -32,7 +32,7 @@ describe("Detect Changes", () => {
 
 		const parse2 = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1, {ignoreAttributes:true});
 
 		expect(parse2.formatted).not.toBeNull();
@@ -46,7 +46,7 @@ describe("Detect Changes", () => {
 
 		const parse3 = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1, {ignoreCss:true, ignoreScripts:false});
 
 		expect(parse3.formatted).not.toBeNull();
@@ -62,12 +62,12 @@ describe("Detect Changes", () => {
 	test("Equal", async() => {
 		const last = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1);
 
 		const current = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1);
 
 		const detector = new ChangeDetector(last, current);
@@ -86,12 +86,12 @@ describe("Detect Changes", () => {
 	test("NotEqual", async() => {
 		const last = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1);
 
 		const current = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file2);
 
 		const diff0 = createChangeDetector(last, current);
@@ -114,12 +114,12 @@ describe("Detect Changes", () => {
 	test("NotEqual Classes and Styles", async() => {
 		const last = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1, {ignoreCss:true, ignoreScripts:false});
 
 		const current = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file2, {ignoreCss:true, ignoreScripts:false});
 
 		const diff0 = createChangeDetector(last, current);
@@ -142,12 +142,12 @@ describe("Detect Changes", () => {
 	test("NotEqual Attributes", async() => {
 		const last = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file1, {ignoreAttributes:true});
 
 		const current = new Parsed({
 			time: new Date().getTime(),
-			id: "a"
+			revisionID: "a"
 		}, file2, {ignoreAttributes:true});
 
 		const diff0 = createChangeDetector(last, current);

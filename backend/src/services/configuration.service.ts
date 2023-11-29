@@ -11,6 +11,9 @@ export class ConfigurationService {
 	/** Preloaded configuration if already loaded */
 	private cachedConfig:Config;
 
+	/** Preloaded jwt key file */
+	private cachedJwt?:Buffer;
+
 	/** The bucket used to load the JSON */
 	private readonly configurationPath:string;
 
@@ -46,6 +49,25 @@ export class ConfigurationService {
 		}
 
 		return this.cachedConfig;
+	}
+
+	public async loadJwt():Promise<Buffer> {
+		if(!this.cachedJwt) {
+			console.log(`Loading jwt key from s3://${this.configurationPath}/jwt.key`);
+
+			const s3Response = await this.s3.send(new GetObjectCommand({
+				Key: "jwt.key",
+				Bucket: this.configurationPath
+			}));
+
+			if(!s3Response.Body) {
+				throw `S3 result from ${this.configurationPath}/jwt.key was empty`;
+			}
+
+			this.cachedJwt = Buffer.from(await s3Response.Body.transformToByteArray());
+		}
+
+		return this.cachedJwt;
 	}
 
 	/** Get the configuration for a particular website */

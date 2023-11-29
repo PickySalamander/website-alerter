@@ -72,7 +72,7 @@ class DetectChanges extends LambdaBase {
 		}
 
 		//if there are changes upload the diff to S3
-		const s3Key = `content/${current.revision.id}.diff`
+		const s3Key = `content/${current.revision.revisionID}.diff`
 
 		console.log(`Found differences, uploading to s3://${this.configPath}/${s3Key}`);
 
@@ -84,7 +84,7 @@ class DetectChanges extends LambdaBase {
 
 		//update the database that there are changes
 		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
-			current.revision.id);
+			current.revision.revisionID);
 	}
 
 	/**
@@ -97,7 +97,7 @@ class DetectChanges extends LambdaBase {
 		//get the html from S3
 		const s3Result = await this.s3.send(new GetObjectCommand({
 			Bucket: this.configPath,
-			Key: `content/${revision.id}.html`
+			Key: `content/${revision.revisionID}.html`
 		}));
 
 		//get the html string
