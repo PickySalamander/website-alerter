@@ -1,8 +1,9 @@
-import {DatabaseService} from "../services/database.service";
+import {DatabaseService, UserItem} from "../services/database.service";
 import {ConfigurationService} from "../services/configuration.service";
 import {S3Client} from "@aws-sdk/client-s3";
 import {SQSClient} from "@aws-sdk/client-sqs";
 import {CorsService} from "../services/cors.service";
+import {APIGatewayProxyEvent} from "aws-lambda";
 
 /** Base class for all Lambda functions in tool */
 export abstract class LambdaBase {

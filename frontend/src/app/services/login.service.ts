@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {CanActivateFn, Router, UrlTree} from "@angular/router";
-import {HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
-import {Observable} from "rxjs";
+import {HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
+import {catchError, Observable, throwError} from "rxjs";
 import {environment} from "../../environments/environment";
 
 @Injectable({
@@ -14,8 +14,12 @@ export class LoginService implements HttpInterceptor {
 		this._session = localStorage.getItem("session");
 	}
 
-	private canActivate():boolean | Promise<boolean | UrlTree> {
-		return Promise.resolve(this.router.createUrlTree(["login"]));
+	private canActivate():boolean | UrlTree {
+		if(this.hasSession) {
+			return true;
+		}
+
+		return this.router.createUrlTree(["login"]);
 	}
 
 	public static canActivateLoggedIn:CanActivateFn = route => {
@@ -32,10 +36,27 @@ export class LoginService implements HttpInterceptor {
 
 			//clone the request to add the header and withCredentials (required for cors)
 			const authReq = request.clone({headers, withCredentials: true});
-			return next.handle(authReq);
+			return next.handle(authReq).pipe(
+				catchError((error:HttpErrorResponse) => {
+					if(error.status == 403) {
+						console.log("Authorization error", error);
+						this.logout();
+					}
+
+					return throwError(() => error);
+				})
+			);
 		}
 
 		return next.handle(request);
+	}
+
+	/** Log the user out of the App and redirect to the login page */
+	logout():void {
+		this._session = undefined
+
+		//nav to the login page
+		this.router.navigate(['login']);
 	}
 
 	set session(value:string) {

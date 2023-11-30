@@ -18,7 +18,11 @@ export class LambdaStack {
 
 	public readonly login:FunctionBase;
 
-	public readonly cors:AlerterJsFunction;
+	public readonly cors:FunctionBase;
+
+	public readonly auth:FunctionBase;
+
+	public readonly getSites:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
 		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
@@ -114,7 +118,27 @@ export class LambdaStack {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"IS_PRODUCTION": "true"
 			}
-		})
+		});
+
+		this.auth = new AlerterJsFunction(stack, "Auth", {
+			description: "JWT authorizor for API",
+			entry: "src/functions/auth.ts",
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"IS_PRODUCTION": "true"
+			}
+		});
+
+		//TODO get sites
+		this.getSites = new AlerterJsFunction(stack, "GetSites", {
+			description: "JWT authorizor for API",
+			entry: "src/functions/get-sites.ts",
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"IS_PRODUCTION": "true"
+			}
+		});
 	}
 }
 
