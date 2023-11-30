@@ -40,7 +40,11 @@ export class IamStack {
 								"dynamodb:UpdateItem",
 								"dynamodb:PutItem"
 							],
-							resources: [stack.websiteTable.tableArn, stack.runThroughTable.tableArn]
+							resources: [
+								stack.dynamo.websiteTable.tableArn,
+								stack.dynamo.runThroughTable.tableArn,
+								stack.dynamo.usersTable.tableArn
+							]
 						}),
 						new PolicyStatement({
 							effect: Effect.ALLOW,

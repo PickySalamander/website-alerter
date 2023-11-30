@@ -1,5 +1,5 @@
 import {LambdaBase} from "../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
+import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {LoginRequest} from "../../../shared/src/util/login-request";
 import * as bcrypt from "bcrypt";
 import {UserItem} from "../services/database.service";
@@ -8,11 +8,14 @@ import * as jwt from "jsonwebtoken";
 import {LoginResponse} from "../../../shared/src/util/login-response";
 
 class Login extends LambdaBase {
-	public async handler(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
+	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
 		//make sure there was a body
 		if(!event.body) {
 			throw new Error("Body was not specified");
 		}
+
+		console.log(this);
+		await this.setupServices();
 
 		//get the login request
 		const request = JSON.parse(event.body) as LoginRequest;

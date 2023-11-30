@@ -17,6 +17,20 @@ await esbuild.build({
 });
 
 //copy required files
-await fs.copyFile("src/docker/Dockerfile", "build/process-site/Dockerfile");
-await fs.copyFile("src/docker/package.json", "build/process-site/package.json");
-await fs.copyFile("src/docker/puppeteer.config.js", "build/process-site/puppeteer.config.js");
+await fs.copyFile("src/docker/process-site/Dockerfile", "build/process-site/Dockerfile");
+await fs.copyFile("src/docker/process-site/package.json", "build/process-site/package.json");
+await fs.copyFile("src/docker/process-site//puppeteer.config.js", "build/process-site/puppeteer.config.js");
+
+//build the typescript
+await esbuild.build({
+	entryPoints: ["src/functions/login.ts"],
+	bundle: true,
+	minify: true,
+	outfile: 'build/login/index.js',
+	target: "es2020",
+	platform: "node",
+	external: [ "bcrypt" ]
+});
+
+//copy required files
+await fs.copyFile("src/docker/login/Dockerfile", "build/login/Dockerfile");

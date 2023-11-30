@@ -109,17 +109,17 @@ export class LambdaStack {
 			logRetention: RetentionDays.ONE_MONTH
 		});
 
-		this.login = new NodejsFunction(stack, "Login", {
-			description: "Login with JWT process",
-			runtime: Runtime.NODEJS_18_X,
-			entry: "src/functions/login.ts",
-			handler: "handler",
+		this.login = new DockerImageFunction(stack, "Login", {
+			code: DockerImageCode.fromImageAsset("build/login"),
+			description: "Login users to the API using JWT",
 			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
+				"USERS_TABLE": stack.dynamo.usersTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
-			logRetention: RetentionDays.ONE_MONTH
+			logRetention: RetentionDays.ONE_MONTH,
+			timeout: Duration.seconds(30)
 		});
 	}
 }
