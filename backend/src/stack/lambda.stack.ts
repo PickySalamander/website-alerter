@@ -4,7 +4,8 @@ import {DockerImageCode, DockerImageFunction, FunctionBase, Runtime} from "aws-c
 import {Duration} from "aws-cdk-lib";
 import {RetentionDays} from "aws-cdk-lib/aws-logs";
 import {SqsEventSource} from "aws-cdk-lib/aws-lambda-event-sources";
-import {Construct} from "constructs";
+import {NodejsFunctionProps} from "aws-cdk-lib/aws-lambda-nodejs/lib/function";
+import {DockerImageFunctionProps} from "aws-cdk-lib/aws-lambda/lib/image-function";
 
 export class LambdaStack {
 	public readonly scheduledStart:FunctionBase;
@@ -17,15 +18,14 @@ export class LambdaStack {
 
 	public readonly login:FunctionBase;
 
+	public readonly cors:AlerterJsFunction;
+
 	constructor(stack:WebsiteAlerterStack) {
 		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
-		this.scheduledStart = new NodejsFunction(stack, "ScheduledStart", {
+		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all " +
 				"the sites to SQS",
-			runtime: Runtime.NODEJS_18_X,
 			entry: "src/functions/scheduled-start.ts",
-			handler: "handler",
-			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -33,9 +33,7 @@ export class LambdaStack {
 				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"END_QUEUE": stack.sqs.endQueue.queueUrl,
 				"IS_PRODUCTION": "true"
-			},
-			timeout: Duration.seconds(30),
-			logRetention: RetentionDays.ONE_MONTH
+			}
 		});
 
 		//TODO re-add schedule
@@ -48,10 +46,9 @@ export class LambdaStack {
 
 		// create the docker image lambda function that triggers the website polling with Puppeteer. This needs to be
 		// built with "npm run build" first.
-		this.processSite = new DockerImageFunction(stack, "ProcessSite", {
+		this.processSite = new AlerterDockerFunction(stack, "ProcessSite", {
 			code: DockerImageCode.fromImageAsset("build/process-site"),
 			description: "Scheduled call to the function to start scrapping process",
-			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -59,7 +56,6 @@ export class LambdaStack {
 				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"IS_PRODUCTION": "true"
 			},
-			logRetention: RetentionDays.ONE_MONTH,
 			events: [
 				new SqsEventSource(stack.sqs.websiteQueue)
 			],
@@ -73,8 +69,6 @@ export class LambdaStack {
 			description: "Detect the changes from the browser processing",
 			runtime: Runtime.NODEJS_18_X,
 			entry: "src/functions/detect-changes.ts",
-			handler: "handler",
-			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -83,19 +77,15 @@ export class LambdaStack {
 			},
 			events: [
 				new SqsEventSource(stack.sqs.changeQueue)
-			],
-			timeout: Duration.seconds(30),
-			logRetention: RetentionDays.ONE_MONTH
+			]
 		});
 
 		// called after the whole flow is finished to follow up on the whole process
-		this.scheduledEnd = new NodejsFunction(stack, "ScheduledEnd", {
+		this.scheduledEnd = new AlerterJsFunction(stack, "ScheduledEnd", {
 			description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
 				"perform some final maintenance.",
 			runtime: Runtime.NODEJS_18_X,
 			entry: "src/functions/scheduled-end.ts",
-			handler: "handler",
-			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -104,22 +94,52 @@ export class LambdaStack {
 			},
 			events: [
 				new SqsEventSource(stack.sqs.endQueue)
-			],
-			timeout: Duration.seconds(30),
-			logRetention: RetentionDays.ONE_MONTH
+			]
 		});
 
-		this.login = new DockerImageFunction(stack, "Login", {
+		this.login = new AlerterDockerFunction(stack, "Login", {
 			code: DockerImageCode.fromImageAsset("build/login"),
 			description: "Login users to the API using JWT",
-			role: stack.iam.role,
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"USERS_TABLE": stack.dynamo.usersTable.tableName,
 				"IS_PRODUCTION": "true"
-			},
-			logRetention: RetentionDays.ONE_MONTH,
-			timeout: Duration.seconds(30)
+			}
 		});
+
+		this.cors = new AlerterJsFunction(stack, "Cors", {
+			description: "Handle general cors requests to the backend",
+			entry: "src/functions/cors.ts",
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"IS_PRODUCTION": "true"
+			}
+		})
+	}
+}
+
+class AlerterJsFunction extends NodejsFunction {
+
+	constructor(stack:WebsiteAlerterStack, id:string, props?:NodejsFunctionProps) {
+		super(stack, id,
+			Object.assign({
+				timeout: Duration.seconds(30),
+				logRetention: RetentionDays.ONE_MONTH,
+				runtime: Runtime.NODEJS_18_X,
+				handler: "handler",
+				role: stack.iam.role,
+			}, props));
+	}
+}
+
+class AlerterDockerFunction extends DockerImageFunction {
+
+	constructor(stack:WebsiteAlerterStack, id:string, props?:DockerImageFunctionProps) {
+		super(stack, id,
+			Object.assign({
+				timeout: Duration.seconds(30),
+				logRetention: RetentionDays.ONE_MONTH,
+				role: stack.iam.role,
+			}, props));
 	}
 }

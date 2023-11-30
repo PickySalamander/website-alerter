@@ -6,6 +6,6 @@ export const routes: Routes = [
     path: "login",
     component: LoginComponent
   },
-  { path: '', redirectTo: 'sims', pathMatch: 'full' },
-  { path: '**', redirectTo: 'sims' }
+  { path: '', redirectTo: 'index', pathMatch: 'full' },
+  { path: '**', redirectTo: 'index' }
 ];

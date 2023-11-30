@@ -40,11 +40,11 @@ class Login extends LambdaBase {
 		}
 
 		//return the signed auth and user information
-		return {
+		return this.cors.appendCors(event, {
 			body: JSON.stringify(response),
 			headers: {session: signed},
 			statusCode: 200
-		};
+		});
 	}
 
 	public static getSignedJwt(user:UserItem, sessionID:string, key:Buffer) {

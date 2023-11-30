@@ -2,6 +2,7 @@ import {DatabaseService} from "../services/database.service";
 import {ConfigurationService} from "../services/configuration.service";
 import {S3Client} from "@aws-sdk/client-s3";
 import {SQSClient} from "@aws-sdk/client-sqs";
+import {CorsService} from "../services/cors.service";
 
 /** Base class for all Lambda functions in tool */
 export abstract class LambdaBase {
@@ -16,6 +17,9 @@ export abstract class LambdaBase {
 
 	/** Cached SQS client */
 	private _sqs:SQSClient;
+
+	/** Cached cors service */
+	private _cors:CorsService;
 
 	/** Have all the services been loaded? */
 	private init:boolean = false;
@@ -65,5 +69,19 @@ export abstract class LambdaBase {
 		}
 
 		return this._sqs;
+	}
+
+	get cors() {
+		if(!this._cors) {
+			//TODO configure this in config.json
+			this._cors = new CorsService(
+				[/^http:\/\/localhost:4200/],
+				['POST'],
+				true,
+				['session']
+			);
+		}
+
+		return this._cors;
 	}
 }
