@@ -6,12 +6,13 @@ import {UserItem} from "../services/database.service";
 import {v4} from 'uuid';
 import * as jwt from "jsonwebtoken";
 import {LoginResponse} from "../../../shared/src/util/login-response";
+import {GatewayResponses} from "../util/gateway-responses";
 
 class Login extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
 		//make sure there was a body
 		if(!event.body) {
-			throw new Error("Body was not specified");
+			return GatewayResponses.badRequestError("Body was not specified");
 		}
 
 		console.log(this);
@@ -22,12 +23,12 @@ class Login extends LambdaBase {
 		const user = await this.database.getUser(request.email);
 
 		if(!user) {
-			throw new Error("failed to find user");
+			return GatewayResponses.forbiddenError("bad credentials");
 		}
 
 		//check the password
 		if(!await bcrypt.compare(request.password, user.password)) {
-			throw new Error('bad credentials');
+			return GatewayResponses.forbiddenError("bad credentials");
 		}
 
 		const key = await this.configService.loadJwt();

@@ -10,3 +10,9 @@ body {
 * {
 	box-sizing: border-box;
 }
+
+.mat-mdc-no-data-row {
+	td {
+		padding: 17px;
+	}
+}

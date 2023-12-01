@@ -8,10 +8,12 @@ import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {MatButtonModule} from "@angular/material/button";
 import {LoginResponse} from "../../../../shared/src/util/login-response";
 import {LoginRequest} from "../../../../shared/src/util/login-request";
-import {HttpClient} from "@angular/common/http";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {environment} from "../../environments/environment";
 import {LoginService} from "../services/login.service";
 import {Router} from "@angular/router";
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {SnackbarService} from "../services/snackbar.service";
 
 @Component({
 	selector: 'app-login',
@@ -32,6 +34,7 @@ export class LoginComponent {
 
 	constructor(private http:HttpClient,
 	            private loginService:LoginService,
+	            private snackbar:SnackbarService,
 	            private router:Router) {
 	}
 
@@ -56,14 +59,23 @@ export class LoginComponent {
 					const session = response.headers.get("session");
 					if(session) {
 						this.loginService.session = session;
-						// this.router.navigate(['index']);
+						this.router.navigate(['index']);
+					} else {
+						this.handleError();
 					}
-
-					//TODO error
 				},
-				error: err => {
-					//TODO error
-				}
+				error: err => this.handleError(err)
 			});
+	}
+
+	private handleError(error?:HttpErrorResponse) {
+		this.loggingIn = false;
+		this.loginForm.controls.password.reset();
+
+		if(error && error.status == 401) {
+			this.snackbar.message("Password or username was incorrect");
+		} else {
+			this.snackbar.error("An unknown error occurred");
+		}
 	}
 }

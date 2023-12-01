@@ -24,6 +24,8 @@ export class LambdaStack {
 
 	public readonly getSites:FunctionBase;
 
+	public readonly putSite:AlerterJsFunction;
+
 	constructor(stack:WebsiteAlerterStack) {
 		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
 		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
@@ -131,7 +133,7 @@ export class LambdaStack {
 
 		//TODO get sites
 		this.getSites = new AlerterJsFunction(stack, "GetSites", {
-			description: "JWT authorizor for API",
+			description: "Get a list of sites for the user already configured in the backend",
 			entry: "src/functions/get-sites.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
@@ -139,6 +141,16 @@ export class LambdaStack {
 				"IS_PRODUCTION": "true"
 			}
 		});
+
+		this.putSite = new AlerterJsFunction(stack, "PutSite", {
+			description: "Put a new site into the backend for a user",
+			entry: "src/functions/put-site.ts",
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"IS_PRODUCTION": "true"
+			}
+		})
 	}
 }
 

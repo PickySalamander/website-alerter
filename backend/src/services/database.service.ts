@@ -68,6 +68,19 @@ export class DatabaseService {
 		return response.Item as WebsiteItem;
 	}
 
+	public async getSites(userID:string) {
+		const response = await this.client.send(new QueryCommand({
+			TableName: process.env.WEBSITE_TABLE,
+			KeyConditionExpression: "userID = :userID",
+			ExpressionAttributeValues: {
+				":userID": userID
+			},
+			ProjectionExpression: "userID, site, lastCheck"
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
+	}
+
 	/**
 	 * Put a new website's configuration in the database
 	 * @param item the new website's configuration

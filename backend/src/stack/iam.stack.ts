@@ -37,13 +37,17 @@ export class IamStack {
 								"dynamodb:ListTables",
 								"dynamodb:DescribeTable",
 								"dynamodb:GetItem",
+								"dynamodb:DeleteItem",
+								"dynamodb:Query",
+								"dynamodb:Scan",
 								"dynamodb:UpdateItem",
 								"dynamodb:PutItem"
 							],
 							resources: [
 								stack.dynamo.websiteTable.tableArn,
 								stack.dynamo.runThroughTable.tableArn,
-								stack.dynamo.usersTable.tableArn
+								stack.dynamo.usersTable.tableArn,
+								`${stack.dynamo.usersTable.tableArn}/index/*`
 							]
 						}),
 						new PolicyStatement({

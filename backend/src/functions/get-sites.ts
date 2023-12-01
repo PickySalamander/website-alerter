@@ -1,11 +1,23 @@
 import {LambdaBase} from "../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
+import {UserJwt} from "../util/user-jwt";
 
 export class GetSites extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
-		console.log(event.requestContext.authorizer);
+		const user = event.requestContext.authorizer as UserJwt;
 
-		throw "not implemented";
+		await this.setupServices();
+
+		console.log(`Getting sites for user ${user.userID}`);
+
+		const sites = await this.database.getSites(user.userID);
+
+		console.log(`Returning ${sites.length} sites.`);
+
+		return {
+			statusCode: 200,
+			body: JSON.stringify(sites)
+		};
 	}
 }
 

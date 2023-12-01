@@ -1,0 +1,25 @@
+:host {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+}
+
+.table-header {
+	width: 100%;
+
+	.actions {
+		display: flex;
+		gap: 1em;
+	}
+
+	.filter {
+		margin-top: 1em;
+		width: 100%;
+	}
+}
+
+table {
+	margin-top: 2em;
+	border-radius: 4px;
+	width: 100%;
+}

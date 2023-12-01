@@ -1,0 +1,31 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"type": "object",
+	"properties": {
+		"site": {
+			"type": "string",
+			"pattern": "^(https:\\/\\/)[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$"
+		},
+		"selector": {
+			"type": "string"
+		},
+		"options": {
+			"type": "object",
+			"properties": {
+				"ignoreCss": {
+					"type": "boolean"
+				},
+				"ignoreAttributes": {
+					"type": "boolean"
+				},
+				"ignoreScripts": {
+					"type": "boolean"
+				}
+			}
+		}
+	},
+	"required": [
+		"site"
+	],
+	"additionalProperties": false
+}

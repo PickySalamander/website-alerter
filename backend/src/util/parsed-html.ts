@@ -1,5 +1,5 @@
-import {WebsiteCheck} from "../services/database.service";
 import {X2jOptionsOptional, XMLBuilder, XmlBuilderOptions, XmlBuilderOptionsOptional, XMLParser} from "fast-xml-parser";
+import {ChangeOptions, WebsiteCheck} from "../../../shared/src/util/website-item";
 
 /**
  * Parsed HTML from S3 Revisions
@@ -67,17 +67,4 @@ export class Parsed {
 		const builder = new XMLBuilder(options as XmlBuilderOptions);
 		this.formatted = builder.build(parsed);
 	}
-
-}
-
-/** Options for detecting changes on the page */
-export interface ChangeOptions {
-	/** Ignore CSS on the page (anything in "class" and "style" attributes, plus "style" tags) (default:false) */
-	ignoreCss?:boolean;
-
-	/** Ignore <b>all</b> html attributes (default:false)*/
-	ignoreAttributes?:boolean;
-
-	/** ignore script tags on the page (default:true) */
-	ignoreScripts?:boolean;
 }

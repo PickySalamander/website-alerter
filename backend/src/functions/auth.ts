@@ -1,7 +1,8 @@
 import {LambdaBase} from "../util/lambda-base";
 import {APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent, APIGatewayTokenAuthorizerHandler} from "aws-lambda";
-import {JwtPayload, verify, VerifyOptions} from "jsonwebtoken";
+import {verify, VerifyOptions} from "jsonwebtoken";
 import {UserItem} from "../services/database.service";
+import {UserJwt} from "../util/user-jwt";
 
 class Auth extends LambdaBase {
 	private static readonly TOKEN_PREFIX = 'Bearer ';
@@ -82,7 +83,9 @@ class Auth extends LambdaBase {
 						Effect: 'Allow',
 						Resource: [
 							`arn:aws:execute-api:${region}:${accountId}:${apiId}/${stage}/POST/*`,
-							`arn:aws:execute-api:${region}:${accountId}:${apiId}/${stage}/GET/*`
+							`arn:aws:execute-api:${region}:${accountId}:${apiId}/${stage}/GET/*`,
+							`arn:aws:execute-api:${region}:${accountId}:${apiId}/${stage}/PUT/*`,
+							`arn:aws:execute-api:${region}:${accountId}:${apiId}/${stage}/DELETE/*`
 						]
 					}
 				]
@@ -92,10 +95,6 @@ class Auth extends LambdaBase {
 			context: user
 		};
 	}
-}
-
-interface UserJwt extends UserItem, JwtPayload {
-
 }
 
 // noinspection JSUnusedGlobalSymbols
