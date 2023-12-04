@@ -1,7 +1,7 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
-import {LambdaBase} from "../util/lambda-base";
-import {RunThroughState, SiteRunState} from "../services/database.service";
-import {Utils} from "../util/utils";
+import {LambdaBase} from "../../util/lambda-base";
+import {RunThroughState, SiteRunState} from "../../services/database.service";
+import {Utils} from "../../util/utils";
 import {DeleteObjectCommand} from "@aws-sdk/client-s3";
 import {PublishCommand, SNSClient} from "@aws-sdk/client-sns";
 

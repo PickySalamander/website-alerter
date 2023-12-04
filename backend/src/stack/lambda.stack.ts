@@ -24,14 +24,16 @@ export class LambdaStack {
 
 	public readonly getSites:FunctionBase;
 
-	public readonly putSite:AlerterJsFunction;
+	public readonly putSite:FunctionBase;
+
+	public readonly deleteSites:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
 		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
 		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all " +
 				"the sites to SQS",
-			entry: "src/functions/scheduled-start.ts",
+			entry: "src/functions/process/scheduled-start.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -74,7 +76,7 @@ export class LambdaStack {
 		this.detectChanges = new NodejsFunction(stack, "DetectChanges", {
 			description: "Detect the changes from the browser processing",
 			runtime: Runtime.NODEJS_18_X,
-			entry: "src/functions/detect-changes.ts",
+			entry: "src/functions/process/detect-changes.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -91,7 +93,7 @@ export class LambdaStack {
 			description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
 				"perform some final maintenance.",
 			runtime: Runtime.NODEJS_18_X,
-			entry: "src/functions/scheduled-end.ts",
+			entry: "src/functions/process/scheduled-end.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -115,7 +117,7 @@ export class LambdaStack {
 
 		this.cors = new AlerterJsFunction(stack, "Cors", {
 			description: "Handle general cors requests to the backend",
-			entry: "src/functions/cors.ts",
+			entry: "src/functions/api/cors.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"IS_PRODUCTION": "true"
@@ -124,7 +126,7 @@ export class LambdaStack {
 
 		this.auth = new AlerterJsFunction(stack, "Auth", {
 			description: "JWT authorizor for API",
-			entry: "src/functions/auth.ts",
+			entry: "src/functions/api/auth.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"IS_PRODUCTION": "true"
@@ -134,7 +136,7 @@ export class LambdaStack {
 		//TODO get sites
 		this.getSites = new AlerterJsFunction(stack, "GetSites", {
 			description: "Get a list of sites for the user already configured in the backend",
-			entry: "src/functions/get-sites.ts",
+			entry: "src/functions/api/get-sites.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
@@ -144,7 +146,17 @@ export class LambdaStack {
 
 		this.putSite = new AlerterJsFunction(stack, "PutSite", {
 			description: "Put a new site into the backend for a user",
-			entry: "src/functions/put-site.ts",
+			entry: "src/functions/api/put-site.ts",
+			environment: {
+				"CONFIG_S3": stack.configBucket.bucketName,
+				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"IS_PRODUCTION": "true"
+			}
+		});
+
+		this.deleteSites = new AlerterJsFunction(stack, "DeleteSites", {
+			description: "Delete site in the backend for a user",
+			entry: "src/functions/api/delete-sites.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,

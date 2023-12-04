@@ -1,8 +1,8 @@
-import {LambdaBase} from "../util/lambda-base";
+import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent, APIGatewayTokenAuthorizerHandler} from "aws-lambda";
 import {verify, VerifyOptions} from "jsonwebtoken";
-import {UserItem} from "../services/database.service";
-import {UserJwt} from "../util/user-jwt";
+import {UserItem} from "../../services/database.service";
+import {UserJwt} from "../../util/user-jwt";
 
 class Auth extends LambdaBase {
 	private static readonly TOKEN_PREFIX = 'Bearer ';

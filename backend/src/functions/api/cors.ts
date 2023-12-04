@@ -1,4 +1,4 @@
-import {LambdaBase} from "../util/lambda-base";
+import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 
 export class Cors extends LambdaBase {

@@ -1,9 +1,9 @@
 import {EventBridgeHandler} from "aws-lambda";
-import {Utils} from "../util/utils";
-import {LambdaBase} from "../util/lambda-base";
-import {RunThrough, RunThroughState, SiteRunState} from "../services/database.service";
+import {Utils} from "../../util/utils";
+import {LambdaBase} from "../../util/lambda-base";
+import {RunThrough, RunThroughState, SiteRunState} from "../../services/database.service";
 import {v4} from "uuid";
-import {SqsSiteEvent} from "../util/sqs-site-event";
+import {SqsSiteEvent} from "../../util/sqs-site-event";
 import {SendMessageCommand} from "@aws-sdk/client-sqs";
 
 /**

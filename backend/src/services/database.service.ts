@@ -1,6 +1,8 @@
 import {Utils} from "../util/utils";
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {
+	BatchWriteCommand,
+	BatchWriteCommandInput,
 	DynamoDBDocumentClient,
 	GetCommand,
 	PutCommand,
@@ -90,6 +92,36 @@ export class DatabaseService {
 			TableName: process.env.WEBSITE_TABLE,
 			Item: item
 		}));
+	}
+
+	async deleteSites(userID:string, sites:string[]) {
+		const maxItems = 25;
+		for(let i = 0; i < sites.length; i += maxItems) {
+			const toDelete = sites.slice(i, i + maxItems);
+
+			const params:BatchWriteCommandInput = {
+				RequestItems: {
+					[process.env.WEBSITE_TABLE]: []
+				}
+			}
+
+			const deleteRequests = params.RequestItems[process.env.WEBSITE_TABLE];
+
+			for(const site of toDelete) {
+				deleteRequests.push({
+					DeleteRequest: {
+						Key: {
+							userID,
+							site
+						}
+					}
+				})
+			}
+
+			console.debug(`Deleting ${toDelete.length} sites for user "${userID}": ${JSON.stringify(params)}`);
+
+			await this.client.send(new BatchWriteCommand(params));
+		}
 	}
 
 	/**

@@ -1,12 +1,12 @@
-import {LambdaBase} from "../util/lambda-base";
+import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {LoginRequest} from "../../../shared/src/util/login-request";
+import {LoginRequest} from "../../../../shared/src/util/login-request";
 import * as bcrypt from "bcrypt";
-import {UserItem} from "../services/database.service";
+import {UserItem} from "../../services/database.service";
 import {v4} from 'uuid';
 import * as jwt from "jsonwebtoken";
-import {LoginResponse} from "../../../shared/src/util/login-response";
-import {GatewayResponses} from "../util/gateway-responses";
+import {LoginResponse} from "../../../../shared/src/util/login-response";
+import {GatewayResponses} from "../../util/gateway-responses";
 
 class Login extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {

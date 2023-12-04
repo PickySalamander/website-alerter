@@ -7,7 +7,7 @@ import fs from "fs/promises";
 
 //build the typescript
 await esbuild.build({
-	entryPoints: ["src/functions/process-site.ts"],
+	entryPoints: ["src/functions/process/process-site.ts"],
 	bundle: true,
 	minify: true,
 	outfile: 'build/process-site/index.js',
@@ -23,7 +23,7 @@ await fs.copyFile("src/docker/process-site//puppeteer.config.js", "build/process
 
 //build the typescript
 await esbuild.build({
-	entryPoints: ["src/functions/login.ts"],
+	entryPoints: ["src/functions/api/login.ts"],
 	bundle: true,
 	minify: true,
 	outfile: 'build/login/index.js',

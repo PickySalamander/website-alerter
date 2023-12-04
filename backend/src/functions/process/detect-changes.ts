@@ -1,11 +1,11 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
-import {LambdaBase} from "../util/lambda-base";
-import {SiteRunState, WebsiteCheck} from "../services/database.service";
-import {SqsSiteEvent} from "../util/sqs-site-event";
+import {LambdaBase} from "../../util/lambda-base";
+import {SiteRunState} from "../../services/database.service";
+import {SqsSiteEvent} from "../../util/sqs-site-event";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
-import {ChangeDetector} from "../util/change-detector";
-import {Parsed} from "../util/parsed-html";
-import {ChangeOptions} from "../../../shared/src/util/website-item";
+import {ChangeDetector} from "../../util/change-detector";
+import {Parsed} from "../../util/parsed-html";
+import {ChangeOptions, WebsiteCheck} from "../../../../shared/src/util/website-item";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put

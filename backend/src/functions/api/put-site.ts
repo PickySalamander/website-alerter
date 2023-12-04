@@ -1,8 +1,8 @@
-import {LambdaBase} from "../util/lambda-base";
+import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {GatewayResponses} from "../util/gateway-responses";
-import {WebsiteItemRequest} from "../../../shared/src/util/website-item-request";
-import {UserJwt} from "../util/user-jwt";
+import {GatewayResponses} from "../../util/gateway-responses";
+import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-request";
+import {UserJwt} from "../../util/user-jwt";
 
 export class PutSite extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -14,16 +14,13 @@ export class PutSite extends LambdaBase {
 		const user = event.requestContext.authorizer as UserJwt;
 
 		const newSite = JSON.parse(event.body) as WebsiteItemRequest;
-		console.log(`User ${user.userID} adding site ${newSite.site}`);
+		console.log(`User "${user.userID}" adding site ${newSite.site}`);
 
 		await this.setupServices();
 
-		await this.database.putWebsite({
-			userID: user.userID,
-			site: newSite.site,
-			options: newSite.options,
-			selector: newSite.selector
-		});
+		const newSiteItem = Object.assign(newSite, {userID: user.userID});
+
+		await this.database.putWebsite(newSiteItem);
 
 		return {
 			statusCode: 200,

@@ -1,11 +1,11 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
-import {DefaultChromeArgs} from "../util/default-chrome-args";
+import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4 as uuidV4} from "uuid";
-import {LambdaBase} from "../util/lambda-base";
-import {Utils} from "../util/utils";
-import {SqsSiteEvent} from "../util/sqs-site-event";
-import {SiteRunState} from "../services/database.service";
+import {LambdaBase} from "../../util/lambda-base";
+import {Utils} from "../../util/utils";
+import {SqsSiteEvent} from "../../util/sqs-site-event";
+import {SiteRunState} from "../../services/database.service";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SendMessageCommand} from "@aws-sdk/client-sqs";
 

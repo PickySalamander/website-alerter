@@ -95,6 +95,21 @@ export class ApiStack {
 			}
 		});
 
+		const deleteSitesModel = this.api.addModel("DeleteSitesSchema", {
+			description: "Validation for DeleteSites calls",
+			contentType: "application/json",
+			schema: this.schemaFromFile("delete-sites")
+		});
+
+		sites.addMethod("DELETE", new LambdaIntegration(stack.lambda.deleteSites), {
+			requestValidatorOptions: {
+				validateRequestBody: true
+			},
+			requestModels: {
+				"application/json": deleteSitesModel
+			}
+		});
+
 		this.api.methods
 			.filter(method => method.httpMethod == "OPTIONS" || method.resource.path == "/login")
 			.forEach(method => {

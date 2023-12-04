@@ -1,6 +1,6 @@
-import {LambdaBase} from "../util/lambda-base";
+import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../util/user-jwt";
+import {UserJwt} from "../../util/user-jwt";
 
 export class GetSites extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
