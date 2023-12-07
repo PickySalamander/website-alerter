@@ -4,10 +4,12 @@
 	"properties": {
 		"site": {
 			"type": "string",
-			"pattern": "^(https:\\/\\/)[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$"
+			"pattern": "^(https://)[\\w.-]+(?:\\.[\\w.-]+)+[\\w\\-._~:/?#[\\]@!$&'()*+,;=]+$",
+			"maxLength": 2048
 		},
 		"selector": {
-			"type": "string"
+			"type": "string",
+			"maxLength": 2048
 		},
 		"options": {
 			"type": "object",

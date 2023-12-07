@@ -11,6 +11,10 @@ import {MatIconModule} from "@angular/material/icon";
 import {SelectionModel} from "@angular/cdk/collections";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {SnackbarService} from "../services/snackbar.service";
+import {MatDialog} from "@angular/material/dialog";
+import {AddEditSiteComponent} from "./add-edit-site/add-edit-site.component";
+import {environment} from "../../environments/environment";
+import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-request";
 
 @Component({
 	selector: 'app-index',
@@ -31,47 +35,27 @@ export class IndexComponent implements OnInit, AfterViewInit {
 	@ViewChild(MatSort) sort:MatSort;
 
 	constructor(private http:HttpClient,
-	            private snackbar:SnackbarService) {
+	            private snackbar:SnackbarService,
+	            private dialog:MatDialog) {
 	}
 
 	ngOnInit() {
-		// this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(response => {
-		// 	this.items = response;
+		this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(response => {
+			this.items = response;
 
-		this.items = [
-			{
-				"userID": "a",
-				"site": "https://firaxis.com/careers/",
-				lastCheck: 1701452353000
-			},
-			{
-				"userID": "a",
-				"site": "https://unknownworlds.com/jobs/"
-			},
-			{
-				"userID": "a",
-				"site": "https://www.failbettergames.com/jobs",
-				lastCheck: 1669916353000
-			},
-			{
-				"userID": "a",
-				"site": "https://www.privatedivision.com/jobs/"
+			if(this.items && this.items.length > 0) {
+				this.items.sort((a, b) => {
+					const ret = b.lastCheck || 0 - a.lastCheck || 0;
+					if(ret != 0) {
+						return ret;
+					}
+					return a.site.localeCompare(b.site);
+				})
+
+				this.dataSource.data = this.items;
+				this.table?.renderRows();
 			}
-		];
-
-		if(this.items && this.items.length > 0) {
-			this.items.sort((a, b) => {
-				const ret = b.lastCheck || 0 -  a.lastCheck || 0;
-				if(ret != 0) {
-					return ret;
-				}
-				return a.site.localeCompare(b.site);
-			})
-
-			this.dataSource.data = this.items;
-			this.table?.renderRows();
-		}
-		// });
+		});
 	}
 
 	ngAfterViewInit():void {
@@ -86,7 +70,7 @@ export class IndexComponent implements OnInit, AfterViewInit {
 
 	/** Selects all rows if they are not all selected; otherwise clear selection. */
 	toggleAllRows() {
-		if (this.isAllSelected) {
+		if(this.isAllSelected) {
 			this.selection.clear();
 			return;
 		}
@@ -95,24 +79,51 @@ export class IndexComponent implements OnInit, AfterViewInit {
 	}
 
 	onAdd() {
+		this.dialog.open(AddEditSiteComponent).afterClosed().subscribe(value => {
+			if(value) {
+				this.items.push(value);
+				this.updateItems();
+			}
+		});
+	}
 
+
+	onEdit(row:WebsiteItem) {
+		this.dialog.open(AddEditSiteComponent, {data: row});
 	}
 
 	onDelete() {
 		if(!this.isEmptySelection) {
 			const toDelete = this.selection.selected.slice();
+			const request:string[] = [];
 
 			for(const del of toDelete) {
-				const index = this.items.indexOf(del);
-				this.items.splice(index, 1);
+				request.push(del.site);
 			}
 
-			this.dataSource.data = this.items;
-			this.table.renderRows();
-			this.selection.clear();
+			this.http.delete(`${environment.apiUrl}/sites`, {body: request}).subscribe({
+				next: () => {
+					for(const del of toDelete) {
+						const index = this.items.indexOf(del);
+						this.items.splice(index, 1);
+					}
 
-			this.snackbar.message('Successfully deleted site(s)');
+					this.updateItems();
+
+					this.snackbar.message('Successfully deleted site(s)');
+				},
+				error: (error) => {
+					console.error("Failed to delete site(s)", error);
+					this.snackbar.error("Failed to delete site(s)");
+				}
+			});
 		}
+	}
+
+	private updateItems() {
+		this.dataSource.data = this.items;
+		this.table.renderRows();
+		this.selection.clear();
 	}
 
 	/** Whether the number of selected elements matches the total number of rows. */
@@ -124,5 +135,9 @@ export class IndexComponent implements OnInit, AfterViewInit {
 
 	get isEmptySelection() {
 		return this.selection.isEmpty();
+	}
+
+	get itemsExist() {
+		return this.items !== undefined
 	}
 }

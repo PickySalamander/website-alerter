@@ -2,13 +2,13 @@ import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {
 	AuthorizationType,
 	CfnMethod,
-	Cors, JsonSchema,
-	LambdaIntegration, Model, RequestValidator,
+	JsonSchema,
+	LambdaIntegration,
+	Method,
 	ResponseType,
 	RestApi,
 	TokenAuthorizer
 } from "aws-cdk-lib/aws-apigateway";
-import {JsonSchemaMapper} from "aws-cdk-lib/aws-apigateway/lib/util";
 import * as fs from "fs";
 import path from "node:path";
 
@@ -35,7 +35,7 @@ export class ApiStack {
 				allowCredentials: true,
 				allowOrigins: ["http://localhost:4200"],
 				allowHeaders: ["Content-Type","Authorization"],
-				allowMethods: ["GET", "POST"]
+				allowMethods: ["GET", "POST", "DELETE", "PUT"]
 			}
 		});
 
@@ -62,7 +62,7 @@ export class ApiStack {
 		})
 
 		//add the lambda functions and the authorizer to the api
-		this.api.root.addResource("login")
+		const login = this.api.root.addResource("login")
 			.addMethod("POST", new LambdaIntegration(stack.lambda.login), {
 				requestValidatorOptions: {
 					validateRequestBody: true
@@ -72,10 +72,7 @@ export class ApiStack {
 				}
 			});
 
-		// this.api.root.addMethod("OPTIONS", new LambdaIntegration(stack.lambda.cors));
-		//
-		// this.api.root.addResource("{path+}")
-		// 	.addMethod("OPTIONS", new LambdaIntegration(stack.lambda.cors));
+		this.noAuthorizer(login);
 
 		const sites = this.api.root.addResource("sites");
 		sites.addMethod("GET", new LambdaIntegration(stack.lambda.getSites));
@@ -109,15 +106,13 @@ export class ApiStack {
 				"application/json": deleteSitesModel
 			}
 		});
+	}
 
-		this.api.methods
-			.filter(method => method.httpMethod == "OPTIONS" || method.resource.path == "/login")
-			.forEach(method => {
-				const cfnMethod = method.node.defaultChild as CfnMethod;
-				cfnMethod.addPropertyOverride("ApiKeyRequired", false);
-				cfnMethod.addPropertyOverride("AuthorizationType", "NONE");
-				cfnMethod.addPropertyDeletionOverride("AuthorizerId");
-			});
+	private noAuthorizer(method:Method) {
+		const cfnMethod = method.node.defaultChild as CfnMethod;
+		cfnMethod.addPropertyOverride("ApiKeyRequired", false);
+		cfnMethod.addPropertyOverride("AuthorizationType", "NONE");
+		cfnMethod.addPropertyDeletionOverride("AuthorizerId");
 	}
 
 	private schemaFromFile(name:string):JsonSchema {

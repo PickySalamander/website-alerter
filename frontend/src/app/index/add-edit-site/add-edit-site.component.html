@@ -1,0 +1,34 @@
+<h1 mat-dialog-title>
+	Create a new site check
+</h1>
+
+<div mat-dialog-content>
+	<form [formGroup]="createForm" (ngSubmit)="submit()">
+		<mat-form-field>
+			<mat-label>The website url to check for changes</mat-label>
+			<input matInput placeholder="https://mywebsite.org" formControlName="url" required>
+			<mat-hint>This should be an https url</mat-hint>
+		</mat-form-field>
+
+		<mat-form-field>
+			<mat-label>A CSS selector to target an element for changes</mat-label>
+			<input matInput placeholder="body > .content" formControlName="selector">
+		</mat-form-field>
+
+		<div class="options">
+			<h3>Options</h3>
+			<mat-checkbox formControlName="ignoreCss">Should "class" and "style" attributes be ignored as changes?
+			</mat-checkbox>
+			<mat-checkbox formControlName="ignoreAttributes">Should all HTML attributes be ignored as changes?</mat-checkbox>
+			<mat-checkbox formControlName="ignoreScripts">Should "script" tags be ignored as changes?</mat-checkbox>
+		</div>
+	</form>
+</div>
+
+<div mat-dialog-actions align="end">
+	<button mat-button type="button" mat-dialog-close>Cancel</button>
+
+	<button mat-flat-button color="primary" [disabled]="createForm.invalid || createForm.disabled" (click)="submit()">
+		{{isNewSite ? "Create" : "Save"}}
+	</button>
+</div>
