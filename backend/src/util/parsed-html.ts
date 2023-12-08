@@ -1,5 +1,5 @@
 import {X2jOptionsOptional, XMLBuilder, XmlBuilderOptions, XmlBuilderOptionsOptional, XMLParser} from "fast-xml-parser";
-import {ChangeOptions, WebsiteCheck} from "../../../shared/src/util/website-item";
+import {ChangeOptions, WebsiteCheck} from "website-alerter-shared";
 
 /**
  * Parsed HTML from S3 Revisions

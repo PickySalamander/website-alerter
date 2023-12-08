@@ -10,7 +10,7 @@ import {
 	UpdateCommand,
 	UpdateCommandInput
 } from "@aws-sdk/lib-dynamodb";
-import {WebsiteCheck, WebsiteItem} from "../../../shared/src/util/website-item";
+import {WebsiteCheck, WebsiteItem} from "website-alerter-shared";
 
 
 /**
@@ -77,7 +77,7 @@ export class DatabaseService {
 			ExpressionAttributeValues: {
 				":userID": userID
 			},
-			ProjectionExpression: "userID, site, lastCheck"
+			ProjectionExpression: "userID, site, lastCheck, frequency"
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];

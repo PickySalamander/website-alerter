@@ -11,6 +11,10 @@
 			"type": "string",
 			"maxLength": 2048
 		},
+		"frequency": {
+			"type": "string",
+			"pattern": "^(NEVER|WEEKLY|BIWEEKLY)$"
+		},
 		"options": {
 			"type": "object",
 			"properties": {

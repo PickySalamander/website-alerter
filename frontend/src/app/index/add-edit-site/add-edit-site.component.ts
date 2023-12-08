@@ -11,27 +11,30 @@ import {
 } from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from "@angular/material/dialog";
-import {WebsiteItem} from "../../../../../shared/src/util/website-item";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {HttpClient} from "@angular/common/http";
-import {WebsiteItemRequest} from "../../../../../shared/src/util/website-item-request";
 import {environment} from "../../../environments/environment";
 import {SnackbarService} from "../../services/snackbar.service";
+import {MatSelectModule} from "@angular/material/select";
+import {ChangeFrequency, WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 
 @Component({
 	selector: 'app-add-site',
 	standalone: true,
-	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule],
+	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSelectModule],
 	templateUrl: './add-edit-site.component.html',
 	styleUrl: './add-edit-site.component.scss'
 })
 export class AddEditSiteComponent {
 	private static readonly SITE_PATTERN = /^(https:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=]+$/;
 
+	frequencyValues = ChangeFrequency;
+
 	/** The form fields to put on the page */
 	createForm = new FormGroup({
 		url: new FormControl('', [Validators.required, Validators.pattern(AddEditSiteComponent.SITE_PATTERN), Validators.maxLength(2048)]),
 		selector: new FormControl('', [Validators.maxLength(2048)]),
+		frequency: new FormControl(ChangeFrequency.Weekly, [Validators.pattern(/^(WEEKLY|NEVER|BIWEEKLY)$/)]),
 		ignoreCss: new FormControl(false),
 		ignoreAttributes: new FormControl(false),
 		ignoreScripts: new FormControl(false),
@@ -46,6 +49,7 @@ export class AddEditSiteComponent {
 		if(data) {
 			this.createForm.controls.url.setValue(data.site);
 			this.createForm.controls.url.disable();
+			this.createForm.controls.frequency.setValue(data.frequency ?? ChangeFrequency.Never);
 			this.createForm.controls.selector.setValue(data.selector ?? "");
 			this.createForm.controls.ignoreCss.setValue(data.options?.ignoreCss ?? false);
 			this.createForm.controls.ignoreAttributes.setValue(data.options?.ignoreAttributes ?? false);
@@ -67,6 +71,7 @@ export class AddEditSiteComponent {
 		const updated:WebsiteItemRequest = {
 			site: this.createForm.value.url,
 			selector: this.createForm.value.selector ?? undefined,
+			frequency: this.createForm.value.frequency,
 			options: {
 				ignoreCss: this.createForm.value.ignoreCss ?? false,
 				ignoreScripts: this.createForm.value.ignoreScripts ?? false,

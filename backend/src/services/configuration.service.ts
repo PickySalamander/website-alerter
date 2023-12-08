@@ -1,6 +1,5 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
-
-import {ChangeOptions} from "../../../shared/src/util/website-item";
+import {ChangeOptions} from "website-alerter-shared";
 
 /**
  * Helper service for getting the configuration JSON from S3. It won't reload a fresh JSON if already loaded.

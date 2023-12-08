@@ -52,6 +52,30 @@
 		</td>
 	</ng-container>
 
+	<ng-container matColumnDef="frequency">
+		<th mat-header-cell *matHeaderCellDef mat-sort-header>Frequency</th>
+		<td mat-cell *matCellDef="let row">
+			<ng-container [ngSwitch]="row.frequency">
+				<span *ngSwitchCase="frequencyValues.BiWeekly">Bi-Weekly</span>
+				<span *ngSwitchCase="frequencyValues.Weekly">Weekly</span>
+				<span *ngSwitchDefault>Never</span>
+			</ng-container>
+		</td>
+	</ng-container>
+
+	<ng-container matColumnDef="nextCheck">
+		<th mat-header-cell *matHeaderCellDef mat-sort-header>Next Check</th>
+		<td mat-cell *matCellDef="let row">
+			<ng-template [ngIf]="!row.frequency || row.frequency == frequencyValues.Never" [ngIfElse]="frequency">
+				Never
+			</ng-template>
+
+			<ng-template #frequency>
+				{{getNext(row) | date: 'short'}}
+			</ng-template>
+		</td>
+	</ng-container>
+
 	<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
 	<tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onEdit(row)"></tr>
 

@@ -1,8 +1,8 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {GatewayResponses} from "../../util/gateway-responses";
-import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-request";
 import {UserJwt} from "../../util/user-jwt";
+import {WebsiteItemRequest} from "website-alerter-shared";
 
 export class PutSite extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {

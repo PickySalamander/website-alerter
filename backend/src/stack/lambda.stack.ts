@@ -44,14 +44,6 @@ export class LambdaStack {
 			}
 		});
 
-		//TODO re-add schedule
-		// create the event bridge rule that starts up the whole process every 7 days
-		// new Rule(this, "ScheduledStartRule", {
-		// 	description: "Schedule the lambda to queue up the websites",
-		// 	schedule: Schedule.rate(Duration.days(7)),
-		// 	targets: [new LambdaFunction(scheduledStartFunc)]
-		// });
-
 		// create the docker image lambda function that triggers the website polling with Puppeteer. This needs to be
 		// built with "npm run build" first.
 		this.processSite = new AlerterDockerFunction(stack, "ProcessSite", {

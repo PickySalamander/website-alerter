@@ -6,6 +6,9 @@ import {SqsStack} from "./stack/sqs.stack";
 import {LambdaStack} from "./stack/lambda.stack";
 import {ApiStack} from "./stack/api.stack";
 import {DynamoStack} from "./stack/dynamo.stack";
+import {Rule, Schedule} from "aws-cdk-lib/aws-events";
+import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
+import {RunScheduling} from "../../shared/src/util/run-scheduling";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
@@ -36,6 +39,14 @@ export class WebsiteAlerterStack extends Stack {
 		this.iam = new IamStack(this);
 
 		this.lambda = new LambdaStack(this);
+
+		// create the event bridge rule that starts up the whole process every 7 days
+		new Rule(this, "ScheduledStartRule", {
+			description: "Schedule the lambda to queue up the websites",
+			schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
+			enabled: false,
+			targets: [new LambdaFunction(this.lambda.scheduledStart)]
+		});
 
 		new ApiStack(this);
 	}

@@ -1,7 +1,6 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {GatewayResponses} from "../../util/gateway-responses";
-import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-request";
 import {UserJwt} from "../../util/user-jwt";
 
 export class DeleteSites extends LambdaBase {

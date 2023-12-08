@@ -2,7 +2,6 @@ import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatTable, MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatSort, MatSortModule} from "@angular/material/sort";
-import {WebsiteItem} from "../../../../shared/src/util/website-item";
 import {HttpClient} from "@angular/common/http";
 import {MatCardModule} from "@angular/material/card";
 import {MatButtonModule} from "@angular/material/button";
@@ -14,7 +13,7 @@ import {SnackbarService} from "../services/snackbar.service";
 import {MatDialog} from "@angular/material/dialog";
 import {AddEditSiteComponent} from "./add-edit-site/add-edit-site.component";
 import {environment} from "../../environments/environment";
-import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-request";
+import {ChangeFrequency, RunScheduling, WebsiteItem} from "website-alerter-shared";
 
 @Component({
 	selector: 'app-index',
@@ -24,10 +23,11 @@ import {WebsiteItemRequest} from "../../../../shared/src/util/website-item-reque
 	styleUrl: './index.component.scss'
 })
 export class IndexComponent implements OnInit, AfterViewInit {
-	displayedColumns:string[] = ["select", "site", "lastCheck"];
+	displayedColumns:string[] = ["select", "site", "lastCheck", "frequency", "nextCheck"];
 	items:WebsiteItem[];
 	dataSource:MatTableDataSource<WebsiteItem> = new MatTableDataSource<WebsiteItem>();
 	selection = new SelectionModel<WebsiteItem>(true, []);
+	frequencyValues = ChangeFrequency;
 
 	/** The table display on the page */
 	@ViewChild(MatTable) table:MatTable<WebsiteItem>;
@@ -87,9 +87,17 @@ export class IndexComponent implements OnInit, AfterViewInit {
 		});
 	}
 
-
 	onEdit(row:WebsiteItem) {
-		this.dialog.open(AddEditSiteComponent, {data: row});
+		this.dialog.open(AddEditSiteComponent, {data: row}).afterClosed().subscribe(value => {
+			if(value) {
+				const index = this.items.indexOf(row);
+				if(index >= 0) {
+					this.items[index] = value;
+				}
+
+				this.updateItems();
+			}
+		});
 	}
 
 	onDelete() {
@@ -124,6 +132,10 @@ export class IndexComponent implements OnInit, AfterViewInit {
 		this.dataSource.data = this.items;
 		this.table.renderRows();
 		this.selection.clear();
+	}
+
+	getNext(row:WebsiteItem) {
+		return RunScheduling.getNext(row);
 	}
 
 	/** Whether the number of selected elements matches the total number of rows. */

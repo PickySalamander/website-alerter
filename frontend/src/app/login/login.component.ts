@@ -6,14 +6,12 @@ import {MatInputModule} from "@angular/material/input";
 import {MatIconModule} from "@angular/material/icon";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {MatButtonModule} from "@angular/material/button";
-import {LoginResponse} from "../../../../shared/src/util/login-response";
-import {LoginRequest} from "../../../../shared/src/util/login-request";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {environment} from "../../environments/environment";
 import {LoginService} from "../services/login.service";
 import {Router} from "@angular/router";
-import {MatSnackBar} from "@angular/material/snack-bar";
 import {SnackbarService} from "../services/snackbar.service";
+import {LoginRequest, LoginResponse} from "website-alerter-shared";
 
 @Component({
 	selector: 'app-login',
