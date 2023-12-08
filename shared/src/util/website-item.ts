@@ -19,6 +19,9 @@ export interface WebsiteItem {
 
 	/** The last revision of the website */
 	updates?:WebsiteCheck[];
+
+	/** Frequency to check the site for changes */
+	frequency:ChangeFrequency;
 }
 
 /** A revision of a polled website */
@@ -43,4 +46,10 @@ export interface ChangeOptions {
 
 	/** ignore script tags on the page (default:true) */
 	ignoreScripts?:boolean;
+}
+
+export enum ChangeFrequency {
+	Never = "NEVER",
+	Weekly = "WEEKLY",
+	BiWeekly = "BIWEEKLY"
 }
