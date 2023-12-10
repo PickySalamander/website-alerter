@@ -33,7 +33,7 @@ export class ApiStack {
 			},
 			defaultCorsPreflightOptions: {
 				allowCredentials: true,
-				allowOrigins: ["http://localhost:4200"],
+				allowOrigins: [`https://${stack.cdn.cdn.attrDomainName}`, "http://localhost:4200"],
 				allowHeaders: ["Content-Type","Authorization"],
 				allowMethods: ["GET", "POST", "DELETE", "PUT"]
 			}

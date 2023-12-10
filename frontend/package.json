@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "release": "node release.mjs",
     "test": "ng test"
   },
   "private": true,
@@ -30,13 +31,19 @@
     "@angular-devkit/build-angular": "^17.0.1",
     "@angular/cli": "^17.0.1",
     "@angular/compiler-cli": "^17.0.0",
+    "@aws-sdk/client-cloudformation": "^3.468.0",
+    "@aws-sdk/client-cloudfront": "^3.468.0",
+    "@aws-sdk/client-s3": "^3.468.0",
     "@types/jasmine": "~5.1.0",
+    "install": "^0.13.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "mime-types": "^2.1.35",
+    "s3-sync-client": "^4.3.1",
     "typescript": "~5.2.2"
   }
 }

@@ -3,5 +3,5 @@ export const environment = {
 	production: true,
 
 	/** location of the api to query */
-	apiUrl: 'http://localhost:3000'
+	apiUrl: 'https://jb2ro21mr7.execute-api.us-east-1.amazonaws.com/prod'
 };
