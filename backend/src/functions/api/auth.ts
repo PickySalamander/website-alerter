@@ -3,6 +3,7 @@ import {APIGatewayAuthorizerResult, APIGatewayTokenAuthorizerEvent, APIGatewayTo
 import {verify, VerifyOptions} from "jsonwebtoken";
 import {UserItem} from "../../services/database.service";
 import {UserJwt} from "../../util/user-jwt";
+import {MiddyUtil} from "../../util/middy-util";
 
 class Auth extends LambdaBase {
 	private static readonly TOKEN_PREFIX = 'Bearer ';
@@ -98,4 +99,5 @@ class Auth extends LambdaBase {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const handler = new Auth().handler;
+export const handler = MiddyUtil.defaultMiddy()
+	.handler(new Auth().handler);

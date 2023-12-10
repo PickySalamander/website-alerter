@@ -14,16 +14,18 @@ import path from "node:path";
 
 export class ApiStack {
 	public readonly api:RestApi;
-	//
-	// constructor(stack:WebsiteAlerterStack) {
-	// 	this.api = new HttpApi(stack);
-	// }
 
 	constructor(stack:WebsiteAlerterStack) {
 		const authorizer = new TokenAuthorizer(stack, "Authorizor", {
 			handler: stack.lambda.auth,
 			validationRegex: "^Bearer [-0-9a-zA-Z\\._]*$"
 		});
+
+		const allowOrigins = [`https://${stack.cdn.cdn.attrDomainName}`];
+
+		if(stack.isIncludeLocalCors) {
+			allowOrigins.push("http://localhost:4200")
+		}
 
 		this.api = new RestApi(stack, "WebsiteAlerterApi", {
 			description: "Website Alerter API for website functions",
@@ -33,8 +35,8 @@ export class ApiStack {
 			},
 			defaultCorsPreflightOptions: {
 				allowCredentials: true,
-				allowOrigins: [`https://${stack.cdn.cdn.attrDomainName}`, "http://localhost:4200"],
-				allowHeaders: ["Content-Type","Authorization"],
+				allowOrigins,
+				allowHeaders: ["Content-Type", "Authorization"],
 				allowMethods: ["GET", "POST", "DELETE", "PUT"]
 			}
 		});
@@ -118,6 +120,6 @@ export class ApiStack {
 	private schemaFromFile(name:string):JsonSchema {
 		const fileName = path.resolve(__dirname, '..', 'schema', `${name}.json`);
 		console.log(`Loading json schema from ${fileName}`);
-		return JSON.parse(fs.readFileSync(fileName, { encoding: 'utf-8' }));
+		return JSON.parse(fs.readFileSync(fileName, {encoding: 'utf-8'}));
 	}
 }

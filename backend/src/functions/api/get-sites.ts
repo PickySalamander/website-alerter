@@ -1,6 +1,7 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {UserJwt} from "../../util/user-jwt";
+import {MiddyUtil} from "../../util/middy-util";
 
 export class GetSites extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -22,4 +23,6 @@ export class GetSites extends LambdaBase {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const handler = new GetSites().handler;
+export const handler = MiddyUtil.defaultMiddy()
+	.use(MiddyUtil.cors("GET"))
+	.handler(new GetSites().handler);

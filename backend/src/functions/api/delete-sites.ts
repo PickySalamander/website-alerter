@@ -1,13 +1,14 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {GatewayResponses} from "../../util/gateway-responses";
 import {UserJwt} from "../../util/user-jwt";
+import {MiddyUtil} from "../../util/middy-util";
+import createError from "http-errors";
 
 export class DeleteSites extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
 		//make sure there was a body
 		if(!event.body) {
-			return GatewayResponses.badRequestError("Body was not specified");
+			throw new createError.BadRequest("Body was not specified");
 		}
 
 		const user = event.requestContext.authorizer as UserJwt;
@@ -20,11 +21,13 @@ export class DeleteSites extends LambdaBase {
 		await this.database.deleteSites(user.userID, toDelete);
 
 		return {
-			statusCode: 200,
+			statusCode: 204,
 			body: ''
 		};
 	}
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const handler = new DeleteSites().handler;
+export const handler = MiddyUtil.defaultMiddy()
+	.use(MiddyUtil.cors("DELETE"))
+	.handler(new DeleteSites().handler);

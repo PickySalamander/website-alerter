@@ -18,8 +18,6 @@ export class LambdaStack {
 
 	public readonly login:FunctionBase;
 
-	public readonly cors:FunctionBase;
-
 	public readonly auth:FunctionBase;
 
 	public readonly getSites:FunctionBase;
@@ -29,7 +27,7 @@ export class LambdaStack {
 	public readonly deleteSites:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
-		// creat the scheduled start function which starts the whole process when hit with the event bridge rule
+		// create the scheduled start function which starts the whole process when hit with the event bridge rule
 		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all " +
 				"the sites to SQS",
@@ -97,27 +95,24 @@ export class LambdaStack {
 			]
 		});
 
+		let allowOrigins = `https://${stack.cdn.cdn.attrDomainName}`;
+		if(stack.isIncludeLocalCors) {
+			allowOrigins += ",http://localhost:4200";
+		}
+
 		this.login = new AlerterDockerFunction(stack, "Login", {
 			code: DockerImageCode.fromImageAsset("build/login"),
 			description: "Login users to the API using JWT",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"USERS_TABLE": stack.dynamo.usersTable.tableName,
-				"IS_PRODUCTION": "true"
-			}
-		});
-
-		this.cors = new AlerterJsFunction(stack, "Cors", {
-			description: "Handle general cors requests to the backend",
-			entry: "src/functions/api/cors.ts",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
+				"ALLOWED_ORIGINS": allowOrigins,
 				"IS_PRODUCTION": "true"
 			}
 		});
 
 		this.auth = new AlerterJsFunction(stack, "Auth", {
-			description: "JWT authorizor for API",
+			description: "JWT authorizer for API",
 			entry: "src/functions/api/auth.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
@@ -125,13 +120,13 @@ export class LambdaStack {
 			}
 		});
 
-		//TODO get sites
 		this.getSites = new AlerterJsFunction(stack, "GetSites", {
 			description: "Get a list of sites for the user already configured in the backend",
 			entry: "src/functions/api/get-sites.ts",
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"ALLOWED_ORIGINS": allowOrigins,
 				"IS_PRODUCTION": "true"
 			}
 		});
@@ -142,6 +137,7 @@ export class LambdaStack {
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"ALLOWED_ORIGINS": allowOrigins,
 				"IS_PRODUCTION": "true"
 			}
 		});
@@ -152,6 +148,7 @@ export class LambdaStack {
 			environment: {
 				"CONFIG_S3": stack.configBucket.bucketName,
 				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+				"ALLOWED_ORIGINS": allowOrigins,
 				"IS_PRODUCTION": "true"
 			}
 		})

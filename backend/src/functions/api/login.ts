@@ -4,30 +4,30 @@ import * as bcrypt from "bcrypt";
 import {UserItem} from "../../services/database.service";
 import {v4} from 'uuid';
 import * as jwt from "jsonwebtoken";
-import {GatewayResponses} from "../../util/gateway-responses";
 import {LoginRequest, LoginResponse} from "website-alerter-shared";
+import {MiddyUtil} from "../../util/middy-util";
+import createError from "http-errors";
 
 class Login extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
 		//make sure there was a body
 		if(!event.body) {
-			return GatewayResponses.badRequestError("Body was not specified");
+			throw new createError.BadRequest("Body was not specified");
 		}
 
-		console.log(this);
 		await this.setupServices();
 
 		//get the login request
-		const request = JSON.parse(event.body) as LoginRequest;
+		const request = event.body as any as LoginRequest;
 		const user = await this.database.getUser(request.email);
 
 		if(!user) {
-			return GatewayResponses.forbiddenError("bad credentials");
+			throw new createError.Forbidden("bad credentials")
 		}
 
 		//check the password
 		if(!await bcrypt.compare(request.password, user.password)) {
-			return GatewayResponses.forbiddenError("bad credentials");
+			throw new createError.Forbidden("bad credentials")
 		}
 
 		const key = await this.configService.loadJwt();
@@ -40,11 +40,11 @@ class Login extends LambdaBase {
 		}
 
 		//return the signed auth and user information
-		return this.cors.appendCors(event, {
+		return {
 			body: JSON.stringify(response),
 			headers: {session: signed},
 			statusCode: 200
-		});
+		};
 	}
 
 	public static getSignedJwt(user:UserItem, sessionID:string, key:Buffer) {
@@ -73,4 +73,6 @@ class Login extends LambdaBase {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const handler = new Login().handler;
+export const handler = MiddyUtil.defaultMiddy()
+	.use(MiddyUtil.cors("POST"))
+	.handler(new Login().handler);

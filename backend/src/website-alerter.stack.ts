@@ -73,4 +73,8 @@ export class WebsiteAlerterStack extends Stack {
 
 		new ApiStack(this);
 	}
+
+	get isIncludeLocalCors() {
+		return this.includeLocalCors.valueAsString === "true";
+	}
 }
