@@ -23,7 +23,6 @@ export abstract class MiddyUtil {
 		return middy()
 			.use(errorLogger())
 			.use(httpHeaderNormalizer())
-			.use(httpJsonBodyParser())
 			.use(httpErrorHandler());
 	}
 }

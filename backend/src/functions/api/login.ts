@@ -18,7 +18,7 @@ class Login extends LambdaBase {
 		await this.setupServices();
 
 		//get the login request
-		const request = event.body as any as LoginRequest;
+		const request = JSON.parse(event.body);
 		const user = await this.database.getUser(request.email);
 
 		if(!user) {

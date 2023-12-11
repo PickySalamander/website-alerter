@@ -1,11 +1,9 @@
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {NodejsFunction} from "aws-cdk-lib/aws-lambda-nodejs";
-import {DockerImageCode, DockerImageFunction, FunctionBase, Runtime} from "aws-cdk-lib/aws-lambda";
+import {DockerImageCode, FunctionBase, Runtime} from "aws-cdk-lib/aws-lambda";
 import {Duration} from "aws-cdk-lib";
-import {RetentionDays} from "aws-cdk-lib/aws-logs";
 import {SqsEventSource} from "aws-cdk-lib/aws-lambda-event-sources";
-import {NodejsFunctionProps} from "aws-cdk-lib/aws-lambda-nodejs/lib/function";
-import {DockerImageFunctionProps} from "aws-cdk-lib/aws-lambda/lib/image-function";
+import {AlerterDockerFunction, AlerterJsFunction} from "./alerter-js-function";
 
 export class LambdaStack {
 	public readonly scheduledStart:FunctionBase;
@@ -15,16 +13,6 @@ export class LambdaStack {
 	public readonly detectChanges:FunctionBase;
 
 	public readonly scheduledEnd:FunctionBase;
-
-	public readonly login:FunctionBase;
-
-	public readonly auth:FunctionBase;
-
-	public readonly getSites:FunctionBase;
-
-	public readonly putSite:FunctionBase;
-
-	public readonly deleteSites:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
 		// create the scheduled start function which starts the whole process when hit with the event bridge rule
@@ -94,89 +82,5 @@ export class LambdaStack {
 				new SqsEventSource(stack.sqs.endQueue)
 			]
 		});
-
-		let allowOrigins = `https://${stack.cdn.cdn.attrDomainName}`;
-		if(stack.isIncludeLocalCors) {
-			allowOrigins += ",http://localhost:4200";
-		}
-
-		this.login = new AlerterDockerFunction(stack, "Login", {
-			code: DockerImageCode.fromImageAsset("build/login"),
-			description: "Login users to the API using JWT",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
-				"USERS_TABLE": stack.dynamo.usersTable.tableName,
-				"ALLOWED_ORIGINS": allowOrigins,
-				"IS_PRODUCTION": "true"
-			}
-		});
-
-		this.auth = new AlerterJsFunction(stack, "Auth", {
-			description: "JWT authorizer for API",
-			entry: "src/functions/api/auth.ts",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
-				"IS_PRODUCTION": "true"
-			}
-		});
-
-		this.getSites = new AlerterJsFunction(stack, "GetSites", {
-			description: "Get a list of sites for the user already configured in the backend",
-			entry: "src/functions/api/get-sites.ts",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
-				"ALLOWED_ORIGINS": allowOrigins,
-				"IS_PRODUCTION": "true"
-			}
-		});
-
-		this.putSite = new AlerterJsFunction(stack, "PutSite", {
-			description: "Put a new site into the backend for a user",
-			entry: "src/functions/api/put-site.ts",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
-				"ALLOWED_ORIGINS": allowOrigins,
-				"IS_PRODUCTION": "true"
-			}
-		});
-
-		this.deleteSites = new AlerterJsFunction(stack, "DeleteSites", {
-			description: "Delete site in the backend for a user",
-			entry: "src/functions/api/delete-sites.ts",
-			environment: {
-				"CONFIG_S3": stack.configBucket.bucketName,
-				"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
-				"ALLOWED_ORIGINS": allowOrigins,
-				"IS_PRODUCTION": "true"
-			}
-		})
-	}
-}
-
-class AlerterJsFunction extends NodejsFunction {
-
-	constructor(stack:WebsiteAlerterStack, id:string, props?:NodejsFunctionProps) {
-		super(stack, id,
-			Object.assign({
-				timeout: Duration.seconds(30),
-				logRetention: RetentionDays.ONE_MONTH,
-				runtime: Runtime.NODEJS_18_X,
-				handler: "handler",
-				role: stack.iam.role,
-			}, props));
-	}
-}
-
-class AlerterDockerFunction extends DockerImageFunction {
-
-	constructor(stack:WebsiteAlerterStack, id:string, props?:DockerImageFunctionProps) {
-		super(stack, id,
-			Object.assign({
-				timeout: Duration.seconds(30),
-				logRetention: RetentionDays.ONE_MONTH,
-				role: stack.iam.role,
-			}, props));
 	}
 }

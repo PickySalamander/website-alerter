@@ -5,19 +5,22 @@ import {
 	JsonSchema,
 	LambdaIntegration,
 	Method,
+	Resource,
 	ResponseType,
 	RestApi,
 	TokenAuthorizer
 } from "aws-cdk-lib/aws-apigateway";
 import * as fs from "fs";
 import path from "node:path";
+import {HttpMethod} from "../util/middy-util";
+import {FunctionBase} from "aws-cdk-lib/aws-lambda";
 
 export class ApiStack {
 	public readonly api:RestApi;
 
 	constructor(stack:WebsiteAlerterStack) {
 		const authorizer = new TokenAuthorizer(stack, "Authorizor", {
-			handler: stack.lambda.auth,
+			handler: stack.apiLambda.auth,
 			validationRegex: "^Bearer [-0-9a-zA-Z\\._]*$"
 		});
 
@@ -57,57 +60,57 @@ export class ApiStack {
 			}
 		});
 
-		const loginModel = this.api.addModel("LoginSchema", {
-			description: "Validation for Login calls",
-			contentType: "application/json",
-			schema: this.schemaFromFile("login")
-		})
-
-		//add the lambda functions and the authorizer to the api
-		const login = this.api.root.addResource("login")
-			.addMethod("POST", new LambdaIntegration(stack.lambda.login), {
-				requestValidatorOptions: {
-					validateRequestBody: true
-				},
-				requestModels: {
-					"application/json": loginModel
-				}
-			});
-
-		this.noAuthorizer(login);
+		const login = this.api.root.addResource("login");
+		this.addLambda(login, {
+			method: "POST",
+			function: stack.apiLambda.login,
+			authorizer: false,
+			schemaName: "login"
+		});
 
 		const sites = this.api.root.addResource("sites");
-		sites.addMethod("GET", new LambdaIntegration(stack.lambda.getSites));
+		this.addLambda(sites, {
+			method: "GET",
+			function: stack.apiLambda.getSites
+		});
 
-		const putSiteModel = this.api.addModel("PutSiteSchema", {
-			description: "Validation for PutSite calls",
-			contentType: "application/json",
-			schema: this.schemaFromFile("put-site")
-		})
+		this.addLambda(sites, {
+			method: "PUT",
+			function: stack.apiLambda.putSite,
+			schemaName: "put-site"
+		});
 
-		sites.addMethod("PUT", new LambdaIntegration(stack.lambda.putSite), {
-			requestValidatorOptions: {
+		this.addLambda(sites, {
+			method: "DELETE",
+			function: stack.apiLambda.deleteSites,
+			schemaName: "delete-sites"
+		});
+	}
+
+	private addLambda(resource:Resource, props:LambdaOptions) {
+		const methodOptions:any = {};
+
+		if(props.schemaName) {
+			const model = this.api.addModel(`${props.schemaName}Schema`, {
+				description: `Validation for ${props.schemaName} calls`,
+				contentType: "application/json",
+				schema: this.schemaFromFile(props.schemaName)
+			});
+
+			methodOptions.requestValidatorOptions = {
 				validateRequestBody: true
-			},
-			requestModels: {
-				"application/json": putSiteModel
-			}
-		});
+			};
 
-		const deleteSitesModel = this.api.addModel("DeleteSitesSchema", {
-			description: "Validation for DeleteSites calls",
-			contentType: "application/json",
-			schema: this.schemaFromFile("delete-sites")
-		});
+			methodOptions.requestModels = {
+				"application/json": model
+			};
+		}
 
-		sites.addMethod("DELETE", new LambdaIntegration(stack.lambda.deleteSites), {
-			requestValidatorOptions: {
-				validateRequestBody: true
-			},
-			requestModels: {
-				"application/json": deleteSitesModel
-			}
-		});
+		const method = resource.addMethod(props.method, new LambdaIntegration(props.function), methodOptions);
+
+		if(props.authorizer === false) {
+			this.noAuthorizer(method);
+		}
 	}
 
 	private noAuthorizer(method:Method) {
@@ -122,4 +125,11 @@ export class ApiStack {
 		console.log(`Loading json schema from ${fileName}`);
 		return JSON.parse(fs.readFileSync(fileName, {encoding: 'utf-8'}));
 	}
+}
+
+export interface LambdaOptions {
+	method:HttpMethod;
+	function:FunctionBase;
+	schemaName?:string;
+	authorizer?:boolean;
 }
