@@ -14,6 +14,7 @@ import * as fs from "fs";
 import path from "node:path";
 import {HttpMethod} from "../util/middy-util";
 import {FunctionBase} from "aws-cdk-lib/aws-lambda";
+import {Fn} from "aws-cdk-lib";
 
 export class ApiStack {
 	public readonly api:RestApi;
@@ -26,7 +27,8 @@ export class ApiStack {
 
 		const allowOrigins = [`https://${stack.cdn.cdn.attrDomainName}`];
 
-		if(stack.isIncludeLocalCors) {
+		if(process.env.INCLUDE_LOCAL_CORS === "true") {
+			console.warn("Including localhost for cors checks");
 			allowOrigins.push("http://localhost:4200")
 		}
 

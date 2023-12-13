@@ -56,7 +56,7 @@
 		<th mat-header-cell *matHeaderCellDef mat-sort-header>Frequency</th>
 		<td mat-cell *matCellDef="let row">
 			<ng-container [ngSwitch]="row.frequency">
-				<span *ngSwitchCase="frequencyValues.BiWeekly">Bi-Weekly</span>
+				<span *ngSwitchCase="frequencyValues.SemiWeekly">Semi-Weekly</span>
 				<span *ngSwitchCase="frequencyValues.Weekly">Weekly</span>
 				<span *ngSwitchDefault>Never</span>
 			</ng-container>

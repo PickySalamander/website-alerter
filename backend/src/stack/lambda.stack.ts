@@ -15,6 +15,10 @@ export class LambdaStack {
 	public readonly scheduledEnd:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
+		if(process.env.ALWAYS_RUN_SEMI_WEEKLY === "true") {
+			console.warn("Including debug flag for always running semi-weekly");
+		}
+
 		// create the scheduled start function which starts the whole process when hit with the event bridge rule
 		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will parse the config files and queue all " +
@@ -26,6 +30,7 @@ export class LambdaStack {
 				"WEBSITE_QUEUE_NAME": stack.sqs.websiteQueue.queueUrl,
 				"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 				"END_QUEUE": stack.sqs.endQueue.queueUrl,
+				"ALWAYS_RUN_SEMI_WEEKLY": process.env.ALWAYS_RUN_SEMI_WEEKLY === "true" ? "true" : "false",
 				"IS_PRODUCTION": "true"
 			}
 		});

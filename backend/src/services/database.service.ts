@@ -11,7 +11,8 @@ import {
 	UpdateCommandInput
 } from "@aws-sdk/lib-dynamodb";
 import {WebsiteCheck, WebsiteItem} from "website-alerter-shared";
-
+import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
+import {SiteRevisionState} from "website-alerter-shared/dist/util/site-revision";
 
 /**
  * Helper service for interfacing with a DynamoDB database storing tables for the tool.
@@ -183,7 +184,7 @@ export class DatabaseService {
 	 * @param state the state to set the site to
 	 * @param revision a revision id if the site changed
 	 */
-	public async updateRunSiteState(runID:string, site:string, state:SiteRunState, revision?:string) {
+	public async updateRunSiteState(runID:string, site:string, state:SiteRevisionState, revision?:string) {
 		const command:UpdateCommandInput = {
 			TableName: process.env.RUN_TABLE,
 			Key: {
@@ -232,58 +233,4 @@ export interface UserItem {
 	email:string;
 
 	password:string;
-}
-
-/** A run through of the website alerter tool in the database */
-export interface RunThrough {
-	/** The id of the run through */
-	id:string;
-
-	/** The time the run was started */
-	time:number;
-
-	/** The sites that were checked */
-	sites:SiteRun[];
-
-	/** The state of the entire run */
-	runState:RunThroughState;
-}
-
-/** The state of a check of a site in a {@link RunThrough} */
-export interface SiteRun {
-	/** The site's owner */
-	userID:string;
-
-	/** The site's url */
-	site:string;
-
-	/** The state of the site's polling and change detection */
-	siteState:SiteRunState,
-
-	/** the revision of any changes found in S3 */
-	revisionID?:string;
-}
-
-/** The state of an entire {@link RunThrough} */
-export enum RunThroughState {
-	/** The run is open and being sent through the flow */
-	Open,
-
-	/** The run through is complete without errors */
-	Complete,
-
-	/** The run through is complete with errors */
-	Expired
-}
-
-/** The state of the site's polling and change detection */
-export enum SiteRunState {
-	/** The website is getting ready to be polled by Puppeteer */
-	Open,
-
-	/** The website was polled by Puppeteer and is awaiting changed detection */
-	Polled,
-
-	/** The website was checked by change detection and is done */
-	Complete
 }

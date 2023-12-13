@@ -1,24 +1,19 @@
-import {CfnOutput, CfnParameter, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
+import {CfnOutput, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {Bucket} from "aws-cdk-lib/aws-s3";
 import {IamStack} from "./stack/iam.stack";
-import {SqsStack} from "./stack/sqs.stack";
 import {LambdaStack} from "./stack/lambda.stack";
 import {ApiStack} from "./stack/api.stack";
 import {DynamoStack} from "./stack/dynamo.stack";
-import {Rule, Schedule} from "aws-cdk-lib/aws-events";
-import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
 
 import {CdnStack} from "./stack/cdn.stack";
-import {RunScheduling} from "website-alerter-shared";
 import {ApiLambdaStack} from "./stack/api-lambda";
+import {StepStack} from "./stack/step.stack";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
 	/** S3 bucket for configuration and storage of files */
 	public readonly configBucket:Bucket;
-
-	public readonly sqs:SqsStack;
 
 	public readonly iam:IamStack;
 
@@ -30,20 +25,10 @@ export class WebsiteAlerterStack extends Stack {
 
 	public readonly cdn:CdnStack;
 
-	private readonly includeLocalCors:CfnParameter;
-
 	constructor(scope:Construct, id:string, props?:StackProps) {
 		super(scope, id, props);
 
 		this.dynamo = new DynamoStack(this);
-
-		//TODO hook this up
-		this.includeLocalCors = new CfnParameter(this, "includeLocalCors", {
-			type: "String",
-			description: "Should localhost be included in the CORS config?",
-			allowedValues: ["true", "false"],
-			"default": "true"
-		});
 
 		// create the S3 bucket
 		this.configBucket = new Bucket(this, 'ConfigurationBucket', {
@@ -59,27 +44,23 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.cdn = new CdnStack(this);
 
-		this.sqs = new SqsStack(this);
-
 		// create the role that all lambda functions use
 		this.iam = new IamStack(this);
 
 		this.lambda = new LambdaStack(this);
 
-		this.apiLambda = new ApiLambdaStack(this);
+		new StepStack(this);
 
 		// create the event bridge rule that starts up the whole process every 7 days
-		new Rule(this, "ScheduledStartRule", {
-			description: "Schedule the lambda to queue up the websites",
-			schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
-			enabled: false,
-			targets: [new LambdaFunction(this.lambda.scheduledStart)]
-		});
+		// new Rule(this, "ScheduledStartRule", {
+		// 	description: "Schedule the lambda to queue up the websites",
+		// 	schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
+		// 	enabled: false,
+		// 	targets: [new LambdaFunction(this.lambda.scheduledStart)]
+		// });
+
+		this.apiLambda = new ApiLambdaStack(this);
 
 		new ApiStack(this);
-	}
-
-	get isIncludeLocalCors() {
-		return this.includeLocalCors.valueAsString === "true";
 	}
 }

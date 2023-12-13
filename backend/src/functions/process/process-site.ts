@@ -5,7 +5,7 @@ import {v4 as uuidV4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {Utils} from "../../util/utils";
 import {SqsSiteEvent} from "../../util/sqs-site-event";
-import {SiteRunState} from "../../services/database.service";
+import {SiteRevisionState} from "../../services/database.service";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SendMessageCommand} from "@aws-sdk/client-sqs";
 

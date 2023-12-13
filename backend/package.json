@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "node build.mjs",
-		"build:local": "node build.mjs && cdk synth --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
+		"build:local": "node build.mjs && ALWAYS_RUN_SEMI_WEEKLY=true INCLUDE_LOCAL_CORS=true cdk synth --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
 		"test": "jest",
 		"clean": "rimraf cdk.out && rimraf build",
 		"deploy": "cdk deploy"

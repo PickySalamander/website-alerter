@@ -1,13 +1,14 @@
-import {Effect, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {Effect, Policy, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 
 /** Create the IAM role that all the lambda functions will use */
 export class IamStack {
-	public readonly role:Role;
+	public readonly lambdaRole:Role;
 
-	constructor(stack:WebsiteAlerterStack) {
-		this.role = new Role(stack, "LambdaIAMRole", {
-			roleName: "website-alerter-role",
+	public readonly stateMachineRole:Role;
+
+	constructor(private stack:WebsiteAlerterStack) {
+		this.lambdaRole = new Role(stack, "LambdaIAMRole", {
 			description: "Generic role for Lambdas in website-alerter stack",
 			assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
 			inlinePolicies: {
@@ -83,6 +84,31 @@ export class IamStack {
 							]
 						})
 					]
+				})
+			}
+		});
+
+		this.stateMachineRole = new Role(stack, "StateMachineRole", {
+			description: "Generic role for State Machines in website-alerter stack",
+			assumedBy: new ServicePrincipal("states.amazonaws.com"),
+			inlinePolicies: {
+				//read database
+				Data: new PolicyDocument({
+					statements: [
+						new PolicyStatement({
+							effect: Effect.ALLOW,
+							actions: [
+								"dynamodb:ListTables",
+								"dynamodb:DescribeTable",
+								"dynamodb:GetItem",
+								"dynamodb:Query",
+								"dynamodb:Scan"
+							],
+							resources: [
+								stack.dynamo.websiteTable.tableArn,
+								`${stack.dynamo.websiteTable.tableArn}/index/*`
+							]
+						})]
 				})
 			}
 		});

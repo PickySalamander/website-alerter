@@ -3,7 +3,7 @@ import {ChangeFrequency, RunScheduling, WebsiteItem} from "../src";
 describe("Scheduling", () => {
 	const biWeekly:WebsiteItem = {
 		userID: "a",
-		frequency: ChangeFrequency.BiWeekly,
+		frequency: ChangeFrequency.SemiWeekly,
 		site: "test"
 	};
 
@@ -22,21 +22,16 @@ describe("Scheduling", () => {
 	test("Should Run", () => {
 		// Fri Jan 01 1999
 		const friday = new Date(1999, 0);
-		expect(RunScheduling.shouldRun(biWeekly, friday)).toBeFalsy();
-		expect(RunScheduling.shouldRun(weekly, friday)).toBeFalsy();
-		expect(RunScheduling.shouldRun(never, friday)).toBeFalsy();
 
 		// Tue Jan 05 1999
 		const tuesday = new Date(1999, 0, 5);
-		expect(RunScheduling.shouldRun(biWeekly, tuesday)).toBeTruthy();
-		expect(RunScheduling.shouldRun(weekly, tuesday)).toBeTruthy();
-		expect(RunScheduling.shouldRun(never, tuesday)).toBeFalsy();
 
 		// Thu Jan 07 1999
 		const thursday = new Date(1999, 0, 7);
-		expect(RunScheduling.shouldRun(biWeekly, thursday)).toBeTruthy();
-		expect(RunScheduling.shouldRun(weekly, thursday)).toBeFalsy();
-		expect(RunScheduling.shouldRun(never, thursday)).toBeFalsy();
+
+		expect(RunScheduling.shouldRun(friday)).toEqual([]);
+		expect(RunScheduling.shouldRun(tuesday)).toEqual([ChangeFrequency.Weekly, ChangeFrequency.SemiWeekly]);
+		expect(RunScheduling.shouldRun(thursday)).toEqual([ChangeFrequency.SemiWeekly]);
 	});
 
 	test("Next Run", () => {

@@ -51,5 +51,5 @@ export interface ChangeOptions {
 export enum ChangeFrequency {
 	Never = "NEVER",
 	Weekly = "WEEKLY",
-	BiWeekly = "BIWEEKLY"
+	SemiWeekly = "SEMI-WEEKLY"
 }

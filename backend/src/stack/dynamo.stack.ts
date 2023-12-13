@@ -26,11 +26,27 @@ export class DynamoStack {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
+		this.websiteTable.addGlobalSecondaryIndex({
+			indexName: "frequency-index",
+			partitionKey: {
+				name: "frequency",
+				type: AttributeType.STRING
+			},
+			sortKey: {
+				name: "userID",
+				type: AttributeType.STRING
+			}
+		});
+
 		// create the run table
 		this.runThroughTable = new Table(stack, "RunThroughTable", {
 			partitionKey: {
-				name: "id",
+				name: "runID",
 				type: AttributeType.STRING,
+			},
+			sortKey: {
+				name: "time",
+				type: AttributeType.NUMBER,
 			},
 			billingMode: BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY

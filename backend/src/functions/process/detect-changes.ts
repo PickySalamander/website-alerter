@@ -1,6 +1,6 @@
 import {SQSEvent, SQSHandler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
-import {SiteRunState} from "../../services/database.service";
+import {SiteRevisionState} from "../../services/database.service";
 import {SqsSiteEvent} from "../../util/sqs-site-event";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";

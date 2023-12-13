@@ -15,7 +15,7 @@ export class AlerterJsFunction extends NodejsFunction {
 				logRetention: RetentionDays.ONE_MONTH,
 				runtime: Runtime.NODEJS_18_X,
 				handler: "handler",
-				role: stack.iam.role,
+				role: stack.iam.lambdaRole,
 			}, props));
 	}
 }
@@ -27,7 +27,7 @@ export class AlerterDockerFunction extends DockerImageFunction {
 			Object.assign({
 				timeout: Duration.seconds(30),
 				logRetention: RetentionDays.ONE_MONTH,
-				role: stack.iam.role,
+				role: stack.iam.lambdaRole,
 			}, props));
 	}
 }

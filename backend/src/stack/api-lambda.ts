@@ -15,7 +15,7 @@ export class ApiLambdaStack {
 
 	constructor(stack:WebsiteAlerterStack) {
 		let allowOrigins = `https://${stack.cdn.cdn.attrDomainName}`;
-		if(stack.isIncludeLocalCors) {
+		if(process.env.INCLUDE_LOCAL_CORS === "true") {
 			allowOrigins += ",http://localhost:4200";
 		}
 
