@@ -1,6 +1,15 @@
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {LambdaInvoke} from "aws-cdk-lib/aws-stepfunctions-tasks";
-import {Choice, Condition, CustomState, DefinitionBody, Fail, Map, StateMachine} from "aws-cdk-lib/aws-stepfunctions";
+import {
+	Choice,
+	Condition,
+	CustomState,
+	DefinitionBody,
+	Fail,
+	Map,
+	Pass,
+	StateMachine
+} from "aws-cdk-lib/aws-stepfunctions";
 import {Duration} from "aws-cdk-lib";
 import {QueryCommandInput} from "@aws-sdk/lib-dynamodb";
 
@@ -8,6 +17,11 @@ export class StepStack {
 	constructor(stack:WebsiteAlerterStack) {
 		const start = new LambdaInvoke(stack, "StartProcessing", {
 			lambdaFunction: stack.lambda.scheduledStart,
+			outputPath: "$.Payload"
+		});
+
+		const query = new LambdaInvoke(stack, "QueryFrequency", {
+			lambdaFunction: stack.lambda.queryStart,
 			outputPath: "$.Payload",
 			comment: "Start the whole routine, by getting what items to query"
 		});
@@ -16,24 +30,12 @@ export class StepStack {
 			maxConcurrency: 1,
 			comment: "Query the frequencies from the database and return the items to check",
 			itemsPath: "$.shouldRun",
-			resultPath: "$.items",
-		}).iterator(new CustomState(stack, "QueryDatabase", {
-			stateJson: {
-				"Type": "Task",
-				"Parameters": {
-					"TableName": stack.dynamo.websiteTable.tableName,
-					"IndexName": "frequency-index",
-					"KeyConditionExpression": "frequency = :frequency",
-					"ProjectionExpression": "userID, site",
-					"ExpressionAttributeValues": {
-						":frequency": {
-							"S.$": "$"
-						}
-					}
-				} as QueryCommandInput,
-				"Resource": "arn:aws:states:::aws-sdk:dynamodb:query"
-			}
-		}));
+			resultPath: "$.items"
+		}).iterator(query
+			.next(new Choice(stack, "HasElements")
+				.when(Condition.numberGreaterThan("$.count", 0),
+					new Pass(stack, "GoOn"))
+				.otherwise(new Pass(stack, "NoElements"))));
 
 		const definition = start
 			.next(new Choice(stack, "IsEmpty")

@@ -10,7 +10,7 @@ import {
 	UpdateCommand,
 	UpdateCommandInput
 } from "@aws-sdk/lib-dynamodb";
-import {WebsiteCheck, WebsiteItem} from "website-alerter-shared";
+import {ChangeFrequency, WebsiteCheck, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {SiteRevisionState} from "website-alerter-shared/dist/util/site-revision";
 
@@ -69,6 +69,19 @@ export class DatabaseService {
 		}));
 
 		return response.Item as WebsiteItem;
+	}
+
+	public async getAllSites(frequency:ChangeFrequency, exclusiveStartKey?:Record<string, any>) {
+		return await this.client.send(new QueryCommand({
+			TableName: process.env.WEBSITE_TABLE,
+			IndexName: "frequency-index",
+			KeyConditionExpression: "frequency = :frequency",
+			ExpressionAttributeValues: {
+				":frequency": frequency
+			},
+			ProjectionExpression: "userID, site",
+			ExclusiveStartKey: exclusiveStartKey
+		}));
 	}
 
 	public async getSites(userID:string) {

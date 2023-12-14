@@ -1,4 +1,4 @@
-import {Effect, Policy, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
+import {Effect, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 
 /** Create the IAM role that all the lambda functions will use */
@@ -46,7 +46,9 @@ export class IamStack {
 							],
 							resources: [
 								stack.dynamo.websiteTable.tableArn,
+								`${stack.dynamo.websiteTable.tableArn}/index/*`,
 								stack.dynamo.runThroughTable.tableArn,
+								`${stack.dynamo.runThroughTable.tableArn}/index/*`,
 								stack.dynamo.usersTable.tableArn,
 								`${stack.dynamo.usersTable.tableArn}/index/*`
 							]
@@ -61,56 +63,13 @@ export class IamStack {
 							resources: [`${stack.configBucket.bucketArn}/*`]
 						})
 					]
-				}),
-
-				//read and write to required queues and notifications
-				Events: new PolicyDocument({
-					statements: [
-						new PolicyStatement({
-							effect: Effect.ALLOW,
-							actions: [
-								"sqs:ReceiveMessage",
-								"sqs:DeleteMessage",
-								"sqs:GetQueueAttributes",
-								"sqs:ChangeMessageVisibility",
-								"sqs:DeleteMessage",
-								"sqs:GetQueueUrl",
-								"sqs:SendMessage"
-							],
-							resources: [
-								stack.sqs.websiteQueue.queueArn,
-								stack.sqs.changeQueue.queueArn,
-								stack.sqs.endQueue.queueArn
-							]
-						})
-					]
 				})
 			}
 		});
 
 		this.stateMachineRole = new Role(stack, "StateMachineRole", {
 			description: "Generic role for State Machines in website-alerter stack",
-			assumedBy: new ServicePrincipal("states.amazonaws.com"),
-			inlinePolicies: {
-				//read database
-				Data: new PolicyDocument({
-					statements: [
-						new PolicyStatement({
-							effect: Effect.ALLOW,
-							actions: [
-								"dynamodb:ListTables",
-								"dynamodb:DescribeTable",
-								"dynamodb:GetItem",
-								"dynamodb:Query",
-								"dynamodb:Scan"
-							],
-							resources: [
-								stack.dynamo.websiteTable.tableArn,
-								`${stack.dynamo.websiteTable.tableArn}/index/*`
-							]
-						})]
-				})
-			}
+			assumedBy: new ServicePrincipal("states.amazonaws.com")
 		});
 	}
 }

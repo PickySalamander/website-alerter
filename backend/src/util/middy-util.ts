@@ -2,7 +2,6 @@ import cors from "@middy/http-cors";
 import middy from "@middy/core";
 import errorLogger from "@middy/error-logger";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
-import httpJsonBodyParser from "@middy/http-json-body-parser";
 import httpErrorHandler from "@middy/http-error-handler";
 
 export abstract class MiddyUtil {

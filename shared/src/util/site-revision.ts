@@ -19,8 +19,6 @@ export interface SiteRevision {
 	revisionID?:string;
 }
 
-
-
 /** The state of the site's polling and change detection */
 export enum SiteRevisionState {
 	/** The website is getting ready to be polled by Puppeteer */

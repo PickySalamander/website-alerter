@@ -1,4 +1,4 @@
-import {SQSEvent, SQSHandler} from "aws-lambda";
+import {Handler, SQSHandler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
 import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4 as uuidV4} from "uuid";
@@ -8,6 +8,7 @@ import {SqsSiteEvent} from "../../util/sqs-site-event";
 import {SiteRevisionState} from "../../services/database.service";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SendMessageCommand} from "@aws-sdk/client-sqs";
+import {SiteToProcess} from "../../util/site-to-process";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -19,31 +20,17 @@ class ProcessSite extends LambdaBase {
 	/** The current chromium browser running */
 	private browser:Browser;
 
-	public handler:SQSHandler = async(event:SQSEvent) => {
-		console.log(`Starting to parse ${event.Records.length} websites`);
-
-		if(event.Records.length == 0) {
-			console.error("No records on event");
-			return;
-		}
+	public handler:Handler<SiteToProcess, any> = async(siteToProcess) => {
+		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
 
-		try {
+		if(!this.browser) {
 			//set up the browser
 			await this.initializeBrowser();
-
-			//got through each site in the SQS queue and poll them
-			for(const record of event.Records) {
-				const siteEvent = JSON.parse(record.body) as SqsSiteEvent;
-				await this.parseSite(siteEvent);
-			}
-		} finally {
-			//finally make sure the browser is shut down
-			console.log("Closing down browser...");
-			await this.browser?.close();
-			this.browser = undefined;
 		}
+
+		await this.parseSite(siteToProcess);
 
 		console.log("Done.");
 	}

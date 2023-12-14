@@ -1,7 +1,7 @@
 /** A run through of the website alerter tool in the database */
 export interface RunThrough {
 	/** The id of the run through */
-	id:string;
+	runID:string;
 
 	/** The time the run was started */
 	time:number;
