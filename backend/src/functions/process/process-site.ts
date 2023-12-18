@@ -1,7 +1,7 @@
 import {Handler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
 import {DefaultChromeArgs} from "../../util/default-chrome-args";
-import {v4, v4 as uuidV4} from "uuid";
+import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SiteToProcess} from "../../util/site-to-process";
@@ -36,6 +36,8 @@ class ProcessSite extends LambdaBase {
 			revisionID: this.currentRevision,
 			siteState: SiteRevisionState.Open
 		});
+
+		await this.database.updateSiteRunDetails(siteToProcess.siteID, siteToProcess.runID);
 
 		if(!this.browser) {
 			//set up the browser
@@ -124,7 +126,7 @@ class ProcessSite extends LambdaBase {
 		//close the page
 		await page.close();
 
-		const changeID = uuidV4();
+		const changeID = v4();
 
 		console.log(`Done with page, uploading changes:${changeID}`);
 
@@ -143,8 +145,6 @@ class ProcessSite extends LambdaBase {
 		}));
 
 		console.log("All done, updating database");
-
-		//TODO add the revision
 
 		//add a revision to the database
 		await this.database.updateSiteRevision(this.currentRevision, SiteRevisionState.Polled);

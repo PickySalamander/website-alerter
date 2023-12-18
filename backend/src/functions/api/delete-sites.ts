@@ -3,6 +3,7 @@ import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} fro
 import {UserJwt} from "../../util/user-jwt";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
+import {HttpMethod} from "../../util/http-method";
 
 export class DeleteSites extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -45,5 +46,5 @@ export class DeleteSites extends LambdaBase {
 
 // noinspection JSUnusedGlobalSymbols
 export const handler = MiddyUtil.defaultMiddy()
-	.use(MiddyUtil.cors("DELETE"))
+	.use(MiddyUtil.cors(HttpMethod.Delete))
 	.handler(new DeleteSites().handler);

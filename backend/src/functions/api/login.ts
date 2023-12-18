@@ -4,9 +4,10 @@ import * as bcrypt from "bcrypt";
 import {UserItem} from "../../services/database.service";
 import {v4} from 'uuid';
 import * as jwt from "jsonwebtoken";
-import {LoginRequest, LoginResponse} from "website-alerter-shared";
+import {LoginResponse} from "website-alerter-shared";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
+import {HttpMethod} from "../../util/http-method";
 
 class Login extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -74,5 +75,5 @@ class Login extends LambdaBase {
 
 // noinspection JSUnusedGlobalSymbols
 export const handler = MiddyUtil.defaultMiddy()
-	.use(MiddyUtil.cors("POST"))
+	.use(MiddyUtil.cors(HttpMethod.Post))
 	.handler(new Login().handler);

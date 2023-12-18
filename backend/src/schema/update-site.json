@@ -1,0 +1,40 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"type": "object",
+	"properties": {
+		"siteID": {
+			"type": "string"
+		},
+		"site": {
+			"type": "string",
+			"pattern": "^(https://)[\\w.-]+(?:\\.[\\w.-]+)+[\\w\\-._~:/?#[\\]@!$&'()*+,;=]+$",
+			"maxLength": 2048
+		},
+		"selector": {
+			"type": "string",
+			"maxLength": 2048
+		},
+		"frequency": {
+			"type": "string",
+			"pattern": "^(NEVER|WEEKLY|BIWEEKLY)$"
+		},
+		"options": {
+			"type": "object",
+			"properties": {
+				"ignoreCss": {
+					"type": "boolean"
+				},
+				"ignoreAttributes": {
+					"type": "boolean"
+				},
+				"ignoreScripts": {
+					"type": "boolean"
+				}
+			}
+		}
+	},
+	"required": [
+		"siteID"
+	],
+	"additionalProperties": false
+}

@@ -12,9 +12,8 @@ import {
 } from "aws-cdk-lib/aws-apigateway";
 import * as fs from "fs";
 import path from "node:path";
-import {HttpMethod} from "../util/middy-util";
 import {FunctionBase} from "aws-cdk-lib/aws-lambda";
-import {Fn} from "aws-cdk-lib";
+import {HttpMethod} from "../util/http-method";
 
 export class ApiStack {
 	public readonly api:RestApi;
@@ -29,7 +28,8 @@ export class ApiStack {
 
 		if(process.env.INCLUDE_LOCAL_CORS === "true") {
 			console.warn("Including localhost for cors checks");
-			allowOrigins.push("http://localhost:4200")
+			//SAM likes the localhost to come first otherwise won't use it
+			allowOrigins.unshift("http://localhost:4200")
 		}
 
 		this.api = new RestApi(stack, "WebsiteAlerterApi", {
@@ -42,7 +42,7 @@ export class ApiStack {
 				allowCredentials: true,
 				allowOrigins,
 				allowHeaders: ["Content-Type", "Authorization"],
-				allowMethods: ["GET", "POST", "DELETE", "PUT"]
+				allowMethods: [HttpMethod.Get, HttpMethod.Post, HttpMethod.Delete, HttpMethod.Put]
 			}
 		});
 
@@ -64,7 +64,7 @@ export class ApiStack {
 
 		const login = this.api.root.addResource("login");
 		this.addLambda(login, {
-			method: "POST",
+			method: HttpMethod.Post,
 			function: stack.apiLambda.login,
 			authorizer: false,
 			schemaName: "login"
@@ -72,18 +72,24 @@ export class ApiStack {
 
 		const sites = this.api.root.addResource("sites");
 		this.addLambda(sites, {
-			method: "GET",
+			method: HttpMethod.Get,
 			function: stack.apiLambda.getSites
 		});
 
 		this.addLambda(sites, {
-			method: "PUT",
+			method: HttpMethod.Put,
 			function: stack.apiLambda.putSite,
 			schemaName: "put-site"
 		});
 
 		this.addLambda(sites, {
-			method: "DELETE",
+			method: HttpMethod.Post,
+			function: stack.apiLambda.putSite,
+			schemaName: "update-site"
+		});
+
+		this.addLambda(sites, {
+			method: HttpMethod.Delete,
 			function: stack.apiLambda.deleteSites,
 			schemaName: "delete-sites"
 		});

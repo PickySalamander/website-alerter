@@ -8,7 +8,7 @@ import {
 	GetCommand,
 	PutCommand,
 	QueryCommand,
-	UpdateCommand
+	UpdateCommand, UpdateCommandInput
 } from "@aws-sdk/lib-dynamodb";
 import {ChangeFrequency, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
@@ -102,10 +102,28 @@ export class DatabaseService {
 	 * Put a new website's configuration in the database
 	 * @param item the new website's configuration
 	 */
-	public async putWebsite(item:WebsiteItem) {
+	async putWebsite(item:WebsiteItem) {
 		await this.client.send(new PutCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Item: item
+		}));
+	}
+
+	async editWebsite(item:WebsiteItem) {
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID: item.siteID
+			},
+			UpdateExpression: "SET selector = :selector, frequency = :frequency, options.ignoreCss = :ignoreCss, " +
+				"options.ignoreAttributes = :ignoreAttributes, options.ignoreScripts = :ignoreScripts",
+			ExpressionAttributeValues: {
+				":selector": item.selector,
+				":frequency": item.frequency,
+				":ignoreAttributes": item.options.ignoreAttributes,
+				":ignoreScripts": item.options.ignoreScripts,
+				":ignoreCss": item.options.ignoreCss
+			}
 		}));
 	}
 
@@ -211,6 +229,22 @@ export class DatabaseService {
 			},
 			ExpressionAttributeNames: {
 				"#time": "time"
+			}
+		}));
+	}
+
+	public async updateSiteRunDetails(siteID:string, runID:string) {
+		const time = new Date().getTime();
+
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID
+			},
+			UpdateExpression: "SET lastCheck = :lastCheck, lastRunID = :lastRunID",
+			ExpressionAttributeValues: {
+				":lastCheck": time,
+				":lastRunID": runID
 			}
 		}));
 	}

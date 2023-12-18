@@ -5,6 +5,7 @@ import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
 import {v4} from "uuid";
+import {HttpMethod} from "../../util/http-method";
 
 export class PutSite extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -13,31 +14,40 @@ export class PutSite extends LambdaBase {
 			throw new createError.BadRequest("Body was not specified");
 		}
 
-		//TODO add site update routine
+		//TODO check duplicates?
 
 		const user = event.requestContext.authorizer as UserJwt;
 
-		const newSite = JSON.parse(event.body) as WebsiteItemRequest;
-		console.log(`User "${user.userID}" adding site ${newSite.site}`);
+		const isNewSite = event.httpMethod.toUpperCase() == HttpMethod.Put;
+
+		const siteRequest = JSON.parse(event.body) as WebsiteItemRequest;
+
+		console.log(`User "${user.userID}" ${isNewSite ? "adding" : "updating"} site ${siteRequest.site}`);
 
 		await this.setupServices();
 
-		const newSiteItem:WebsiteItem = Object.assign(newSite, {
-			siteID: v4(),
+		const siteItem:WebsiteItem = Object.assign(siteRequest, {
+			siteID: isNewSite ? v4() : siteRequest.siteID,
 			userID: user.userID,
 			created: new Date().getTime()
 		});
 
-		await this.database.putWebsite(newSiteItem);
+		if(isNewSite) {
+			await this.database.putWebsite(siteItem);
+		} else {
+			//TODO validate they have access to the site
+			//TODO validate deletion of fields?
+			await this.database.editWebsite(siteItem);
+		}
 
 		return {
 			statusCode: 200,
-			body: JSON.stringify(newSiteItem)
+			body: JSON.stringify(siteItem)
 		};
 	}
 }
 
 // noinspection JSUnusedGlobalSymbols
 export const handler = MiddyUtil.defaultMiddy()
-	.use(MiddyUtil.cors("PUT"))
+	.use(MiddyUtil.cors(HttpMethod.Put, HttpMethod.Post))
 	.handler(new PutSite().handler);

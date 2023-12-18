@@ -1,6 +1,9 @@
 import {ChangeFrequency, ChangeOptions} from "./website-item";
 
 export interface WebsiteItemRequest {
+	/** The site to update (if specified) */
+	siteID?:string;
+
 	/** The site's url */
 	site:string;
 

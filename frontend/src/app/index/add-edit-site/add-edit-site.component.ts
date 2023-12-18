@@ -34,7 +34,7 @@ export class AddEditSiteComponent {
 	createForm = new FormGroup({
 		url: new FormControl('', [Validators.required, Validators.pattern(AddEditSiteComponent.SITE_PATTERN), Validators.maxLength(2048)]),
 		selector: new FormControl('', [Validators.maxLength(2048)]),
-		frequency: new FormControl(ChangeFrequency.Weekly, [Validators.pattern(/^(WEEKLY|NEVER|BIWEEKLY)$/)]),
+		frequency: new FormControl(ChangeFrequency.Weekly, [Validators.pattern(/^(WEEKLY|NEVER|SEMI-WEEKLY)$/)]),
 		ignoreCss: new FormControl(false),
 		ignoreAttributes: new FormControl(false),
 		ignoreScripts: new FormControl(false),
@@ -57,7 +57,7 @@ export class AddEditSiteComponent {
 
 			this.initial = this.createForm.value;
 
-			this.createForm.addValidators((control) => this.notEqualValidator(control));
+			this.createForm.addValidators(() => this.notEqualValidator());
 		}
 	}
 
@@ -77,22 +77,35 @@ export class AddEditSiteComponent {
 				ignoreScripts: this.createForm.value.ignoreScripts ?? false,
 				ignoreAttributes: this.createForm.value.ignoreAttributes ?? false
 			}
-		}
+		};
 
-		this.http.put(`${environment.apiUrl}/sites`, updated).subscribe({
-			next: () => {
-				this.snackbar.message(this.isNewSite ? "Successfully added new site!" : "Successfully updated site!");
-				this.dialog.close(updated);
-			},
-			error: (error) => {
-				this.createForm.enable();
-				console.error("Failed to add/edit", error);
-				this.snackbar.error("Failed to add or edit a site.");
-			}
-		});
+		if(this.data) {
+			updated.siteID = this.data.siteID;
+
+			this.http.post<WebsiteItem>(`${environment.apiUrl}/sites`, updated).subscribe({
+				next: (response) => this.next(response),
+				error: (error) => this.error(error)
+			});
+		} else {
+			this.http.put<WebsiteItem>(`${environment.apiUrl}/sites`, updated).subscribe({
+				next: (response) => this.next(response),
+				error: (error) => this.error(error)
+			});
+		}
 	}
 
-	notEqualValidator(control:AbstractControl):ValidationErrors | null {
+	next(response:WebsiteItem) {
+		this.snackbar.message(this.isNewSite ? "Successfully added new site!" : "Successfully updated site!");
+		this.dialog.close(response);
+	}
+
+	error(error:any) {
+		this.createForm.enable();
+		console.error("Failed to add/edit", error);
+		this.snackbar.error("Failed to add or edit a site.");
+	}
+
+	notEqualValidator():ValidationErrors | null {
 		for(const [key, initialValue] of Object.entries(this.initial)) {
 			const current = (this.createForm.value as any)[key];
 			if(current != initialValue) {

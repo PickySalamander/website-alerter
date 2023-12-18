@@ -4,12 +4,11 @@ import errorLogger from "@middy/error-logger";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpErrorHandler from "@middy/http-error-handler";
 import {EnvironmentVars} from "./environment-vars";
+import {HttpMethod} from "./http-method";
 
 export abstract class MiddyUtil {
-	static cors(methods:HttpMethod[] | HttpMethod) {
+	static cors(...methods:HttpMethod[]) {
 		const origins = EnvironmentVars.allowedOrigins;
-
-		console.log(`Here ${methods}`);
 
 		return cors({
 			origins,
@@ -27,4 +26,3 @@ export abstract class MiddyUtil {
 	}
 }
 
-export declare type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";

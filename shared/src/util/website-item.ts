@@ -20,6 +20,9 @@ export interface WebsiteItem {
 	/** The time the site was created */
 	created:number;
 
+	/** The last time the site was polled */
+	lastCheck?:number;
+
 	/** The last run the site was polled */
 	lastRunID?:number;
 
