@@ -1,5 +1,6 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {ChangeOptions} from "website-alerter-shared";
+import {EnvironmentVars} from "../util/environment-vars";
 
 /**
  * Helper service for getting the configuration JSON from S3. It won't reload a fresh JSON if already loaded.
@@ -22,7 +23,7 @@ export class ConfigurationService {
 	 * @param s3 use a pre-existing S3
 	 */
 	constructor(s3?:S3Client) {
-		this.configurationPath = process.env.CONFIG_S3 as string;
+		this.configurationPath = EnvironmentVars.configS3Path;
 		if(!this.configurationPath) {
 			throw "Failed to get configuration s3 bucket from environment";
 		}

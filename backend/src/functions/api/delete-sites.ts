@@ -13,12 +13,28 @@ export class DeleteSites extends LambdaBase {
 
 		const user = event.requestContext.authorizer as UserJwt;
 
-		const toDelete = <string[]>JSON.parse(event.body);
-		console.log(`User "${user.userID}" wants to delete ${toDelete.length} sites.`);
+		const toDelete = new Set(<string[]>JSON.parse(event.body));
+		console.log(`User "${user.userID}" wants to delete ${toDelete.size} sites.`);
+
+		if(toDelete.size > 25) {
+			throw new createError.BadRequest("Can only delete 25 items at a time");
+		}
 
 		await this.setupServices();
 
-		await this.database.deleteSites(user.userID, toDelete);
+		const itemsToDelete = await this.database.getSitesByID(toDelete);
+		if(itemsToDelete.length != toDelete.size) {
+			throw new createError.BadRequest(`Failed to find all ${toDelete.size} items in the database`);
+		}
+
+		for(const item of itemsToDelete) {
+			if(item.userID != user.userID) {
+				console.error(`User ${user.userID} not authorized to delete site ${item.siteID}`);
+				throw new createError.Forbidden("Not authorized to delete site");
+			}
+		}
+
+		await this.database.deleteSites(toDelete);
 
 		return {
 			statusCode: 204,

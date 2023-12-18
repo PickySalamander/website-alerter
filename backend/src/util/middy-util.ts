@@ -3,10 +3,11 @@ import middy from "@middy/core";
 import errorLogger from "@middy/error-logger";
 import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpErrorHandler from "@middy/http-error-handler";
+import {EnvironmentVars} from "./environment-vars";
 
 export abstract class MiddyUtil {
 	static cors(methods:HttpMethod[] | HttpMethod) {
-		const origins = process.env.ALLOWED_ORIGINS.split(",");
+		const origins = EnvironmentVars.allowedOrigins;
 
 		console.log(`Here ${methods}`);
 

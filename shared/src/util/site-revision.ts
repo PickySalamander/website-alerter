@@ -1,22 +1,19 @@
 /** The state of a check of a site in a {@link RunThrough} */
 export interface SiteRevision {
+	/** the revision of any changes found in S3 */
+	revisionID:string;
+
 	/** the run this revision was apart of */
 	runID:string;
 
-	/** The site's owner */
-	userID:string;
-
-	/** The site's url */
-	site:string;
+	/** The id of the site that was checked */
+	siteID:string;
 
 	/** Last time it was updated */
 	time:number;
 
 	/** The state of the site's polling and change detection */
-	siteState:SiteRevisionState,
-
-	/** the revision of any changes found in S3 */
-	revisionID?:string;
+	siteState:SiteRevisionState;
 }
 
 /** The state of the site's polling and change detection */
@@ -29,4 +26,8 @@ export enum SiteRevisionState {
 
 	/** The website was checked by change detection and is done */
 	Complete
+}
+
+export function getSiteRevisionCompositeKey(userID:string, site:string) {
+	return `${userID}|${site}`;
 }

@@ -1,9 +1,10 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
 import {UserJwt} from "../../util/user-jwt";
-import {WebsiteItemRequest} from "website-alerter-shared";
+import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
+import {v4} from "uuid";
 
 export class PutSite extends LambdaBase {
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
@@ -12,6 +13,8 @@ export class PutSite extends LambdaBase {
 			throw new createError.BadRequest("Body was not specified");
 		}
 
+		//TODO add site update routine
+
 		const user = event.requestContext.authorizer as UserJwt;
 
 		const newSite = JSON.parse(event.body) as WebsiteItemRequest;
@@ -19,13 +22,17 @@ export class PutSite extends LambdaBase {
 
 		await this.setupServices();
 
-		const newSiteItem = Object.assign(newSite, {userID: user.userID});
+		const newSiteItem:WebsiteItem = Object.assign(newSite, {
+			siteID: v4(),
+			userID: user.userID,
+			created: new Date().getTime()
+		});
 
 		await this.database.putWebsite(newSiteItem);
 
 		return {
-			statusCode: 204,
-			body: ''
+			statusCode: 200,
+			body: JSON.stringify(newSiteItem)
 		};
 	}
 }

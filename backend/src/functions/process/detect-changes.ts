@@ -68,7 +68,7 @@ class DetectChanges extends LambdaBase {
 			console.log("Found no differences, moving on");
 
 			//update the database that there aren't changes
-			await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete);
+			await this.database.putSiteRevision(siteEvent.runID, siteEvent.site, SiteRunState.Complete);
 			return;
 		}
 
@@ -84,7 +84,7 @@ class DetectChanges extends LambdaBase {
 		}));
 
 		//update the database that there are changes
-		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
+		await this.database.putSiteRevision(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
 			current.revision.revisionID);
 	}
 

@@ -24,6 +24,7 @@ export class LambdaStack {
 			"CONFIG_S3": stack.configBucket.bucketName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
+			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
 			"ALWAYS_RUN_SEMI_WEEKLY": process.env.ALWAYS_RUN_SEMI_WEEKLY === "true" ? "true" : "false",
 			"IS_PRODUCTION": "true"
 		};
@@ -41,17 +42,17 @@ export class LambdaStack {
 			environment
 		});
 
-		// // create the docker image lambda function that triggers the website polling with Puppeteer. This needs to be
-		// // built with "npm run build" first.
-		// this.processSite = new AlerterDockerFunction(stack, "ProcessSite", {
-		// 	code: DockerImageCode.fromImageAsset("build/process-site"),
-		// 	description: "Scheduled call to the function to start scrapping process",
-		// 	environment,
-		// 	//bigger memory size and timeout to give a chance for puppeteer to run
-		// 	memorySize: 1024,
-		// 	timeout: Duration.minutes(1)
-		// });
-		//
+		// create the docker image lambda function that triggers the website polling with Puppeteer. This needs to be
+		// built with "npm run build" first.
+		this.processSite = new AlerterDockerFunction(stack, "ProcessSite", {
+			code: DockerImageCode.fromImageAsset("build/process-site"),
+			description: "Scheduled call to the function to start scrapping process",
+			environment,
+			//bigger memory size and timeout to give a chance for puppeteer to run
+			memorySize: 1024,
+			timeout: Duration.minutes(1)
+		});
+
 		// // detect changes from the recently polled website
 		// this.detectChanges = new NodejsFunction(stack, "DetectChanges", {
 		// 	description: "Detect the changes from the browser processing",

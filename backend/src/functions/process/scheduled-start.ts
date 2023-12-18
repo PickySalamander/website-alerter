@@ -4,6 +4,7 @@ import {v4} from "uuid";
 import {ChangeFrequency, RunScheduling} from "website-alerter-shared";
 import {RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {ScheduledStartData} from "../../util/scheduled-start-data";
+import {EnvironmentVars} from "../../util/environment-vars";
 
 /**
  * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON
@@ -16,7 +17,7 @@ class ScheduledStart extends LambdaBase {
 		await this.setupServices();
 
 		const frequencies = RunScheduling.shouldRun();
-		if(process.env.ALWAYS_RUN_SEMI_WEEKLY === "true" && frequencies.length == 0) {
+		if(EnvironmentVars.isAlwaysRunSemiWeekly && frequencies.length == 0) {
 			frequencies.push(ChangeFrequency.SemiWeekly);
 		}
 

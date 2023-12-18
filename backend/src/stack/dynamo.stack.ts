@@ -11,15 +11,13 @@ export class DynamoStack {
 
 	public readonly usersTable:Table;
 
+	public readonly revisionTable:Table;
+
 	constructor(stack:WebsiteAlerterStack) {
 		// create the website table
 		this.websiteTable = new Table(stack, "WebsiteTable", {
 			partitionKey: {
-				name: "userID",
-				type: AttributeType.STRING
-			},
-			sortKey: {
-				name: "site",
+				name: "siteID",
 				type: AttributeType.STRING
 			},
 			billingMode: BillingMode.PAY_PER_REQUEST,
@@ -34,6 +32,18 @@ export class DynamoStack {
 			},
 			sortKey: {
 				name: "userID",
+				type: AttributeType.STRING
+			}
+		});
+
+		this.websiteTable.addGlobalSecondaryIndex({
+			indexName: "user-index",
+			partitionKey: {
+				name: "userID",
+				type: AttributeType.STRING
+			},
+			sortKey: {
+				name: "site",
 				type: AttributeType.STRING
 			}
 		});
@@ -74,7 +84,29 @@ export class DynamoStack {
 			sortKey: {
 				name: "userID",
 				type: AttributeType.STRING,
+			}
+		});
+
+		// create the revision table
+		this.revisionTable = new Table(stack, "RevisionTable", {
+			partitionKey: {
+				name: "revisionID",
+				type: AttributeType.STRING,
 			},
+			billingMode: BillingMode.PAY_PER_REQUEST,
+			removalPolicy: RemovalPolicy.DESTROY
+		});
+
+		this.revisionTable.addGlobalSecondaryIndex({
+			indexName: "site-index",
+			partitionKey: {
+				name: "siteID",
+				type: AttributeType.STRING
+			},
+			sortKey: {
+				name: "revisionID",
+				type: AttributeType.STRING
+			}
 		});
 	}
 }

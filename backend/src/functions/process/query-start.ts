@@ -4,11 +4,7 @@ import {ScheduledStartData} from "../../util/scheduled-start-data";
 import {SiteToProcess} from "../../util/site-to-process";
 import {QueryCommandOutput} from "@aws-sdk/lib-dynamodb";
 
-/**
- * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON
- * config file in S3 and queue up sites into SQS for checking.
- */
-class ScheduledStart extends LambdaBase {
+class QueryStart extends LambdaBase {
 	public handler:Handler<ScheduledStartData> = async(data) => {
 		console.log(`Starting querying of sites ${data.frequency} to run ${data.runID}.`);
 
@@ -20,15 +16,17 @@ class ScheduledStart extends LambdaBase {
 
 		return {
 			items,
-			count: response.Count,
+			count: items.length,
 			lastEvaluatedKey: response.LastEvaluatedKey
 		};
 	}
 
 	private convertItems(runID:string, response:QueryCommandOutput):SiteToProcess[] {
 		if(response.Items && response.Items.length > 0) {
-			return response.Items.map(value =>
-				<SiteToProcess>Object.assign({runID}, value));
+			return response.Items.map(value => ({
+				runID,
+				siteID: value.siteID
+			}));
 		}
 
 		return [];
@@ -36,4 +34,4 @@ class ScheduledStart extends LambdaBase {
 }
 
 // noinspection JSUnusedGlobalSymbols
-export const handler = new ScheduledStart().handler;
+export const handler = new QueryStart().handler;

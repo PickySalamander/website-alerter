@@ -1,5 +1,8 @@
 /** A website's configuration stored in the database */
 export interface WebsiteItem {
+	/** unique ID for the site */
+	siteID:string;
+
 	/** The site's owner */
 	userID:string;
 
@@ -14,26 +17,14 @@ export interface WebsiteItem {
 	/** Options for detecting changes on the page */
 	options?:ChangeOptions;
 
-	/** The last time the site was polled */
-	lastCheck?:number;
+	/** The time the site was created */
+	created:number;
 
-	/** The last revision of the website */
-	updates?:WebsiteCheck[];
+	/** The last run the site was polled */
+	lastRunID?:number;
 
 	/** Frequency to check the site for changes */
 	frequency:ChangeFrequency;
-}
-
-/** A revision of a polled website */
-export interface WebsiteCheck {
-	/** The time it was polled */
-	time:number;
-
-	/** The id of the revision stored in S3 */
-	revisionID:string;
-
-	/** ID of the run this check was performed in */
-	runID:string;
 }
 
 /** Options for detecting changes on the page */

@@ -1,18 +1,18 @@
-import {Utils} from "../util/utils";
 import {DynamoDBClient} from "@aws-sdk/client-dynamodb";
 import {
+	BatchGetCommand,
+	BatchGetCommandInput,
 	BatchWriteCommand,
 	BatchWriteCommandInput,
 	DynamoDBDocumentClient,
 	GetCommand,
 	PutCommand,
 	QueryCommand,
-	UpdateCommand,
-	UpdateCommandInput
+	UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import {ChangeFrequency, WebsiteCheck, WebsiteItem} from "website-alerter-shared";
+import {ChangeFrequency, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
-import {SiteRevisionState} from "website-alerter-shared/dist/util/site-revision";
+import {EnvironmentVars} from "../util/environment-vars";
 
 /**
  * Helper service for interfacing with a DynamoDB database storing tables for the tool.
@@ -25,7 +25,7 @@ export class DatabaseService {
 		let client:DynamoDBClient;
 
 		//if production we use the account's database
-		if(Utils.isProduction) {
+		if(EnvironmentVars.isProduction) {
 			client = new DynamoDBClient({});
 		}
 
@@ -44,7 +44,7 @@ export class DatabaseService {
 
 	public async getUser(email:string):Promise<UserItem> {
 		const response = await this.client.send(new QueryCommand({
-			TableName: process.env.USERS_TABLE,
+			TableName: EnvironmentVars.usersTableName,
 			IndexName: "user-name-index",
 			KeyConditionExpression: "email = :email",
 			ExpressionAttributeValues: {
@@ -58,13 +58,13 @@ export class DatabaseService {
 
 	/**
 	 * Get a website's configuration from the database
-	 * @param siteName the url of the site to get
+	 * @param siteID the url of the site to get
 	 */
-	public async getWebsite(siteName:string) {
+	public async getWebsite(siteID:string) {
 		const response = await this.client.send(new GetCommand({
-			TableName: process.env.WEBSITE_TABLE,
+			TableName: EnvironmentVars.websiteTableName,
 			Key: {
-				site: siteName
+				siteID
 			}
 		}));
 
@@ -73,25 +73,26 @@ export class DatabaseService {
 
 	public async getAllSites(frequency:ChangeFrequency, exclusiveStartKey?:Record<string, any>) {
 		return await this.client.send(new QueryCommand({
-			TableName: process.env.WEBSITE_TABLE,
+			TableName: EnvironmentVars.websiteTableName,
 			IndexName: "frequency-index",
 			KeyConditionExpression: "frequency = :frequency",
 			ExpressionAttributeValues: {
 				":frequency": frequency
 			},
-			ProjectionExpression: "userID, site",
+			ProjectionExpression: "userID, siteID, frequency",
 			ExclusiveStartKey: exclusiveStartKey
 		}));
 	}
 
 	public async getSites(userID:string) {
 		const response = await this.client.send(new QueryCommand({
-			TableName: process.env.WEBSITE_TABLE,
+			TableName: EnvironmentVars.websiteTableName,
+			IndexName: "user-index",
 			KeyConditionExpression: "userID = :userID",
 			ExpressionAttributeValues: {
 				":userID": userID
 			},
-			ProjectionExpression: "userID, site, lastCheck, frequency"
+			ProjectionExpression: "siteID, userID, site, lastRunID, frequency"
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
@@ -103,65 +104,63 @@ export class DatabaseService {
 	 */
 	public async putWebsite(item:WebsiteItem) {
 		await this.client.send(new PutCommand({
-			TableName: process.env.WEBSITE_TABLE,
+			TableName: EnvironmentVars.websiteTableName,
 			Item: item
 		}));
 	}
 
-	async deleteSites(userID:string, sites:string[]) {
-		const maxItems = 25;
-		for(let i = 0; i < sites.length; i += maxItems) {
-			const toDelete = sites.slice(i, i + maxItems);
+	async getSitesByID(sitesIDs:Set<string>) {
+		if(sitesIDs.size > 25) {
+			throw new Error("Can only batch get 25 at a time");
+		}
 
-			const params:BatchWriteCommandInput = {
-				RequestItems: {
-					[process.env.WEBSITE_TABLE]: []
+		const params:BatchGetCommandInput = {
+			RequestItems: {
+				[EnvironmentVars.websiteTableName]: {
+					ProjectionExpression: "siteID, userID, site, lastRunID, frequency",
+					Keys: []
 				}
 			}
-
-			const deleteRequests = params.RequestItems[process.env.WEBSITE_TABLE];
-
-			for(const site of toDelete) {
-				deleteRequests.push({
-					DeleteRequest: {
-						Key: {
-							userID,
-							site
-						}
-					}
-				})
-			}
-
-			console.debug(`Deleting ${toDelete.length} sites for user "${userID}": ${JSON.stringify(params)}`);
-
-			await this.client.send(new BatchWriteCommand(params));
 		}
+
+		const requestItems = params.RequestItems[EnvironmentVars.websiteTableName].Keys;
+
+		for(const siteID of sitesIDs) {
+			requestItems.push({siteID});
+		}
+
+		console.debug(`Deleting ${sitesIDs.size} sites: ${JSON.stringify(params)}`);
+
+		const get = await this.client.send(new BatchGetCommand(params));
+		return get.Responses[EnvironmentVars.websiteTableName] as WebsiteItem[];
 	}
 
-	/**
-	 * Add a polled revision to the website's configuration ({@link WebsiteItem.updates})
-	 * @param site the site to update
-	 * @param revision the revision to add to the table
-	 */
-	public async addRevision(site:string, revision:WebsiteCheck) {
-		//get the time of the latest revision
-		const revisionTime = revision.time;
+	async deleteSites(sitesIDs:Set<string>) {
+		if(sitesIDs.size > 25) {
+			throw new Error("Can only batch delete 25 at a time");
+		}
 
-		//run the update
-		await this.client.send(new UpdateCommand({
-			TableName: process.env.WEBSITE_TABLE,
-			Key: {
-				site
-			},
-			UpdateExpression: "SET lastCheck = :revisionTime, #updates = list_append(#updates, :revision)",
-			ExpressionAttributeValues: {
-				":revisionTime": revisionTime,
-				":revision": [revision]
-			},
-			ExpressionAttributeNames: {
-				"#updates": "updates"
+		const params:BatchWriteCommandInput = {
+			RequestItems: {
+				[EnvironmentVars.websiteTableName]: []
 			}
-		}));
+		}
+
+		const deleteRequests = params.RequestItems[EnvironmentVars.websiteTableName];
+
+		for(const siteID of sitesIDs) {
+			deleteRequests.push({
+				DeleteRequest: {
+					Key: {
+						siteID
+					}
+				}
+			})
+		}
+
+		console.debug(`Deleting ${sitesIDs.size} sites: ${JSON.stringify(params)}`);
+
+		await this.client.send(new BatchWriteCommand(params));
 	}
 
 	/**
@@ -170,7 +169,7 @@ export class DatabaseService {
 	 */
 	public async putRunThrough(runThrough:RunThrough) {
 		await this.client.send(new PutCommand({
-			TableName: process.env.RUN_TABLE,
+			TableName: EnvironmentVars.runTableName,
 			Item: runThrough
 		}));
 	}
@@ -181,7 +180,7 @@ export class DatabaseService {
 	 */
 	public async getRunThrough(runID:string) {
 		const response = await this.client.send(new GetCommand({
-			TableName: process.env.RUN_TABLE,
+			TableName: EnvironmentVars.runTableName,
 			Key: {
 				id: runID
 			}
@@ -190,35 +189,30 @@ export class DatabaseService {
 		return response?.Item as RunThrough;
 	}
 
-	/**
-	 * Update a website's state in a run, in the database
-	 * @param runID the id of the run to update
-	 * @param site the site url to update
-	 * @param state the state to set the site to
-	 * @param revision a revision id if the site changed
-	 */
-	public async updateRunSiteState(runID:string, site:string, state:SiteRevisionState, revision?:string) {
-		const command:UpdateCommandInput = {
-			TableName: process.env.RUN_TABLE,
+	public async putSiteRevision(revision:SiteRevision) {
+		await this.client.send(new PutCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			Item: revision
+		}));
+	}
+
+	public async updateSiteRevision(revisionID:string, state:SiteRevisionState) {
+		const time = new Date().getTime();
+
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.revisionTableName,
 			Key: {
-				id: runID
+				revisionID
 			},
-			UpdateExpression: "SET sites.#site.siteState = :state",
-			ExpressionAttributeNames: {
-				"#site": site
-			},
+			UpdateExpression: "SET #time = :time, siteState = :siteState",
 			ExpressionAttributeValues: {
-				":state": state
+				":time": time,
+				":siteState": state
+			},
+			ExpressionAttributeNames: {
+				"#time": "time"
 			}
-		};
-
-		//if the revision was set add it to the update
-		if(typeof revision == "string") {
-			command.UpdateExpression += ", sites.#site.revision = :revision";
-			command.ExpressionAttributeValues[":revision"] = revision;
-		}
-
-		await this.client.send(new UpdateCommand(command));
+		}));
 	}
 
 	/**
@@ -228,7 +222,7 @@ export class DatabaseService {
 	 */
 	public async updateRunState(runID:string, state:RunThroughState) {
 		await this.client.send(new UpdateCommand({
-			TableName: process.env.RUN_TABLE,
+			TableName: EnvironmentVars.runTableName,
 			Key: {
 				id: runID
 			},

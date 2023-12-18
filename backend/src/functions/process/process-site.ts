@@ -1,14 +1,11 @@
-import {Handler, SQSHandler} from "aws-lambda";
+import {Handler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
 import {DefaultChromeArgs} from "../../util/default-chrome-args";
-import {v4 as uuidV4} from "uuid";
+import {v4, v4 as uuidV4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
-import {Utils} from "../../util/utils";
-import {SqsSiteEvent} from "../../util/sqs-site-event";
-import {SiteRevisionState} from "../../services/database.service";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
-import {SendMessageCommand} from "@aws-sdk/client-sqs";
 import {SiteToProcess} from "../../util/site-to-process";
+import {SiteRevisionState} from "website-alerter-shared";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -20,10 +17,25 @@ class ProcessSite extends LambdaBase {
 	/** The current chromium browser running */
 	private browser:Browser;
 
+	private currentRevision:string;
+
 	public handler:Handler<SiteToProcess, any> = async(siteToProcess) => {
 		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
+
+		this.currentRevision = v4();
+
+		console.log(`Starting new revision ${this.currentRevision}`);
+
+		//add a revision to the database
+		await this.database.putSiteRevision({
+			siteID: siteToProcess.siteID,
+			runID: siteToProcess.runID,
+			time: new Date().getTime(),
+			revisionID: this.currentRevision,
+			siteState: SiteRevisionState.Open
+		});
 
 		if(!this.browser) {
 			//set up the browser
@@ -33,6 +45,10 @@ class ProcessSite extends LambdaBase {
 		await this.parseSite(siteToProcess);
 
 		console.log("Done.");
+
+		return {
+			revisionID: this.currentRevision
+		};
 	}
 
 	/** Start up a Puppeteer browser instance */
@@ -51,22 +67,21 @@ class ProcessSite extends LambdaBase {
 
 	/**
 	 * Parse the given website in the SQS queue
-	 * @param siteEvent the event from the queue with the run ID and site url
+	 * @param toParse the event from the queue with the run ID and site url
 	 */
-	private async parseSite(siteEvent:SqsSiteEvent) {
-		console.log(`Parsing website ${siteEvent.site} from run ${siteEvent.runID}`);
+	private async parseSite(toParse:SiteToProcess) {
+		console.log(`Parsing website ${toParse.siteID} from run ${toParse.runID}`);
 
 		//get information from the database on the website
-		let site = await this.database.getWebsite(siteEvent.site);
+		const site = await this.database.getWebsite(toParse.siteID);
 		if(!site) {
-			console.error(`Site ${siteEvent.site} doesn't exist in the database, aborting`);
-			return;
+			throw new Error(`Site ${toParse.siteID} doesn't exist in the database, aborting`);
 		}
 
 		//get the site's config for the selector
 		const selector = this.configService.getConfig(site.site).selector;
 
-		console.log("Navigating to page in browser...");
+		console.log(`Navigating to ${site.site} in browser...`);
 
 		//open a new page in the browser
 		const page = await this.browser.newPage();
@@ -79,7 +94,7 @@ class ProcessSite extends LambdaBase {
 		// body
 		if(selector) {
 			//go to the page and wait for it to render
-			await page.goto(siteEvent.site, {
+			await page.goto(site.site, {
 				waitUntil: ["load", "domcontentloaded"],
 				timeout: 15000
 			});
@@ -94,7 +109,7 @@ class ProcessSite extends LambdaBase {
 			content = await element.evaluate(el => el.outerHTML);
 		} else {
 			//go to the page and wait for it to render
-			await page.goto(siteEvent.site, {
+			await page.goto(site.site, {
 				waitUntil: ["load", "domcontentloaded", "networkidle2"],
 				timeout: 30000
 			});
@@ -129,35 +144,10 @@ class ProcessSite extends LambdaBase {
 
 		console.log("All done, updating database");
 
+		//TODO add the revision
+
 		//add a revision to the database
-		await this.database.addRevision(siteEvent.site, {
-			time: new Date().getTime(),
-			revisionID: changeID
-		});
-
-		//update the run that the site was polled
-		await this.database.updateRunSiteState(siteEvent.runID, siteEvent.site, SiteRunState.Polled);
-
-		//queue up the HTML to be checked
-		await this.queueWebsiteCheck(siteEvent);
-	}
-
-	/**
-	 * Queue a website's HTML to be checked
-	 * @param site the site to be checked
-	 */
-	private async queueWebsiteCheck(site:SqsSiteEvent) {
-		//abort if not production
-		if(!Utils.isProduction) {
-			console.log(`Would have queued ${JSON.stringify(site)} to be checked, but this isn't production.`);
-			return;
-		}
-
-		//send to sqs
-		await this.sqs.send(new SendMessageCommand({
-			QueueUrl: process.env.CHANGE_QUEUE_NAME,
-			MessageBody: JSON.stringify(site)
-		}));
+		await this.database.updateSiteRevision(this.currentRevision, SiteRevisionState.Polled);
 	}
 }
 
