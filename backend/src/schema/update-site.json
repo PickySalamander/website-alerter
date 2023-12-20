@@ -16,7 +16,7 @@
 		},
 		"frequency": {
 			"type": "string",
-			"pattern": "^(NEVER|WEEKLY|BIWEEKLY)$"
+			"pattern": "^(NEVER|WEEKLY|SEMI-WEEKLY)$"
 		},
 		"options": {
 			"type": "object",

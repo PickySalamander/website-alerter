@@ -1,20 +1,10 @@
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {LambdaInvoke} from "aws-cdk-lib/aws-stepfunctions-tasks";
-import {
-	Choice,
-	Condition,
-	CustomState,
-	DefinitionBody,
-	Fail,
-	Map,
-	Pass,
-	StateMachine
-} from "aws-cdk-lib/aws-stepfunctions";
+import {Choice, Condition, DefinitionBody, Fail, Map, Pass, StateMachine} from "aws-cdk-lib/aws-stepfunctions";
 import {Duration} from "aws-cdk-lib";
-import {QueryCommandInput} from "@aws-sdk/lib-dynamodb";
 
 export class StepStack {
-	constructor(stack:WebsiteAlerterStack) {
+	constructor(private stack:WebsiteAlerterStack) {
 		const start = new LambdaInvoke(stack, "StartProcessing", {
 			lambdaFunction: stack.lambda.scheduledStart,
 			outputPath: "$.Payload"
@@ -34,7 +24,7 @@ export class StepStack {
 		}).iterator(query
 			.next(new Choice(stack, "HasElements")
 				.when(Condition.numberGreaterThan("$.count", 0),
-					new Pass(stack, "GoOn"))
+					new Pass(stack, "Goon"))
 				.otherwise(new Pass(stack, "NoElements"))));
 
 		const definition = start
@@ -52,4 +42,12 @@ export class StepStack {
 			role: stack.iam.stateMachineRole
 		});
 	}
+
+	// private createLambda(name:string) {
+	// 	return new LambdaInvoke(stack, "QueryFrequency", {
+	// 		lambdaFunction: stack.lambda.queryStart,
+	// 		outputPath: "$.Payload",
+	// 		comment: "Start the whole routine, by getting what items to query"
+	// 	})
+	// }
 }
