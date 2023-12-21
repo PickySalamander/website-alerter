@@ -1,5 +1,4 @@
 import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
-import {ChangeOptions} from "website-alerter-shared";
 import {EnvironmentVars} from "../util/environment-vars";
 
 /**
@@ -71,11 +70,6 @@ export class ConfigurationService {
 		return this.cachedJwt;
 	}
 
-	/** Get the configuration for a particular website */
-	public getConfig(site:string) {
-		return this.cachedConfig.websites.find(value => value.site == site);
-	}
-
 	/** Get the bucket the configuration is loaded from */
 	get configPath():string {
 		return this.configurationPath;
@@ -91,21 +85,4 @@ export class ConfigurationService {
 export interface Config {
 	/** number of revisions to keep in the database and S3 */
 	numRevisions:number;
-
-	/** The websites to poll */
-	websites:SiteConfig[];
-}
-
-/** Configuration of a website to poll */
-export interface SiteConfig {
-	/** The url of the site to poll */
-	site:string;
-
-	/**
-	 * A CSS selector of the part of the DOM to check for changes, this should only return <u><b>one</b></u> element
-	 */
-	selector?:string;
-
-	/** Options for detecting changes on the page */
-	options:ChangeOptions;
 }

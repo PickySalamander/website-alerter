@@ -2,38 +2,15 @@ import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {LambdaInvoke} from "aws-cdk-lib/aws-stepfunctions-tasks";
 import {Choice, Condition, DefinitionBody, Fail, Map, Pass, StateMachine} from "aws-cdk-lib/aws-stepfunctions";
 import {Duration} from "aws-cdk-lib";
+import {CfnFunction, FunctionBase} from "aws-cdk-lib/aws-lambda";
 
 export class StepStack {
 	constructor(private stack:WebsiteAlerterStack) {
-		const start = new LambdaInvoke(stack, "StartProcessing", {
-			lambdaFunction: stack.lambda.scheduledStart,
-			outputPath: "$.Payload"
-		});
-
-		const query = new LambdaInvoke(stack, "QueryFrequency", {
-			lambdaFunction: stack.lambda.queryStart,
-			outputPath: "$.Payload",
-			comment: "Start the whole routine, by getting what items to query"
-		});
-
-		const dynamoMap = new Map(stack, "GetItems", {
-			maxConcurrency: 1,
-			comment: "Query the frequencies from the database and return the items to check",
-			itemsPath: "$.shouldRun",
-			resultPath: "$.items"
-		}).iterator(query
-			.next(new Choice(stack, "HasElements")
-				.when(Condition.numberGreaterThan("$.count", 0),
-					new Pass(stack, "Goon"))
-				.otherwise(new Pass(stack, "NoElements"))));
-
-		const definition = start
-			.next(new Choice(stack, "IsEmpty")
+		const definition = this.lambda(stack.lambda.scheduledStart)
+			.next(this.choice( "IsEmpty")
 				.when(Condition.booleanEquals("$.isEmpty", true),
-					new Fail(stack, "IsEmptyFail", {
-						cause: "No frequencies are ready to be checked"
-					}))
-				.otherwise(dynamoMap));
+					this.fail("IsEmptyFail"))
+				.otherwise(this.getItems()));
 
 		new StateMachine(stack, "WebsiteAlerterStateMachine", {
 			definitionBody: DefinitionBody.fromChainable(definition),
@@ -43,11 +20,49 @@ export class StepStack {
 		});
 	}
 
-	// private createLambda(name:string) {
-	// 	return new LambdaInvoke(stack, "QueryFrequency", {
-	// 		lambdaFunction: stack.lambda.queryStart,
-	// 		outputPath: "$.Payload",
-	// 		comment: "Start the whole routine, by getting what items to query"
-	// 	})
-	// }
+	private getItems() {
+		return new Map(this.stack, "GetItems", {
+			maxConcurrency: 1,
+			comment: "Query the frequencies from the database and return the items to check",
+			itemsPath: "$.shouldRun",
+			resultPath: "$.items"
+		}).iterator(this.lambda(this.stack.lambda.queryStart)
+			.next(this.choice("HasElements")
+				.when(Condition.numberGreaterThan("$.count", 0),
+					this.processSites())
+				.otherwise(this.pass("NoElements"))));
+	}
+
+	private processSites() {
+		return new Map(this.stack, "ProcessSites", {
+			maxConcurrency: 5,
+			comment: "Process each site returned",
+			itemsPath: "$.items",
+			resultPath: "$.items"
+		}).iterator(this.lambda(this.stack.lambda.processSite))
+	}
+
+	private lambda(func:FunctionBase) {
+		const description = (func.node.defaultChild as CfnFunction).description;
+
+		return new LambdaInvoke(this.stack, `${func.node.id}Invoke`, {
+			lambdaFunction: func,
+			outputPath: "$.Payload",
+			comment: description
+		});
+	}
+
+	private choice(name:string) {
+		return new Choice(this.stack, name);
+	}
+
+	private pass(name:string) {
+		return new Pass(this.stack, name);
+	}
+
+	private fail(name:string) {
+		return new Fail(this.stack, name);
+	}
+
+
 }

@@ -80,9 +80,6 @@ class ProcessSite extends LambdaBase {
 			throw new Error(`Site ${toParse.siteID} doesn't exist in the database, aborting`);
 		}
 
-		//get the site's config for the selector
-		const selector = this.configService.getConfig(site.site).selector;
-
 		console.log(`Navigating to ${site.site} in browser...`);
 
 		//open a new page in the browser
@@ -94,7 +91,7 @@ class ProcessSite extends LambdaBase {
 
 		// if a selector is defined then select with it, otherwise we just wait for the network to load and select the
 		// body
-		if(selector) {
+		if(site.selector) {
 			//go to the page and wait for it to render
 			await page.goto(site.site, {
 				waitUntil: ["load", "domcontentloaded"],
@@ -102,7 +99,7 @@ class ProcessSite extends LambdaBase {
 			});
 
 			//wait for the css selector to be visible on the page
-			const element = await page.waitForSelector(selector, {
+			const element = await page.waitForSelector(site.selector, {
 				timeout: 15000,
 				visible: true
 			});
