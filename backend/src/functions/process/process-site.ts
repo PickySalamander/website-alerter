@@ -1,11 +1,11 @@
 import {Handler} from "aws-lambda";
-import puppeteer, {Browser} from "puppeteer";
+import puppeteer, {Browser, Page} from "puppeteer";
 import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SiteToProcess} from "../../util/site-to-process";
-import {SiteRevisionState} from "website-alerter-shared";
+import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -86,9 +86,44 @@ class ProcessSite extends LambdaBase {
 		const page = await this.browser.newPage();
 		await page.setViewport({width: 1920, height: 1080});
 
-		//the finally loaded DOM
-		let content:string;
+		try {
+			//the finally loaded DOM
+			const content = await this.navigateToPage(site, page);
 
+			//take a PNG screenshot for posterity
+			const screenshot = await page.screenshot({fullPage: true}) as Buffer;
+
+			const changeID = v4();
+
+			console.log(`Done with page, uploading changes:${changeID}`);
+
+			//put the HTML in S3
+			await this.s3.send(new PutObjectCommand({
+				Bucket: this.configPath,
+				Key: `content/${changeID}.html`,
+				Body: content
+			}));
+
+			//put the PNG in S3
+			await this.s3.send(new PutObjectCommand({
+				Bucket: this.configPath,
+				Key: `content/${changeID}.png`,
+				Body: screenshot
+			}));
+
+			console.log("All done, updating database");
+
+			//add a revision to the database
+			await this.database.updateSiteRevision(this.currentRevision, SiteRevisionState.Polled);
+		} catch(e) {
+			console.error("Failed to process website", e)
+		} finally {
+			//close the page
+			await page.close();
+		}
+	}
+	
+	private async navigateToPage(site:WebsiteItem, page:Page) {
 		// if a selector is defined then select with it, otherwise we just wait for the network to load and select the
 		// body
 		if(site.selector) {
@@ -98,6 +133,8 @@ class ProcessSite extends LambdaBase {
 				timeout: 15000
 			});
 
+			console.log(`Waiting for site with selector "${site.selector}"...`);
+
 			//wait for the css selector to be visible on the page
 			const element = await page.waitForSelector(site.selector, {
 				timeout: 15000,
@@ -105,46 +142,20 @@ class ProcessSite extends LambdaBase {
 			});
 
 			//get the outer html when it is available
-			content = await element.evaluate(el => el.outerHTML);
-		} else {
-			//go to the page and wait for it to render
-			await page.goto(site.site, {
-				waitUntil: ["load", "domcontentloaded", "networkidle2"],
-				timeout: 30000
-			});
-
-			//get the outer html of the body
-			content = await page.$eval("body", el => el.outerHTML);
+			return await element.evaluate(el => el.outerHTML);
 		}
 
-		//take a PNG screenshot for posterity
-		const screenshot = await page.screenshot({fullPage: true}) as Buffer;
+		console.log(`Waiting for site with no selector...`);
 
-		//close the page
-		await page.close();
+		//go to the page and wait for it to render
+		await page.goto(site.site, {
+			waitUntil: ["load", "domcontentloaded", "networkidle2"],
+			timeout: 30000
+		});
 
-		const changeID = v4();
+		//get the outer html of the body
+		return await page.$eval("body", el => el.outerHTML);
 
-		console.log(`Done with page, uploading changes:${changeID}`);
-
-		//put the HTML in S3
-		await this.s3.send(new PutObjectCommand({
-			Bucket: this.configPath,
-			Key: `content/${changeID}.html`,
-			Body: content
-		}));
-
-		//put the PNG in S3
-		await this.s3.send(new PutObjectCommand({
-			Bucket: this.configPath,
-			Key: `content/${changeID}.png`,
-			Body: screenshot
-		}));
-
-		console.log("All done, updating database");
-
-		//add a revision to the database
-		await this.database.updateSiteRevision(this.currentRevision, SiteRevisionState.Polled);
 	}
 }
 
