@@ -5,6 +5,7 @@ import * as fs from "fs/promises";
 import {ChangeDetector} from "../src/util/change-detector";
 import {Parsed} from "../src/util/parsed-html";
 import {ParsedDiff} from "diff";
+import {ChangeOptions, SiteRevisionState} from "website-alerter-shared";
 
 describe("Detect Changes", () => {
 	let file1:string;
@@ -16,11 +17,7 @@ describe("Detect Changes", () => {
 	})
 
 	test("XML Parsing", async() => {
-		const parsed = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1);
+		const parsed = createParsed(file1);
 
 		expect(parsed.formatted).not.toBeNull();
 		expect(parsed.html).not.toBeNull();
@@ -31,11 +28,7 @@ describe("Detect Changes", () => {
 		expect(parsed.formatted).toContain("<style>test</style>");
 		expect(parsed.formatted).toContain("<script>IGNORED</script>");
 
-		const parse2 = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1, {ignoreAttributes: true});
+		const parse2 = createParsed(file1, {ignoreAttributes: true});
 
 		expect(parse2.formatted).not.toBeNull();
 		expect(parse2.html).not.toBeNull();
@@ -46,11 +39,7 @@ describe("Detect Changes", () => {
 		expect(parse2.formatted).toContain("<style>test</style>");
 		expect(parse2.formatted).toContain("<script>IGNORED</script>");
 
-		const parse3 = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1, {ignoreCss: true, ignoreScripts: false});
+		const parse3 = createParsed(file1, {ignoreCss: true, ignoreScripts: false});
 
 		expect(parse3.formatted).not.toBeNull();
 		expect(parse3.html).not.toBeNull();
@@ -63,17 +52,9 @@ describe("Detect Changes", () => {
 	});
 
 	test("Equal", async() => {
-		const last = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1);
+		const last = createParsed(file1);
 
-		const current = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1);
+		const current = createParsed(file1);
 
 		const detector = new ChangeDetector(last, current);
 		expect(detector.isChanged).toBe(false);
@@ -89,17 +70,9 @@ describe("Detect Changes", () => {
 	});
 
 	test("NotEqual", async() => {
-		const last = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1);
+		const last = createParsed(file1);
 
-		const current = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file2);
+		const current = createParsed(file2);
 
 		const diff0 = createChangeDetector(last, current);
 		const lines = diff0.hunks[0].lines;
@@ -119,17 +92,9 @@ describe("Detect Changes", () => {
 	});
 
 	test("NotEqual Classes and Styles", async() => {
-		const last = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1, {ignoreCss: true, ignoreScripts: false});
+		const last = createParsed(file1, {ignoreCss: true, ignoreScripts: false});
 
-		const current = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file2, {ignoreCss: true, ignoreScripts: false});
+		const current = createParsed(file2, {ignoreCss: true, ignoreScripts: false});
 
 		const diff0 = createChangeDetector(last, current);
 		const lines = diff0.hunks[0].lines;
@@ -149,17 +114,9 @@ describe("Detect Changes", () => {
 	});
 
 	test("NotEqual Attributes", async() => {
-		const last = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file1, {ignoreAttributes: true});
+		const last = createParsed(file1, {ignoreAttributes: true});
 
-		const current = new Parsed({
-			time: new Date().getTime(),
-			revisionID: "a",
-			runID: "a"
-		}, file2, {ignoreAttributes: true});
+		const current = createParsed(file2, {ignoreAttributes: true});
 
 		const diff0 = createChangeDetector(last, current);
 		const lines = diff0.hunks[0].lines;
@@ -169,6 +126,16 @@ describe("Detect Changes", () => {
 		expect(lines).toContain("+pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est");
 	});
 });
+
+function createParsed(file:string, options?:ChangeOptions) {
+	return new Parsed({
+		time: new Date().getTime(),
+		revisionID: "a",
+		runID: "a",
+		siteID: "a",
+		siteState: SiteRevisionState.Open
+	}, file, options);
+}
 
 async function getTestFile(fileName:string) {
 	const filePath = path.join(__dirname, fileName);

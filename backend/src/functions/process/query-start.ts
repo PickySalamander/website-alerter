@@ -1,8 +1,7 @@
 import {Handler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
-import {ScheduledStartData} from "../../util/scheduled-start-data";
-import {SiteToProcess} from "../../util/site-to-process";
 import {QueryCommandOutput} from "@aws-sdk/lib-dynamodb";
+import {ScheduledStartData, SiteToProcess} from "../../util/step-data";
 
 class QueryStart extends LambdaBase {
 	public handler:Handler<ScheduledStartData> = async(data) => {

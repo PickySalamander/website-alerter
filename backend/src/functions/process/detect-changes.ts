@@ -1,64 +1,59 @@
-import {SQSEvent, SQSHandler} from "aws-lambda";
+import {Handler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
-import {SiteRevisionState} from "../../services/database.service";
-import {SqsSiteEvent} from "../../util/sqs-site-event";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";
 import {Parsed} from "../../util/parsed-html";
-import {ChangeOptions, WebsiteCheck} from "website-alerter-shared";
+import {RevisionToProcess, SiteToCloseOut} from "../../util/step-data";
+import {ChangeOptions, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
  * into a unified diff and uploaded to S3 for the user to check later.
  */
 class DetectChanges extends LambdaBase {
-	public handler:SQSHandler = async(event:SQSEvent) => {
-		console.log(`Checking for changes in ${event.Records.length} websites`);
-
-		if(event.Records.length == 0) {
-			console.error("No records on event");
-			return;
-		}
+	public handler:Handler<RevisionToProcess, SiteToCloseOut> = async(toProcess) => {
+		console.log(`Checking for changes in revision ${toProcess.revisionID}.`);
 
 		await this.setupServices();
 
-		//go through each site that was sent on the queue
-		for(const record of event.Records) {
-			const siteEvent = JSON.parse(record.body) as SqsSiteEvent;
-			await this.checkSite(siteEvent);
+		const revision = await this.database.getSiteRevision(toProcess.revisionID);
+		if(!revision) {
+			throw new Error(`Failed to find revision ${toProcess.revisionID}`);
 		}
 
-		console.log("Done.")
+		const site = await this.database.getSite(revision.siteID);
+		if(!site) {
+			throw new Error(`Failed to find site from revision ${site.siteID}`);
+		}
+
+		await this.checkSite(revision, site);
+
+		console.log("Done.");
+
+		return {
+			siteID: site.siteID
+		};
 	}
 
-	/**
-	 * Check a site from the SQS queue
-	 * @param siteEvent the event with the site and run ID from SQS
-	 */
-	private async checkSite(siteEvent:SqsSiteEvent) {
-		console.log(`Checking the download ${siteEvent.site} from run ${siteEvent.runID} for changes...`);
+	private async checkSite(revision:SiteRevision, site:WebsiteItem) {
+		console.log(`Checking the download ${site.site} from run ${revision.runID} for changes...`);
 
-		//get the site's revisions and info from the database
-		let site = await this.database.getWebsite(siteEvent.site);
-		if(!site) {
-			console.error(`Site ${siteEvent.site} doesn't exist in the database, aborting`);
-			return;
-		}
-
-		//get the current site config for the ignore
-		const siteConfig = this.configService.getConfig(site.site);
-
-		console.log(`Getting content changes (ignore ${siteConfig.options ? JSON.stringify(siteConfig.options) : "unset"})`);
+		const revisions = await this.database.getSiteRevisions(site.siteID);
 
 		//if there aren't enough revisions yet then abort
-		if(site.updates.length < 2) {
+		if(revisions.length < 2) {
 			console.log("Website has too few updates, skipping.");
+
+			//update the database that there aren't changes
+			await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Unchanged);
 			return;
 		}
 
+		console.log(`Getting content changes (ignore ${site.options ? JSON.stringify(site.options) : "unset"})`);
+
 		//get the current HTML revision and the previous
-		const current = await this.getContent(site.updates[site.updates.length - 1], siteConfig.options);
-		const last = await this.getContent(site.updates[site.updates.length - 2], siteConfig.options);
+		const current = await this.getContent(revisions[revisions.length - 1], site.options);
+		const last = await this.getContent(revisions[revisions.length - 2], site.options);
 
 		//detect changes in the versions
 		const detection = new ChangeDetector(last, current);
@@ -68,7 +63,7 @@ class DetectChanges extends LambdaBase {
 			console.log("Found no differences, moving on");
 
 			//update the database that there aren't changes
-			await this.database.putSiteRevision(siteEvent.runID, siteEvent.site, SiteRunState.Complete);
+			await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Unchanged);
 			return;
 		}
 
@@ -84,8 +79,7 @@ class DetectChanges extends LambdaBase {
 		}));
 
 		//update the database that there are changes
-		await this.database.putSiteRevision(siteEvent.runID, siteEvent.site, SiteRunState.Complete,
-			current.revision.revisionID);
+		await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Changed);
 	}
 
 	/**
@@ -94,7 +88,7 @@ class DetectChanges extends LambdaBase {
 	 * @param options options for detecting changes on the page
 	 * @return the parsed HTML and the revision
 	 */
-	private async getContent(revision:WebsiteCheck, options?:ChangeOptions):Promise<Parsed> {
+	private async getContent(revision:SiteRevision, options?:ChangeOptions):Promise<Parsed> {
 		//get the html from S3
 		const s3Result = await this.s3.send(new GetObjectCommand({
 			Bucket: this.configPath,

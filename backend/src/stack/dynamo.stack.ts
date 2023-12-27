@@ -104,8 +104,8 @@ export class DynamoStack {
 				type: AttributeType.STRING
 			},
 			sortKey: {
-				name: "revisionID",
-				type: AttributeType.STRING
+				name: "time",
+				type: AttributeType.NUMBER
 			}
 		});
 	}

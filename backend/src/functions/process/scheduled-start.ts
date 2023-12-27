@@ -3,8 +3,8 @@ import {LambdaBase} from "../../util/lambda-base";
 import {v4} from "uuid";
 import {ChangeFrequency, RunScheduling} from "website-alerter-shared";
 import {RunThroughState} from "website-alerter-shared/dist/util/run-through";
-import {ScheduledStartData} from "../../util/scheduled-start-data";
 import {EnvironmentVars} from "../../util/environment-vars";
+import {ScheduledStartData} from "../../util/step-data";
 
 /**
  * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON

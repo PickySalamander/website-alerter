@@ -39,7 +39,9 @@ export class StepStack {
 			comment: "Process each site returned",
 			itemsPath: "$.items",
 			resultPath: "$.items"
-		}).iterator(this.lambda(this.stack.lambda.processSite))
+		}).iterator(
+			this.lambda(this.stack.lambda.processSite)
+				.next(this.lambda(this.stack.lambda.detectChanges)));
 	}
 
 	private lambda(func:FunctionBase) {
@@ -63,6 +65,4 @@ export class StepStack {
 	private fail(name:string) {
 		return new Fail(this.stack, name);
 	}
-
-
 }

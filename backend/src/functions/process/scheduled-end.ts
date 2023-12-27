@@ -111,7 +111,7 @@ class ScheduledEnd extends LambdaBase {
 		//got through each site in the config
 		for(const siteConfig of this.config.websites) {
 			//get the site from the database
-			const website = await this.database.getWebsite(siteConfig.site);
+			const website = await this.database.getSite(siteConfig.site);
 
 			//if the site has too many revisions, delete the old ones
 			if(website && website.updates.length > this.config.numRevisions) {

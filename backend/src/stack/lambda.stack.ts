@@ -53,13 +53,13 @@ export class LambdaStack {
 			timeout: Duration.minutes(1)
 		});
 
-		// // detect changes from the recently polled website
-		// this.detectChanges = new NodejsFunction(stack, "DetectChanges", {
-		// 	description: "Detect the changes from the browser processing",
-		// 	entry: "src/functions/process/detect-changes.ts",
-		// 	environment
-		// });
-		//
+		// detect changes from the recently polled website
+		this.detectChanges = new AlerterJsFunction(stack, "DetectChanges", {
+			description: "Detect the changes from the browser processing",
+			entry: "src/functions/process/detect-changes.ts",
+			environment
+		});
+
 		// // called after the whole flow is finished to follow up on the whole process
 		// this.scheduledEnd = new AlerterJsFunction(stack, "ScheduledEnd", {
 		// 	description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +

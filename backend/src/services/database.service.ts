@@ -60,7 +60,7 @@ export class DatabaseService {
 	 * Get a website's configuration from the database
 	 * @param siteID the url of the site to get
 	 */
-	public async getWebsite(siteID:string) {
+	public async getSite(siteID:string) {
 		const response = await this.client.send(new GetCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Key: {
@@ -212,6 +212,31 @@ export class DatabaseService {
 			TableName: EnvironmentVars.revisionTableName,
 			Item: revision
 		}));
+	}
+
+	async getSiteRevision(revisionID:string):Promise<SiteRevision> {
+		const response = await this.client.send(new GetCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			Key: {
+				revisionID
+			}
+		}));
+
+		return response?.Item as SiteRevision;
+	}
+
+	async getSiteRevisions(siteID:string):Promise<SiteRevision[]> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			IndexName: "site-index",
+			ScanIndexForward: false,
+			KeyConditionExpression: "siteID = :siteID",
+			ExpressionAttributeValues: {
+				":siteID": siteID
+			},
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
 	}
 
 	public async updateSiteRevision(revisionID:string, state:SiteRevisionState) {

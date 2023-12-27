@@ -24,8 +24,11 @@ export enum SiteRevisionState {
 	/** The website was polled by Puppeteer and is awaiting changed detection */
 	Polled,
 
-	/** The website was checked by change detection and is done */
-	Complete
+	/** The website was checked by change detection and has no changes */
+	Unchanged,
+
+	/** The website was checked by change detection and has changes */
+	Changed
 }
 
 export function getSiteRevisionCompositeKey(userID:string, site:string) {

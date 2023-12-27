@@ -1,5 +1,5 @@
 import {X2jOptionsOptional, XMLBuilder, XmlBuilderOptions, XmlBuilderOptionsOptional, XMLParser} from "fast-xml-parser";
-import {ChangeOptions, WebsiteCheck} from "website-alerter-shared";
+import {ChangeOptions, SiteRevision} from "website-alerter-shared";
 
 /**
  * Parsed HTML from S3 Revisions
@@ -14,7 +14,7 @@ export class Parsed {
 	 * @param html The parsed DOM of the HTML from the site polling
 	 * @param ignore potential ignored values, leave empty to not ignore
 	 */
-	constructor(public readonly revision:WebsiteCheck, public readonly html:string, ignore?:ChangeOptions) {
+	constructor(public readonly revision:SiteRevision, public readonly html:string, ignore?:ChangeOptions) {
 		//setup options for parsing and output
 		const options:X2jOptionsOptional | XmlBuilderOptionsOptional = {
 			ignoreAttributes: false,

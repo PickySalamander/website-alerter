@@ -4,8 +4,8 @@ import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
-import {SiteToProcess} from "../../util/site-to-process";
 import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {RevisionToProcess, SiteToProcess} from "../../util/step-data";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -19,7 +19,7 @@ class ProcessSite extends LambdaBase {
 
 	private currentRevision:string;
 
-	public handler:Handler<SiteToProcess, any> = async(siteToProcess) => {
+	public handler:Handler<SiteToProcess, RevisionToProcess> = async(siteToProcess) => {
 		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
@@ -75,7 +75,7 @@ class ProcessSite extends LambdaBase {
 		console.log(`Parsing website ${toParse.siteID} from run ${toParse.runID}`);
 
 		//get information from the database on the website
-		const site = await this.database.getWebsite(toParse.siteID);
+		const site = await this.database.getSite(toParse.siteID);
 		if(!site) {
 			throw new Error(`Site ${toParse.siteID} doesn't exist in the database, aborting`);
 		}
@@ -93,21 +93,19 @@ class ProcessSite extends LambdaBase {
 			//take a PNG screenshot for posterity
 			const screenshot = await page.screenshot({fullPage: true}) as Buffer;
 
-			const changeID = v4();
-
-			console.log(`Done with page, uploading changes:${changeID}`);
+			console.log(`Done with page, uploading changes:${this.currentRevision}`);
 
 			//put the HTML in S3
 			await this.s3.send(new PutObjectCommand({
 				Bucket: this.configPath,
-				Key: `content/${changeID}.html`,
+				Key: `content/${this.currentRevision}.html`,
 				Body: content
 			}));
 
 			//put the PNG in S3
 			await this.s3.send(new PutObjectCommand({
 				Bucket: this.configPath,
-				Key: `content/${changeID}.png`,
+				Key: `content/${this.currentRevision}.png`,
 				Body: screenshot
 			}));
 
