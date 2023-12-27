@@ -3,57 +3,58 @@ import {LambdaBase} from "../../util/lambda-base";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";
 import {Parsed} from "../../util/parsed-html";
-import {RevisionToProcess, SiteToCloseOut} from "../../util/step-data";
-import {ChangeOptions, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {SiteToProcess} from "../../util/step-data";
+import {ChangeOptions, SiteRevision, SiteRevisionState} from "website-alerter-shared";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
  * into a unified diff and uploaded to S3 for the user to check later.
  */
 class DetectChanges extends LambdaBase {
-	public handler:Handler<RevisionToProcess, SiteToCloseOut> = async(toProcess) => {
-		console.log(`Checking for changes in revision ${toProcess.revisionID}.`);
+	public handler:Handler<SiteToProcess, SiteToProcess> = async(toProcess) => {
+		console.log(`Checking for changes in site ${toProcess.siteID}.`);
 
 		await this.setupServices();
 
-		const revision = await this.database.getSiteRevision(toProcess.revisionID);
-		if(!revision) {
-			throw new Error(`Failed to find revision ${toProcess.revisionID}`);
-		}
+		await this.checkSite(toProcess);
 
-		const site = await this.database.getSite(revision.siteID);
+		console.log("Done.");
+
+		return toProcess;
+	}
+
+	private async checkSite(toProcess:SiteToProcess) {
+		const site = await this.database.getSite(toProcess.siteID);
 		if(!site) {
 			throw new Error(`Failed to find site from revision ${site.siteID}`);
 		}
 
-		await this.checkSite(revision, site);
+		console.log(`Checking the download ${site.site} from run ${toProcess.runID} for changes...`);
 
-		console.log("Done.");
+		//TODO check to see if query will ever sort this
+		const revisions = (await this.database.getSiteRevisions(site.siteID))
+			.sort((a, b) => b.time - a.time);
 
-		return {
-			siteID: site.siteID
-		};
-	}
-
-	private async checkSite(revision:SiteRevision, site:WebsiteItem) {
-		console.log(`Checking the download ${site.site} from run ${revision.runID} for changes...`);
-
-		const revisions = await this.database.getSiteRevisions(site.siteID);
+		const currentRevision = revisions[0];
 
 		//if there aren't enough revisions yet then abort
 		if(revisions.length < 2) {
 			console.log("Website has too few updates, skipping.");
 
 			//update the database that there aren't changes
-			await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Unchanged);
+			await this.database.updateSiteRevision(currentRevision.revisionID, SiteRevisionState.Unchanged);
 			return;
 		}
 
 		console.log(`Getting content changes (ignore ${site.options ? JSON.stringify(site.options) : "unset"})`);
 
+		const lastRevision = revisions[1];
+
 		//get the current HTML revision and the previous
-		const current = await this.getContent(revisions[revisions.length - 1], site.options);
-		const last = await this.getContent(revisions[revisions.length - 2], site.options);
+		const current = await this.getContent(currentRevision, site.options);
+		const last = await this.getContent(lastRevision, site.options);
+
+		console.log(`Comparing current:${currentRevision.revisionID} to last:${lastRevision.revisionID}...`);
 
 		//detect changes in the versions
 		const detection = new ChangeDetector(last, current);
@@ -63,7 +64,7 @@ class DetectChanges extends LambdaBase {
 			console.log("Found no differences, moving on");
 
 			//update the database that there aren't changes
-			await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Unchanged);
+			await this.database.updateSiteRevision(currentRevision.revisionID, SiteRevisionState.Unchanged);
 			return;
 		}
 
@@ -79,7 +80,7 @@ class DetectChanges extends LambdaBase {
 		}));
 
 		//update the database that there are changes
-		await this.database.updateSiteRevision(revision.revisionID, SiteRevisionState.Changed);
+		await this.database.updateSiteRevision(currentRevision.revisionID, SiteRevisionState.Changed);
 	}
 
 	/**

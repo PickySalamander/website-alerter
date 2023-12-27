@@ -229,7 +229,6 @@ export class DatabaseService {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
 			IndexName: "site-index",
-			ScanIndexForward: false,
 			KeyConditionExpression: "siteID = :siteID",
 			ExpressionAttributeValues: {
 				":siteID": siteID

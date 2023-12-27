@@ -5,7 +5,7 @@ import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {RevisionToProcess, SiteToProcess} from "../../util/step-data";
+import {SiteToProcess} from "../../util/step-data";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -19,7 +19,7 @@ class ProcessSite extends LambdaBase {
 
 	private currentRevision:string;
 
-	public handler:Handler<SiteToProcess, RevisionToProcess> = async(siteToProcess) => {
+	public handler:Handler<SiteToProcess, SiteToProcess> = async(siteToProcess) => {
 		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
@@ -48,9 +48,7 @@ class ProcessSite extends LambdaBase {
 
 		console.log("Done.");
 
-		return {
-			revisionID: this.currentRevision
-		};
+		return siteToProcess;
 	}
 
 	/** Start up a Puppeteer browser instance */
@@ -120,7 +118,7 @@ class ProcessSite extends LambdaBase {
 			await page.close();
 		}
 	}
-	
+
 	private async navigateToPage(site:WebsiteItem, page:Page) {
 		// if a selector is defined then select with it, otherwise we just wait for the network to load and select the
 		// body
