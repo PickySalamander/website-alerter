@@ -31,9 +31,7 @@ class DetectChanges extends LambdaBase {
 
 		console.log(`Checking the download ${site.site} from run ${toProcess.runID} for changes...`);
 
-		//TODO check to see if query will ever sort this
-		const revisions = (await this.database.getSiteRevisions(site.siteID))
-			.sort((a, b) => b.time - a.time);
+		const revisions = await this.database.getSiteRevisions(site.siteID);
 
 		const currentRevision = revisions[0];
 
