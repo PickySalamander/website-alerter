@@ -1,13 +1,24 @@
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {LambdaInvoke} from "aws-cdk-lib/aws-stepfunctions-tasks";
-import {Choice, Condition, DefinitionBody, Fail, Map, Pass, StateMachine} from "aws-cdk-lib/aws-stepfunctions";
+import {
+	Choice,
+	Condition,
+	DefinitionBody,
+	Fail,
+	JsonPath,
+	Map,
+	Pass,
+	StateMachine
+} from "aws-cdk-lib/aws-stepfunctions";
 import {Duration} from "aws-cdk-lib";
 import {CfnFunction, FunctionBase} from "aws-cdk-lib/aws-lambda";
 
 export class StepStack {
+	private queryStart:LambdaInvoke;
+
 	constructor(private stack:WebsiteAlerterStack) {
 		const definition = this.lambda(stack.lambda.scheduledStart)
-			.next(this.choice( "IsEmpty")
+			.next(this.choice("IsEmpty")
 				.when(Condition.booleanEquals("$.isEmpty", true),
 					this.fail("IsEmptyFail"))
 				.otherwise(this.getItems()));
@@ -21,16 +32,19 @@ export class StepStack {
 	}
 
 	private getItems() {
+		this.queryStart = this.lambda(this.stack.lambda.queryStart);
+
 		return new Map(this.stack, "GetItems", {
 			maxConcurrency: 1,
 			comment: "Query the frequencies from the database and return the items to check",
 			itemsPath: "$.shouldRun",
-			resultPath: "$.items"
-		}).iterator(this.lambda(this.stack.lambda.queryStart)
+			resultPath: JsonPath.DISCARD
+		}).iterator(this.queryStart
 			.next(this.choice("HasElements")
 				.when(Condition.numberGreaterThan("$.count", 0),
 					this.processSites())
-				.otherwise(this.pass("NoElements"))));
+				.otherwise(this.pass("NoElements"))))
+			.next(this.lambda(this.stack.lambda.scheduledEnd));
 	}
 
 	private processSites() {
@@ -38,10 +52,14 @@ export class StepStack {
 			maxConcurrency: 5,
 			comment: "Process each site returned",
 			itemsPath: "$.items",
-			resultPath: "$.items"
+			resultPath: JsonPath.DISCARD
 		}).iterator(
 			this.lambda(this.stack.lambda.processSite)
-				.next(this.lambda(this.stack.lambda.detectChanges)));
+				.next(this.lambda(this.stack.lambda.detectChanges)))
+			.next(this.choice("MoreSites")
+				.when(Condition.isPresent("$.lastEvaluatedKey"),
+					this.pass("QueryMore").next(this.queryStart))
+				.otherwise(this.pass("QueryDone")));
 	}
 
 	private lambda(func:FunctionBase) {

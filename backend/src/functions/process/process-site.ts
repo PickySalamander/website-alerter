@@ -5,7 +5,7 @@ import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {SiteToProcess} from "../../util/step-data";
+import {RevisionToProcess, SiteToProcess} from "../../util/step-data";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -19,7 +19,7 @@ class ProcessSite extends LambdaBase {
 
 	private currentRevision:string;
 
-	public handler:Handler<SiteToProcess, SiteToProcess> = async(siteToProcess) => {
+	public handler:Handler<SiteToProcess, RevisionToProcess> = async(siteToProcess) => {
 		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
@@ -48,7 +48,7 @@ class ProcessSite extends LambdaBase {
 
 		console.log("Done.");
 
-		return siteToProcess;
+		return Object.assign({revisionID: this.currentRevision}, siteToProcess);
 	}
 
 	/** Start up a Puppeteer browser instance */

@@ -1,3 +1,5 @@
+import {SiteRevisionState} from "./site-revision";
+
 /** A website's configuration stored in the database */
 export interface WebsiteItem {
 	/** unique ID for the site */
@@ -20,14 +22,25 @@ export interface WebsiteItem {
 	/** The time the site was created */
 	created:number;
 
-	/** The last time the site was polled */
-	lastCheck?:number;
-
-	/** The last run the site was polled */
-	lastRunID?:number;
+	/** The last check on this site */
+	lastCheck?:LastCheckStatus;
 
 	/** Frequency to check the site for changes */
 	frequency:ChangeFrequency;
+}
+
+export interface LastCheckStatus {
+	/** The last time the site was polled */
+	time:number;
+
+	/** The last run the site was polled */
+	runID:string;
+
+	/** The last revision on the site */
+	revisionID:string;
+
+	/** The last state */
+	state:SiteRevisionState;
 }
 
 /** Options for detecting changes on the page */

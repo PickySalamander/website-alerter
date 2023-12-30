@@ -8,9 +8,9 @@ import {
 	GetCommand,
 	PutCommand,
 	QueryCommand,
-	UpdateCommand, UpdateCommandInput
+	UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import {ChangeFrequency, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {ChangeFrequency, LastCheckStatus, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {EnvironmentVars} from "../util/environment-vars";
 
@@ -115,14 +115,24 @@ export class DatabaseService {
 			Key: {
 				siteID: item.siteID
 			},
-			UpdateExpression: "SET selector = :selector, frequency = :frequency, options.ignoreCss = :ignoreCss, " +
-				"options.ignoreAttributes = :ignoreAttributes, options.ignoreScripts = :ignoreScripts",
+			UpdateExpression: "SET selector = :selector, frequency = :frequency, options = :options",
 			ExpressionAttributeValues: {
 				":selector": item.selector,
 				":frequency": item.frequency,
-				":ignoreAttributes": item.options.ignoreAttributes,
-				":ignoreScripts": item.options.ignoreScripts,
-				":ignoreCss": item.options.ignoreCss
+				":options": item.options
+			}
+		}));
+	}
+
+	async updateSiteStatus(siteID:string, status:LastCheckStatus) {
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID
+			},
+			UpdateExpression: "SET lastCheck = :lastCheck",
+			ExpressionAttributeValues: {
+				":lastCheck": status
 			}
 		}));
 	}
@@ -225,7 +235,7 @@ export class DatabaseService {
 		return response?.Item as SiteRevision;
 	}
 
-	async getSiteRevisions(siteID:string):Promise<SiteRevision[]> {
+	async getAllSiteRevisions(siteID:string):Promise<SiteRevision[]> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
 			IndexName: "site-index",
@@ -237,6 +247,26 @@ export class DatabaseService {
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
+	}
+
+	async getSiteRevisionAfter(revision:SiteRevision):Promise<SiteRevision> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			IndexName: "site-index",
+			ScanIndexForward: false,
+			KeyConditionExpression: "siteID = :siteID and #time < :time",
+			FilterExpression: " siteState <> :notOpen",
+			ExpressionAttributeNames: {
+				"#time": "time"
+			},
+			ExpressionAttributeValues: {
+				":siteID": revision.siteID,
+				":time": revision.time,
+				":notOpen": SiteRevisionState.Open
+			}
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items[0] as SiteRevision : undefined;
 	}
 
 	public async updateSiteRevision(revisionID:string, state:SiteRevisionState) {

@@ -54,10 +54,6 @@ export class DynamoStack {
 				name: "runID",
 				type: AttributeType.STRING,
 			},
-			sortKey: {
-				name: "time",
-				type: AttributeType.NUMBER,
-			},
 			billingMode: BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY
 		});

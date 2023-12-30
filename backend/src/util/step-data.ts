@@ -8,8 +8,25 @@ export interface SiteToProcess {
 	siteID:string;
 }
 
+export interface RevisionToProcess extends SiteToProcess {
+	/** Current revision id being worked on */
+	revisionID:string;
+}
+
 export interface ScheduledStartData {
+	runID:string;
+	shouldRun:GetItemsData[];
+	isEmpty:boolean;
+}
+
+export interface GetItemsData {
 	frequency:ChangeFrequency;
 	runID:string;
 	lastEvaluatedKey?:Record<string, any>;
+}
+
+export interface QueryStartData extends GetItemsData {
+	items:SiteToProcess[],
+	count:number;
+	lastEvaluatedKey:any;
 }

@@ -60,12 +60,12 @@ export class LambdaStack {
 			environment
 		});
 
-		// // called after the whole flow is finished to follow up on the whole process
-		// this.scheduledEnd = new AlerterJsFunction(stack, "ScheduledEnd", {
-		// 	description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
-		// 		"perform some final maintenance.",
-		// 	entry: "src/functions/process/scheduled-end.ts",
-		// 	environment
-		// });
+		// called after the whole flow is finished to follow up on the whole process
+		this.scheduledEnd = new AlerterJsFunction(stack, "ScheduledEnd", {
+			description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
+				"perform some final maintenance.",
+			entry: "src/functions/process/scheduled-end.ts",
+			environment
+		});
 	}
 }
