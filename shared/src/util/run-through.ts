@@ -6,6 +6,9 @@ export interface RunThrough {
 	/** The time the run was started */
 	time:number;
 
+	/** Step functions execution ID */
+	executionID:string;
+
 	/** The state of the entire run */
 	runState:RunThroughState;
 }

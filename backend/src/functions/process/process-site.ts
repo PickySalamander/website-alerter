@@ -19,10 +19,18 @@ class ProcessSite extends LambdaBase {
 
 	private currentRevision:string;
 
+	private site:WebsiteItem;
+
 	public handler:Handler<SiteToProcess, RevisionToProcess> = async(siteToProcess) => {
 		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
 
 		await this.setupServices();
+
+		//get information from the database on the website
+		this.site = await this.database.getSite(siteToProcess.siteID);
+		if(!this.site) {
+			throw new Error(`Site ${siteToProcess.siteID} doesn't exist in the database, aborting`);
+		}
 
 		this.currentRevision = v4();
 
@@ -30,7 +38,8 @@ class ProcessSite extends LambdaBase {
 
 		//add a revision to the database
 		await this.database.putSiteRevision({
-			siteID: siteToProcess.siteID,
+			siteID: this.site.siteID,
+			userID: this.site.userID,
 			runID: siteToProcess.runID,
 			time: new Date().getTime(),
 			revisionID: this.currentRevision,
@@ -70,15 +79,7 @@ class ProcessSite extends LambdaBase {
 	 * @param toParse the event from the queue with the run ID and site url
 	 */
 	private async parseSite(toParse:SiteToProcess) {
-		console.log(`Parsing website ${toParse.siteID} from run ${toParse.runID}`);
-
-		//get information from the database on the website
-		const site = await this.database.getSite(toParse.siteID);
-		if(!site) {
-			throw new Error(`Site ${toParse.siteID} doesn't exist in the database, aborting`);
-		}
-
-		console.log(`Navigating to ${site.site} in browser...`);
+		console.log(`Navigating to ${this.site.site} in browser...`);
 
 		//open a new page in the browser
 		const page = await this.browser.newPage();
@@ -86,7 +87,7 @@ class ProcessSite extends LambdaBase {
 
 		try {
 			//the finally loaded DOM
-			const content = await this.navigateToPage(site, page);
+			const content = await this.navigateToPage(this.site, page);
 
 			//take a PNG screenshot for posterity
 			const screenshot = await page.screenshot({fullPage: true}) as Buffer;

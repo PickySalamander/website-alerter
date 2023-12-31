@@ -9,6 +9,9 @@ export interface SiteRevision {
 	/** The id of the site that was checked */
 	siteID:string;
 
+	/** The user id of the owner */
+	userID:string;
+
 	/** Last time it was updated */
 	time:number;
 

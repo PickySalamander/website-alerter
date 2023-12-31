@@ -12,6 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/.aws-sam" />
       <excludeFolder url="file://$MODULE_DIR$/backend/cdk.out" />
       <excludeFolder url="file://$MODULE_DIR$/backend/build" />
+      <excludeFolder url="file://$MODULE_DIR$/shared/dist" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

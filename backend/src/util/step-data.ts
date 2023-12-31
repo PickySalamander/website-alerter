@@ -13,6 +13,10 @@ export interface RevisionToProcess extends SiteToProcess {
 	revisionID:string;
 }
 
+export interface StartingData {
+	executionID:string;
+}
+
 export interface ScheduledStartData {
 	runID:string;
 	shouldRun:GetItemsData[];
@@ -22,11 +26,16 @@ export interface ScheduledStartData {
 export interface GetItemsData {
 	frequency:ChangeFrequency;
 	runID:string;
-	lastEvaluatedKey?:Record<string, any>;
+	lastEvaluatedKey?:any;
 }
 
 export interface QueryStartData extends GetItemsData {
 	items:SiteToProcess[],
 	count:number;
 	lastEvaluatedKey:any;
+}
+
+export interface ScheduledEndData {
+	runID:string;
+	lastEvaluatedKey?:any;
 }

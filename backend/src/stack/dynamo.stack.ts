@@ -104,5 +104,17 @@ export class DynamoStack {
 				type: AttributeType.NUMBER
 			}
 		});
+
+		this.revisionTable.addGlobalSecondaryIndex({
+			indexName: "run-user-index",
+			partitionKey: {
+				name: "runID",
+				type: AttributeType.STRING
+			},
+			sortKey: {
+				name: "userID",
+				type: AttributeType.STRING
+			}
+		});
 	}
 }

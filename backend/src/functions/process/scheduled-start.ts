@@ -4,14 +4,14 @@ import {v4} from "uuid";
 import {ChangeFrequency, RunScheduling} from "website-alerter-shared";
 import {RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {EnvironmentVars} from "../../util/environment-vars";
-import {GetItemsData, ScheduledStartData} from "../../util/step-data";
+import {GetItemsData, ScheduledStartData, StartingData} from "../../util/step-data";
 
 /**
  * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON
  * config file in S3 and queue up sites into SQS for checking.
  */
 class ScheduledStart extends LambdaBase {
-	public handler:Handler<void, ScheduledStartData> = async() => {
+	public handler:Handler<StartingData, ScheduledStartData> = async(data) => {
 		console.log("Starting scheduled queuing of websites");
 
 		await this.setupServices();
@@ -24,6 +24,7 @@ class ScheduledStart extends LambdaBase {
 		const runID = v4();
 		await this.database.putRunThrough({
 			runID: runID,
+			executionID: data.executionID,
 			time: new Date().getTime(),
 			runState: RunThroughState.Open
 		})

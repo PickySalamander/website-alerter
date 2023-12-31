@@ -1,5 +1,5 @@
 import {WebsiteAlerterStack} from "../website-alerter.stack";
-import {LambdaInvoke} from "aws-cdk-lib/aws-stepfunctions-tasks";
+import {LambdaInvoke, LambdaInvokeProps} from "aws-cdk-lib/aws-stepfunctions-tasks";
 import {
 	Choice,
 	Condition,
@@ -8,7 +8,8 @@ import {
 	JsonPath,
 	Map,
 	Pass,
-	StateMachine
+	StateMachine,
+	TaskInput
 } from "aws-cdk-lib/aws-stepfunctions";
 import {Duration} from "aws-cdk-lib";
 import {CfnFunction, FunctionBase} from "aws-cdk-lib/aws-lambda";
@@ -17,7 +18,11 @@ export class StepStack {
 	private queryStart:LambdaInvoke;
 
 	constructor(private stack:WebsiteAlerterStack) {
-		const definition = this.lambda(stack.lambda.scheduledStart)
+		const start = this.lambda(stack.lambda.scheduledStart, {
+			payload: TaskInput.fromObject({executionID: JsonPath.executionId})
+		});
+
+		const definition = start
 			.next(this.choice("IsEmpty")
 				.when(Condition.booleanEquals("$.isEmpty", true),
 					this.fail("IsEmptyFail"))
@@ -62,14 +67,15 @@ export class StepStack {
 				.otherwise(this.pass("QueryDone")));
 	}
 
-	private lambda(func:FunctionBase) {
+	private lambda(func:FunctionBase, options?:Partial<LambdaInvokeProps>) {
 		const description = (func.node.defaultChild as CfnFunction).description;
 
-		return new LambdaInvoke(this.stack, `${func.node.id}Invoke`, {
-			lambdaFunction: func,
-			outputPath: "$.Payload",
-			comment: description
-		});
+		return new LambdaInvoke(this.stack, `${func.node.id}Invoke`,
+			Object.assign({
+				lambdaFunction: func,
+				outputPath: "$.Payload",
+				comment: description
+			}, options));
 	}
 
 	private choice(name:string) {

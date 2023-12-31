@@ -89,10 +89,10 @@ export class DatabaseService {
 			TableName: EnvironmentVars.websiteTableName,
 			IndexName: "user-index",
 			KeyConditionExpression: "userID = :userID",
+			ProjectionExpression: "siteID, userID, site, lastCheck, frequency",
 			ExpressionAttributeValues: {
 				":userID": userID
-			},
-			ProjectionExpression: "siteID, userID, site, lastRunID, frequency"
+			}
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
@@ -217,7 +217,7 @@ export class DatabaseService {
 		return response?.Item as RunThrough;
 	}
 
-	public async putSiteRevision(revision:SiteRevision) {
+	async putSiteRevision(revision:SiteRevision) {
 		await this.client.send(new PutCommand({
 			TableName: EnvironmentVars.revisionTableName,
 			Item: revision
@@ -235,15 +235,15 @@ export class DatabaseService {
 		return response?.Item as SiteRevision;
 	}
 
-	async getAllSiteRevisions(siteID:string):Promise<SiteRevision[]> {
+	async getChangedRevisions(runID:string, userID:string):Promise<SiteRevision[]> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
-			IndexName: "site-index",
-			ScanIndexForward: false,
-			KeyConditionExpression: "siteID = :siteID",
+			IndexName: "run-user-index",
+			KeyConditionExpression: "runID = :runID and userID = :userID",
 			ExpressionAttributeValues: {
-				":siteID": siteID
-			},
+				":runID": runID,
+				":userID": userID
+			}
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
