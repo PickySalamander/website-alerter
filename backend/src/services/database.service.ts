@@ -203,6 +203,24 @@ export class DatabaseService {
 	}
 
 	/**
+	 * Update the entire run's state
+	 * @param runID the run to update
+	 * @param state the state to set to
+	 */
+	public async updateRunState(runID:string, state:RunThroughState) {
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.runTableName,
+			Key: {
+				runID: runID
+			},
+			UpdateExpression: "SET runState = :state",
+			ExpressionAttributeValues: {
+				":state": state
+			}
+		}));
+	}
+
+	/**
 	 * Get a run through from the database
 	 * @param runID the run's id to get
 	 */
@@ -210,7 +228,7 @@ export class DatabaseService {
 		const response = await this.client.send(new GetCommand({
 			TableName: EnvironmentVars.runTableName,
 			Key: {
-				id: runID
+				runID: runID
 			}
 		}));
 
@@ -300,24 +318,6 @@ export class DatabaseService {
 			ExpressionAttributeValues: {
 				":lastCheck": time,
 				":lastRunID": runID
-			}
-		}));
-	}
-
-	/**
-	 * Update the entire run's state
-	 * @param runID the run to update
-	 * @param state the state to set to
-	 */
-	public async updateRunState(runID:string, state:RunThroughState) {
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.runTableName,
-			Key: {
-				id: runID
-			},
-			UpdateExpression: "SET runState = :state",
-			ExpressionAttributeValues: {
-				":state": state
 			}
 		}));
 	}

@@ -49,4 +49,16 @@ table {
 			opacity: 1;
 		}
 	}
+
+	.error {
+		color: map-get($warn-colors, main);
+	}
+
+	.unchanged {
+		color: map-get($primary-colors, main);
+	}
+
+	.changed {
+		color: map-get($accent-colors, main);
+	}
 }

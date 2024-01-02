@@ -13,7 +13,7 @@ import {SnackbarService} from "../services/snackbar.service";
 import {MatDialog} from "@angular/material/dialog";
 import {AddEditSiteComponent} from "./add-edit-site/add-edit-site.component";
 import {environment} from "../../environments/environment";
-import {ChangeFrequency, RunScheduling, WebsiteItem} from "website-alerter-shared";
+import {ChangeFrequency, RunScheduling, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 
 @Component({
 	selector: 'app-index',
@@ -23,11 +23,12 @@ import {ChangeFrequency, RunScheduling, WebsiteItem} from "website-alerter-share
 	styleUrl: './index.component.scss'
 })
 export class IndexComponent implements OnInit, AfterViewInit {
-	displayedColumns:string[] = ["select", "site", "lastCheck", "frequency", "nextCheck"];
+	displayedColumns:string[] = ["select", "site", "frequency", "lastCheck", "lastStatus", "nextCheck"];
 	items:WebsiteItem[];
 	dataSource:MatTableDataSource<WebsiteItem> = new MatTableDataSource<WebsiteItem>();
 	selection = new SelectionModel<WebsiteItem>(true, []);
 	frequencyValues = ChangeFrequency;
+	stateValues = SiteRevisionState;
 
 	/** The table display on the page */
 	@ViewChild(MatTable) table:MatTable<WebsiteItem>;
@@ -37,6 +38,7 @@ export class IndexComponent implements OnInit, AfterViewInit {
 	constructor(private http:HttpClient,
 	            private snackbar:SnackbarService,
 	            private dialog:MatDialog) {
+		console.log(this.stateValues);
 	}
 
 	ngOnInit() {
@@ -44,14 +46,6 @@ export class IndexComponent implements OnInit, AfterViewInit {
 			this.items = response;
 
 			if(this.items && this.items.length > 0) {
-				this.items.sort((a, b) => {
-					const ret = b.lastCheck || 0 - a.lastCheck || 0;
-					if(ret != 0) {
-						return ret;
-					}
-					return a.site.localeCompare(b.site);
-				})
-
 				this.dataSource.data = this.items;
 				this.table?.renderRows();
 			}

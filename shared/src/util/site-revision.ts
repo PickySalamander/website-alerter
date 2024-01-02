@@ -33,7 +33,3 @@ export enum SiteRevisionState {
 	/** The website was checked by change detection and has changes */
 	Changed
 }
-
-export function getSiteRevisionCompositeKey(userID:string, site:string) {
-	return `${userID}|${site}`;
-}

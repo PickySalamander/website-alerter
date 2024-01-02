@@ -1,5 +1,9 @@
 <h1 mat-dialog-title>
-	Create a new site check
+	@if(isNewSite) {
+		Create a New Site
+	} @else {
+		Edit a Site
+	}
 </h1>
 
 <div mat-dialog-content>
