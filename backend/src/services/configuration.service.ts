@@ -8,9 +8,6 @@ export class ConfigurationService {
 	/** Saved S3 service to be reused */
 	private s3:S3Client;
 
-	/** Preloaded configuration if already loaded */
-	private cachedConfig:Config;
-
 	/** Preloaded jwt key file */
 	private cachedJwt?:Buffer;
 
@@ -28,27 +25,6 @@ export class ConfigurationService {
 		}
 
 		this.s3 = s3 ?? new S3Client({});
-	}
-
-	/** Load the configuration from S3 if not already loaded, otherwise the old will be returned */
-	public async load():Promise<Config> {
-		//if no cached version, then load a new one
-		if(this.cachedConfig == null) {
-			console.log(`Loading config from s3://${this.configurationPath}/config.json`);
-
-			const s3Response = await this.s3.send(new GetObjectCommand({
-				Key: "config.json",
-				Bucket: this.configurationPath
-			}));
-
-			if(!s3Response.Body) {
-				throw `S3 result from ${this.configurationPath}/config.json was empty`;
-			}
-
-			this.cachedConfig = JSON.parse(await s3Response.Body.transformToString("utf8"));
-		}
-
-		return this.cachedConfig;
 	}
 
 	public async loadJwt():Promise<Buffer> {
@@ -74,15 +50,4 @@ export class ConfigurationService {
 	get configPath():string {
 		return this.configurationPath;
 	}
-
-	/** Returns the loaded configuration if already loaded */
-	get config():Config {
-		return this.cachedConfig;
-	}
-}
-
-/** The configuration for the website alerter tool */
-export interface Config {
-	/** number of revisions to keep in the database and S3 */
-	numRevisions:number;
 }

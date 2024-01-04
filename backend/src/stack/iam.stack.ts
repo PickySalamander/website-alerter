@@ -44,6 +44,7 @@ export class IamStack {
 								"dynamodb:Query",
 								"dynamodb:Scan",
 								"dynamodb:UpdateItem",
+								"dynamodb:BatchGetItem",
 								"dynamodb:PutItem"
 							],
 							resources: [
@@ -63,6 +64,19 @@ export class IamStack {
 								"s3:DeleteObject"
 							],
 							resources: [`${stack.configBucket.bucketArn}/*`]
+						})
+					]
+				}),
+
+				//read and write to required queues and notifications
+				Events: new PolicyDocument({
+					statements: [
+						new PolicyStatement({
+							effect: Effect.ALLOW,
+							actions: [
+								"sns:Publish"
+							],
+							resources: [this.stack.notificationSns.topicArn]
 						})
 					]
 				})
