@@ -7,8 +7,6 @@ import {AlerterDockerFunction, AlerterJsFunction} from "./alerter-js-function";
 export class LambdaStack {
 	public readonly scheduledStart:FunctionBase;
 
-	public readonly queryStart:FunctionBase;
-
 	public readonly processSite:FunctionBase;
 
 	public readonly detectChanges:FunctionBase;
@@ -16,16 +14,12 @@ export class LambdaStack {
 	public readonly scheduledEnd:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
-		if(process.env.ALWAYS_RUN_SEMI_WEEKLY === "true") {
-			console.warn("Including debug flag for always running semi-weekly");
-		}
-
 		const environment = {
 			"CONFIG_S3": stack.configBucket.bucketName,
+			"USERS_TABLE": stack.dynamo.usersTable.tableName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
-			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
-			"ALWAYS_RUN_SEMI_WEEKLY": process.env.ALWAYS_RUN_SEMI_WEEKLY === "true" ? "true" : "false",
+			"NUM_REVISIONS_ALLOWED": "5",
 			"IS_PRODUCTION": "true"
 		};
 
@@ -33,12 +27,6 @@ export class LambdaStack {
 		this.scheduledStart = new AlerterJsFunction(stack, "ScheduledStart", {
 			description: "Scheduled start of the scraping process this will select what type of sites to query",
 			entry: "src/functions/process/scheduled-start.ts",
-			environment
-		});
-
-		this.queryStart = new AlerterJsFunction(stack, "QueryStart", {
-			description: "Start querying as many websites as we can",
-			entry: "src/functions/process/query-start.ts",
 			environment
 		});
 

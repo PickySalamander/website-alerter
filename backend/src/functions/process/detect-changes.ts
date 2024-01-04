@@ -3,56 +3,53 @@ import {LambdaBase} from "../../util/lambda-base";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";
 import {Parsed} from "../../util/parsed-html";
-import {RevisionToProcess} from "../../util/step-data";
-import {ChangeOptions, SiteRevision, SiteRevisionState} from "website-alerter-shared";
+import {DetectChangesData} from "../../util/step-data";
+import {
+	ChangeOptions,
+	getOrderedSiteRevisions,
+	SiteRevision,
+	SiteRevisionState,
+	WebsiteItem
+} from "website-alerter-shared";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
  * into a unified diff and uploaded to S3 for the user to check later.
  */
 class DetectChanges extends LambdaBase {
-	public handler:Handler<RevisionToProcess, RevisionToProcess> = async(toProcess) => {
-		console.log(`Checking for changes in ${JSON.stringify(toProcess)}.`);
+	public handler:Handler<DetectChangesData> = async(data) => {
+		console.log(`Checking for changes in ${JSON.stringify(data)}.`);
 
 		await this.setupServices();
 
-		const finalState = await this.checkSite(toProcess);
+		const finalState = await this.checkSite(data);
 
 		console.log(`Updating final state...`);
 
-		await this.database.updateSiteRevision(toProcess.revisionID, finalState);
-
-		await this.database.updateSiteStatus(toProcess.siteID, {
-			time: new Date().getTime(),
-			runID: toProcess.runID,
-			revisionID: toProcess.revisionID,
-			state: finalState
-		});
+		await this.database.updateSiteRevision(data.siteID, data.revisionID, finalState);
 
 		console.log("Done.");
-
-		return toProcess;
 	}
 
-	private async checkSite(toProcess:RevisionToProcess):Promise<SiteRevisionState> {
-		const site = await this.database.getSite(toProcess.siteID);
+	private async checkSite(data:DetectChangesData):Promise<SiteRevisionState> {
+		const site = await this.database.getSite(data.siteID);
 		if(!site) {
 			throw new Error(`Failed to find site from revision ${site.siteID}`);
 		}
 
 		console.log(`Checking the download ${site.site} for changes...`);
 
-		const currentRevision = await this.database.getSiteRevision(toProcess.revisionID);
+		const currentRevision = site.updates[data.revisionID];
 		if(!currentRevision) {
-			throw new Error(`Failed to find ${toProcess.revisionID} revision in the database.`);
+			throw new Error(`Failed to find ${data.revisionID} revision in the database.`);
 		}
 
 		if(currentRevision.siteState == SiteRevisionState.Open) {
-			console.warn(`Could not check ${toProcess.revisionID} since it was not polled`);
+			console.warn(`Could not check ${data.revisionID} since it was not polled`);
 			return SiteRevisionState.Open;
 		}
 
-		const lastRevision = await this.database.getSiteRevisionAfter(currentRevision);
+		const lastRevision = this.findLastRevision(site, data.revisionID);
 
 		//if there aren't enough revisions yet then abort
 		if(!lastRevision) {
@@ -113,6 +110,18 @@ class DetectChanges extends LambdaBase {
 
 		//return the html and pretty print it
 		return new Parsed(revision, html, options);
+	}
+
+	private findLastRevision(site:WebsiteItem, currentRevision:string) {
+		const orderedRevisions = getOrderedSiteRevisions(site, false);
+
+		for(const revision of orderedRevisions) {
+			if(revision.revisionID != currentRevision && revision.siteState != SiteRevisionState.Open) {
+				return revision;
+			}
+		}
+
+		return undefined;
 	}
 }
 

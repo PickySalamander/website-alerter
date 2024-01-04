@@ -1,46 +1,47 @@
 import {Handler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
 import {v4} from "uuid";
-import {ChangeFrequency, RunScheduling} from "website-alerter-shared";
 import {RunThroughState} from "website-alerter-shared/dist/util/run-through";
-import {EnvironmentVars} from "../../util/environment-vars";
-import {GetItemsData, ScheduledStartData, StartingData} from "../../util/step-data";
 
 /**
  * Start the entire flow of polling websites for changes. Called from EventBridge, this function will go through a JSON
  * config file in S3 and queue up sites into SQS for checking.
  */
 class ScheduledStart extends LambdaBase {
-	public handler:Handler<StartingData, ScheduledStartData> = async(data) => {
+	public handler:Handler<StartingData, StartingOutput> = async(data) => {
 		console.log("Starting scheduled queuing of websites");
 
 		await this.setupServices();
 
-		const frequencies = RunScheduling.shouldRun();
-		if(EnvironmentVars.isAlwaysRunSemiWeekly && frequencies.length == 0) {
-			frequencies.push(ChangeFrequency.SemiWeekly);
-		}
+		const sites = await this.database.getSitesForRun();
 
 		const runID = v4();
 		await this.database.putRunThrough({
 			runID: runID,
 			executionID: data.executionID,
 			time: new Date().getTime(),
+			sites,
 			runState: RunThroughState.Open
 		})
 
-		const shouldRun:GetItemsData[] =
-			frequencies.map(value => ({ frequency: value, runID: runID }));
-
-		console.log(`Starting new run ${runID} and queueing frequencies ${JSON.stringify(shouldRun)}.`);
+		console.log(`Starting new run ${runID} and queueing ${sites.length} sites.`);
 
 		return {
 			runID,
-			shouldRun,
-			isEmpty: shouldRun.length == 0
+			sites
 		};
 	}
 }
+
+interface StartingData {
+	executionID:string;
+}
+
+interface StartingOutput {
+	runID:string;
+	sites:string[];
+}
+
 
 // noinspection JSUnusedGlobalSymbols
 export const handler = new ScheduledStart().handler;

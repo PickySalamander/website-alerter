@@ -9,6 +9,9 @@ export interface RunThrough {
 	/** Step functions execution ID */
 	executionID:string;
 
+	/** Sites that were checked during the run */
+	sites:string[];
+
 	/** The state of the entire run */
 	runState:RunThroughState;
 }

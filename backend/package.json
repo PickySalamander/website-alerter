@@ -7,9 +7,9 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "node build.mjs",
-		"build-deploy:test": "node build.mjs && cross-env ALWAYS_RUN_SEMI_WEEKLY=true INCLUDE_LOCAL_CORS=true cdk deploy",
-		"build:local:no-sam": "node build.mjs && cross-env ALWAYS_RUN_SEMI_WEEKLY=true INCLUDE_LOCAL_CORS=true cdk synth --no-staging --quiet",
-		"build:local": "node build.mjs && cross-env ALWAYS_RUN_SEMI_WEEKLY=true INCLUDE_LOCAL_CORS=true cdk synth --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
+		"build-deploy:test": "node build.mjs && cross-env INCLUDE_LOCAL_CORS=true cdk deploy",
+		"build:local:no-sam": "node build.mjs && cross-env INCLUDE_LOCAL_CORS=true cdk synth --no-staging --quiet",
+		"build:local": "node build.mjs && cross-env INCLUDE_LOCAL_CORS=true cdk synth --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
 		"test": "jest",
 		"clean": "rimraf cdk.out && rimraf build",
 		"deploy": "cdk deploy",

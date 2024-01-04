@@ -1,15 +1,15 @@
-import {SiteRevisionState} from "./site-revision";
+import {SiteRevision} from "./site-revision";
 
 /** A website's configuration stored in the database */
 export interface WebsiteItem {
 	/** unique ID for the site */
 	siteID:string;
 
-	/** The site's owner */
-	userID:string;
-
 	/** The site's url */
 	site:string;
+
+	/** Is the site enabled for checking? */
+	enabled:boolean;
 
 	/**
 	 * A CSS selector of the part of the DOM to check for changes, this should only return <u><b>one</b></u> element
@@ -22,25 +22,11 @@ export interface WebsiteItem {
 	/** The time the site was created */
 	created:number;
 
-	/** The last check on this site */
-	lastCheck?:LastCheckStatus;
-
-	/** Frequency to check the site for changes */
-	frequency:ChangeFrequency;
-}
-
-export interface LastCheckStatus {
 	/** The last time the site was polled */
-	time:number;
+	last:SiteRevision;
 
-	/** The last run the site was polled */
-	runID:string;
-
-	/** The last revision on the site */
-	revisionID:string;
-
-	/** The last state */
-	state:SiteRevisionState;
+	/** The last check on this site */
+	updates:{ [revisionID:string]:SiteRevision };
 }
 
 /** Options for detecting changes on the page */
@@ -55,8 +41,8 @@ export interface ChangeOptions {
 	ignoreScripts?:boolean;
 }
 
-export enum ChangeFrequency {
-	Never = "NEVER",
-	Weekly = "WEEKLY",
-	SemiWeekly = "SEMI-WEEKLY"
+export function getOrderedSiteRevisions(site:WebsiteItem, ascending:boolean = true) {
+	return Object.entries(site.updates)
+		.map(([, revision]) => revision)
+		.sort((a, b) => ascending ? a.time - b.time : b.time - a.time);
 }

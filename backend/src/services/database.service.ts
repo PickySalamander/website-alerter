@@ -8,9 +8,10 @@ import {
 	GetCommand,
 	PutCommand,
 	QueryCommand,
+	ScanCommand,
 	UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import {ChangeFrequency, LastCheckStatus, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {EnvironmentVars} from "../util/environment-vars";
 
@@ -42,7 +43,7 @@ export class DatabaseService {
 		this.client = DynamoDBDocumentClient.from(client);
 	}
 
-	public async getUser(email:string):Promise<UserItem> {
+	async getUser(email:string):Promise<UserItem> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.usersTableName,
 			IndexName: "user-name-index",
@@ -60,7 +61,7 @@ export class DatabaseService {
 	 * Get a website's configuration from the database
 	 * @param siteID the url of the site to get
 	 */
-	public async getSite(siteID:string) {
+	async getSite(siteID:string) {
 		const response = await this.client.send(new GetCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Key: {
@@ -71,31 +72,34 @@ export class DatabaseService {
 		return response.Item as WebsiteItem;
 	}
 
-	public async getAllSites(frequency:ChangeFrequency, exclusiveStartKey?:Record<string, any>) {
-		return await this.client.send(new QueryCommand({
+	async getSites() {
+		const response = await this.client.send(new ScanCommand({
 			TableName: EnvironmentVars.websiteTableName,
-			IndexName: "frequency-index",
-			KeyConditionExpression: "frequency = :frequency",
-			ExpressionAttributeValues: {
-				":frequency": frequency
-			},
-			ProjectionExpression: "userID, siteID, frequency",
-			ExclusiveStartKey: exclusiveStartKey
-		}));
-	}
-
-	public async getSites(userID:string) {
-		const response = await this.client.send(new QueryCommand({
-			TableName: EnvironmentVars.websiteTableName,
-			IndexName: "user-index",
-			KeyConditionExpression: "userID = :userID",
-			ProjectionExpression: "siteID, userID, site, lastCheck, frequency",
-			ExpressionAttributeValues: {
-				":userID": userID
-			}
+			ProjectionExpression: "siteID, site, enabled, selector, options, created, last"
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
+	}
+
+	async getSitesForRun() {
+		const response = await this.client.send(new ScanCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			FilterExpression: "#enabled = :true",
+			ExpressionAttributeNames: {
+				"#enabled": "enabled"
+			},
+			ExpressionAttributeValues: {
+				":true": true
+			},
+			ProjectionExpression: "siteID"
+		}));
+
+		if(response.Items && response.Items.length > 0) {
+			const items = response.Items as WebsiteItem[];
+			return items.map(value => value.siteID);
+		}
+
+		return [];
 	}
 
 	/**
@@ -115,52 +119,56 @@ export class DatabaseService {
 			Key: {
 				siteID: item.siteID
 			},
-			UpdateExpression: "SET selector = :selector, frequency = :frequency, options = :options",
+			UpdateExpression: "SET selector = :selector, enabled = :enabled, options = :options",
 			ExpressionAttributeValues: {
 				":selector": item.selector,
-				":frequency": item.frequency,
+				":enabled": item.enabled,
 				":options": item.options
 			}
 		}));
 	}
 
-	async updateSiteStatus(siteID:string, status:LastCheckStatus) {
+	/**
+	 * Add a polled revision to the website's configuration ({@link WebsiteItem.updates})
+	 * @param siteID the site to update
+	 * @param revision the revision to add to the table
+	 */
+	async addSiteRevision(siteID:string, revision:SiteRevision) {
+		//run the update
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Key: {
 				siteID
 			},
-			UpdateExpression: "SET lastCheck = :lastCheck",
+			UpdateExpression: "SET #last = :revision, #updates.#revisionID = :revision",
 			ExpressionAttributeValues: {
-				":lastCheck": status
+				":revision": revision
+			},
+			ExpressionAttributeNames: {
+				"#updates": "updates",
+				"#revisionID": revision.revisionID,
+				"#last": "last"
 			}
 		}));
 	}
 
-	async getSitesByID(sitesIDs:Set<string>) {
-		if(sitesIDs.size > 25) {
-			throw new Error("Can only batch get 25 at a time");
-		}
-
-		const params:BatchGetCommandInput = {
-			RequestItems: {
-				[EnvironmentVars.websiteTableName]: {
-					ProjectionExpression: "siteID, userID, site, lastRunID, frequency",
-					Keys: []
-				}
+	async updateSiteRevision(siteID:string, revisionID:string, siteState:SiteRevisionState) {
+		//run the update
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID
+			},
+			UpdateExpression: "SET #last.siteState = :siteState, #updates.#revisionID.siteState = :siteState",
+			ExpressionAttributeValues: {
+				":siteState": siteState
+			},
+			ExpressionAttributeNames: {
+				"#updates": "updates",
+				"#revisionID": revisionID,
+				"#last": "last"
 			}
-		}
-
-		const requestItems = params.RequestItems[EnvironmentVars.websiteTableName].Keys;
-
-		for(const siteID of sitesIDs) {
-			requestItems.push({siteID});
-		}
-
-		console.debug(`Deleting ${sitesIDs.size} sites: ${JSON.stringify(params)}`);
-
-		const get = await this.client.send(new BatchGetCommand(params));
-		return get.Responses[EnvironmentVars.websiteTableName] as WebsiteItem[];
+		}));
 	}
 
 	async deleteSites(sitesIDs:Set<string>) {
@@ -191,11 +199,60 @@ export class DatabaseService {
 		await this.client.send(new BatchWriteCommand(params));
 	}
 
+	async getSitesByID(sitesIDs:Set<string>) {
+		const keys:Record<string, any>[] = [];
+		for(const siteID of sitesIDs) {
+			keys.push({siteID});
+		}
+
+		const params:BatchGetCommandInput = {
+			RequestItems: {
+				[EnvironmentVars.websiteTableName]: {
+					Keys: keys
+				}
+			}
+		};
+
+		console.debug(`Batch getting ${sitesIDs.size} sites: ${JSON.stringify(params)}`);
+
+		const get = await this.client.send(new BatchGetCommand(params));
+		return get.Responses[EnvironmentVars.websiteTableName] as WebsiteItem[];
+	}
+
+	async deleteRevisions(siteID:string, toDelete:string[]) {
+		let toRemoveExpression = "REMOVE ";
+		let toRemoveNames:Record<string, string> = {};
+
+		for(let i = 0; i < toDelete.length; i++) {
+			toRemoveExpression += `#updates.#rev${i}`;
+			toRemoveNames[`#rev${i}`] = toDelete[i];
+
+			if(i != toDelete.length - 1) {
+				toRemoveExpression += ", ";
+			}
+		}
+
+		console.debug(`Deleting revisions for ${siteID} with expression:${toRemoveExpression} and names:${JSON.stringify(toRemoveNames)}`);
+
+		//run the update
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID
+			},
+			UpdateExpression: toRemoveExpression,
+			ExpressionAttributeNames: {
+				"#updates": "updates",
+				...toRemoveNames
+			}
+		}));
+	}
+
 	/**
 	 * Put a new run in the database
 	 * @param runThrough the new run to add
 	 */
-	public async putRunThrough(runThrough:RunThrough) {
+	async putRunThrough(runThrough:RunThrough) {
 		await this.client.send(new PutCommand({
 			TableName: EnvironmentVars.runTableName,
 			Item: runThrough
@@ -207,7 +264,7 @@ export class DatabaseService {
 	 * @param runID the run to update
 	 * @param state the state to set to
 	 */
-	public async updateRunState(runID:string, state:RunThroughState) {
+	async updateRunState(runID:string, state:RunThroughState) {
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.runTableName,
 			Key: {
@@ -224,7 +281,7 @@ export class DatabaseService {
 	 * Get a run through from the database
 	 * @param runID the run's id to get
 	 */
-	public async getRunThrough(runID:string) {
+	async getRunThrough(runID:string) {
 		const response = await this.client.send(new GetCommand({
 			TableName: EnvironmentVars.runTableName,
 			Key: {
@@ -233,93 +290,6 @@ export class DatabaseService {
 		}));
 
 		return response?.Item as RunThrough;
-	}
-
-	async putSiteRevision(revision:SiteRevision) {
-		await this.client.send(new PutCommand({
-			TableName: EnvironmentVars.revisionTableName,
-			Item: revision
-		}));
-	}
-
-	async getSiteRevision(revisionID:string):Promise<SiteRevision> {
-		const response = await this.client.send(new GetCommand({
-			TableName: EnvironmentVars.revisionTableName,
-			Key: {
-				revisionID
-			}
-		}));
-
-		return response?.Item as SiteRevision;
-	}
-
-	async getChangedRevisions(runID:string, userID:string):Promise<SiteRevision[]> {
-		const response = await this.client.send(new QueryCommand({
-			TableName: EnvironmentVars.revisionTableName,
-			IndexName: "run-user-index",
-			KeyConditionExpression: "runID = :runID and userID = :userID",
-			ExpressionAttributeValues: {
-				":runID": runID,
-				":userID": userID
-			}
-		}));
-
-		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
-	}
-
-	async getSiteRevisionAfter(revision:SiteRevision):Promise<SiteRevision> {
-		const response = await this.client.send(new QueryCommand({
-			TableName: EnvironmentVars.revisionTableName,
-			IndexName: "site-index",
-			ScanIndexForward: false,
-			KeyConditionExpression: "siteID = :siteID and #time < :time",
-			FilterExpression: " siteState <> :notOpen",
-			ExpressionAttributeNames: {
-				"#time": "time"
-			},
-			ExpressionAttributeValues: {
-				":siteID": revision.siteID,
-				":time": revision.time,
-				":notOpen": SiteRevisionState.Open
-			}
-		}));
-
-		return response.Items && response.Items.length > 0 ? response.Items[0] as SiteRevision : undefined;
-	}
-
-	public async updateSiteRevision(revisionID:string, state:SiteRevisionState) {
-		const time = new Date().getTime();
-
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.revisionTableName,
-			Key: {
-				revisionID
-			},
-			UpdateExpression: "SET #time = :time, siteState = :siteState",
-			ExpressionAttributeValues: {
-				":time": time,
-				":siteState": state
-			},
-			ExpressionAttributeNames: {
-				"#time": "time"
-			}
-		}));
-	}
-
-	public async updateSiteRunDetails(siteID:string, runID:string) {
-		const time = new Date().getTime();
-
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.websiteTableName,
-			Key: {
-				siteID
-			},
-			UpdateExpression: "SET lastCheck = :lastCheck, lastRunID = :lastRunID",
-			ExpressionAttributeValues: {
-				":lastCheck": time,
-				":lastRunID": runID
-			}
-		}));
 	}
 }
 

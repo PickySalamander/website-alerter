@@ -5,7 +5,9 @@ import {WebsiteAlerterStack} from "../website-alerter.stack";
 export class IamStack {
 	public readonly lambdaRole:Role;
 
-	public readonly stateMachineRole:Role;
+	public readonly processStateMachineRole:Role;
+
+	public readonly maintenanceStateMachineRole:Role;
 
 	constructor(private stack:WebsiteAlerterStack) {
 		this.lambdaRole = new Role(stack, "LambdaIAMRole", {
@@ -51,8 +53,6 @@ export class IamStack {
 								`${stack.dynamo.runThroughTable.tableArn}/index/*`,
 								stack.dynamo.usersTable.tableArn,
 								`${stack.dynamo.usersTable.tableArn}/index/*`,
-								stack.dynamo.revisionTable.tableArn,
-								`${stack.dynamo.revisionTable.tableArn}/index/*`
 							]
 						}),
 						new PolicyStatement({
@@ -69,8 +69,13 @@ export class IamStack {
 			}
 		});
 
-		this.stateMachineRole = new Role(stack, "StateMachineRole", {
-			description: "Generic role for State Machines in website-alerter stack",
+		this.processStateMachineRole = new Role(stack, "StateMachineRole", {
+			description: "Generic role for process state machine in website-alerter stack",
+			assumedBy: new ServicePrincipal("states.amazonaws.com")
+		});
+
+		this.maintenanceStateMachineRole = new Role(stack, "MaintenanceStateMachineRole", {
+			description: "Generic role for maintenance state machine in website-alerter stack",
 			assumedBy: new ServicePrincipal("states.amazonaws.com")
 		});
 	}

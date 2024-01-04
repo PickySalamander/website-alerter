@@ -1,35 +1,36 @@
 /** Get common environmental variables that the webiste alerter relies on */
 export abstract class EnvironmentVars {
 	/** Is this a production build (Retrieved from environmental variables) */
-	public static get isProduction():boolean {
+	static get isProduction():boolean {
 		return process.env.IS_PRODUCTION == "true";
 	}
 
-	public static get isAlwaysRunSemiWeekly():boolean {
-		return process.env.ALWAYS_RUN_SEMI_WEEKLY == "true";
-	}
-
-	public static get configS3Path():string {
+	static get configS3Path():string {
 		return process.env.CONFIG_S3;
 	}
 
-	public static get usersTableName():string {
+	static get usersTableName():string {
 		return process.env.USERS_TABLE;
 	}
 
-	public static get websiteTableName():string {
+	static get websiteTableName():string {
 		return process.env.WEBSITE_TABLE;
 	}
 
-	public static get runTableName():string {
+	static get runTableName():string {
 		return process.env.RUN_TABLE;
 	}
 
-	public static get revisionTableName():string {
-		return process.env.REVISION_TABLE;
+	static get allowedOrigins():string[] {
+		return process.env.ALLOWED_ORIGINS.split(",");
 	}
 
-	public static get allowedOrigins():string[] {
-		return process.env.ALLOWED_ORIGINS.split(",");
+	static get notificationSNS():string {
+		return process.env.NOTIFICATION_SNS;
+	}
+
+	static get numRevisions():number {
+		const parsed = parseInt(process.env.NUM_REVISIONS_ALLOWED);
+		return isNaN(parsed) ? 5 : parsed;
 	}
 }

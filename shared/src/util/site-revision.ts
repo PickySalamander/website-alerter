@@ -6,12 +6,6 @@ export interface SiteRevision {
 	/** the run this revision was apart of */
 	runID:string;
 
-	/** The id of the site that was checked */
-	siteID:string;
-
-	/** The user id of the owner */
-	userID:string;
-
 	/** Last time it was updated */
 	time:number;
 

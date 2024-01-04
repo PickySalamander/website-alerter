@@ -5,7 +5,7 @@ import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
 import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {RevisionToProcess, SiteToProcess} from "../../util/step-data";
+import {DetectChangesData} from "../../util/step-data";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -21,43 +21,43 @@ class ProcessSite extends LambdaBase {
 
 	private site:WebsiteItem;
 
-	public handler:Handler<SiteToProcess, RevisionToProcess> = async(siteToProcess) => {
-		console.log(`Starting to parse ${JSON.stringify(siteToProcess)}`);
+	public handler:Handler<ProcessSiteData, DetectChangesData> = async(data) => {
+		console.log(`Starting to parse site ${data.siteID} in run ${data.runID}`);
 
 		await this.setupServices();
 
 		//get information from the database on the website
-		this.site = await this.database.getSite(siteToProcess.siteID);
+		this.site = await this.database.getSite(data.siteID);
 		if(!this.site) {
-			throw new Error(`Site ${siteToProcess.siteID} doesn't exist in the database, aborting`);
+			throw new Error(`Site ${data.siteID} doesn't exist in the database, aborting`);
 		}
 
 		this.currentRevision = v4();
-
 		console.log(`Starting new revision ${this.currentRevision}`);
 
 		//add a revision to the database
-		await this.database.putSiteRevision({
-			siteID: this.site.siteID,
-			userID: this.site.userID,
-			runID: siteToProcess.runID,
+		await this.database.addSiteRevision(data.siteID, {
+			runID: data.runID,
 			time: new Date().getTime(),
 			revisionID: this.currentRevision,
 			siteState: SiteRevisionState.Open
 		});
-
-		await this.database.updateSiteRunDetails(siteToProcess.siteID, siteToProcess.runID);
 
 		if(!this.browser) {
 			//set up the browser
 			await this.initializeBrowser();
 		}
 
-		await this.parseSite(siteToProcess);
+		const wasPolled = await this.parseSite();
 
 		console.log("Done.");
 
-		return Object.assign({revisionID: this.currentRevision}, siteToProcess);
+		return {
+			runID: data.runID,
+			siteID: data.siteID,
+			revisionID: this.currentRevision,
+			wasPolled
+		}
 	}
 
 	/** Start up a Puppeteer browser instance */
@@ -67,6 +67,7 @@ class ProcessSite extends LambdaBase {
 		//start up a headless browser
 		this.browser = await puppeteer.launch({
 			args: DefaultChromeArgs(),
+			timeout: 0,
 			headless: "new"
 		});
 
@@ -74,11 +75,7 @@ class ProcessSite extends LambdaBase {
 		console.log(`Puppeteer started, running chrome ${browserVersion}`);
 	}
 
-	/**
-	 * Parse the given website in the SQS queue
-	 * @param toParse the event from the queue with the run ID and site url
-	 */
-	private async parseSite(toParse:SiteToProcess) {
+	private async parseSite() {
 		console.log(`Navigating to ${this.site.site} in browser...`);
 
 		//open a new page in the browser
@@ -111,13 +108,16 @@ class ProcessSite extends LambdaBase {
 			console.log("All done, updating database");
 
 			//add a revision to the database
-			await this.database.updateSiteRevision(this.currentRevision, SiteRevisionState.Polled);
+			await this.database.updateSiteRevision(this.site.siteID, this.currentRevision, SiteRevisionState.Polled);
 		} catch(e) {
-			console.error("Failed to process website", e)
+			console.error("Failed to process website", e);
+			return false;
 		} finally {
 			//close the page
 			await page.close();
 		}
+
+		return true;
 	}
 
 	private async navigateToPage(site:WebsiteItem, page:Page) {
@@ -154,6 +154,11 @@ class ProcessSite extends LambdaBase {
 		return await page.$eval("body", el => el.outerHTML);
 
 	}
+}
+
+interface ProcessSiteData {
+	runID:string;
+	siteID:string;
 }
 
 // noinspection JSUnusedGlobalSymbols

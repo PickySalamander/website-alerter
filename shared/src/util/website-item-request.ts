@@ -1,4 +1,4 @@
-import {ChangeFrequency, ChangeOptions} from "./website-item";
+import {ChangeOptions} from "./website-item";
 
 export interface WebsiteItemRequest {
 	/** The site to update (if specified) */
@@ -14,7 +14,4 @@ export interface WebsiteItemRequest {
 
 	/** Options for detecting changes on the page */
 	options?:ChangeOptions;
-
-	/** Frequency to check the site for changes */
-	frequency:ChangeFrequency;
 }
