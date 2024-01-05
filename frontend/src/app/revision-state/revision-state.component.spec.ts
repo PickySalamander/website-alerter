@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { AddEditSiteComponent } from './add-edit-site.component';
+import { RevisionStateComponent } from './revision-state.component';
 
-describe('AddSiteComponent', () => {
-  let component: AddEditSiteComponent;
-  let fixture: ComponentFixture<AddEditSiteComponent>;
+describe('RevisionStateComponent', () => {
+  let component: RevisionStateComponent;
+  let fixture: ComponentFixture<RevisionStateComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AddEditSiteComponent]
+      imports: [RevisionStateComponent]
     })
     .compileComponents();
-
-    fixture = TestBed.createComponent(AddEditSiteComponent);
+    
+    fixture = TestBed.createComponent(RevisionStateComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

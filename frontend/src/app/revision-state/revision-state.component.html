@@ -1,0 +1,17 @@
+@switch (state) {
+	@case (stateValues.Open) {
+		<span class="error">Polling Failed</span>
+	}
+	@case (stateValues.Polled) {
+		<span class="error">Change Detection Failed</span>
+	}
+	@case (stateValues.Unchanged) {
+		<span class="unchanged">Unchanged</span>
+	}
+	@case (stateValues.Changed) {
+		<span class="changed">Changed</span>
+	}
+	@default {
+		N/A
+	}
+}

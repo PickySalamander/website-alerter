@@ -1,9 +1,9 @@
 <div class="table-header">
 	<div class="actions">
-		<button mat-raised-button (click)="onAdd()">
+		<a mat-raised-button routerLink="/site">
 			<mat-icon>add</mat-icon>
 			Add site
-		</button>
+		</a>
 
 		<button mat-raised-button [disabled]="isEmptySelection" (click)="onDelete()">
 			<mat-icon>delete</mat-icon>
@@ -63,23 +63,7 @@
 	<ng-container matColumnDef="lastStatus">
 		<th mat-header-cell *matHeaderCellDef mat-sort-header>Last Status</th>
 		<td mat-cell *matCellDef="let row">
-			@switch (row.last?.siteState) {
-				@case (stateValues.Open) {
-					<span class="error">Polling Failed</span>
-				}
-				@case (stateValues.Polled) {
-					<span class="error">Change Detection Failed</span>
-				}
-				@case (stateValues.Unchanged) {
-					<span class="unchanged">Unchanged</span>
-				}
-				@case (stateValues.Changed) {
-					<span class="changed">Changed</span>
-				}
-				@default {
-					N/A
-				}
-			}
+			<app-revision-state [state]="row.last?.siteState"></app-revision-state>
 		</td>
 	</ng-container>
 
@@ -91,7 +75,7 @@
 	</ng-container>
 
 	<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-	<tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onEdit(row)" [class.disabled]="!row.enabled"></tr>
+	<tr mat-row *matRowDef="let row; columns: displayedColumns;" [routerLink]="['/', 'site', row.siteID]" [class.disabled]="!row.enabled"></tr>
 
 	<!-- Row shown when there is no matching data. -->
 	<tr class="mat-row" *matNoDataRow>

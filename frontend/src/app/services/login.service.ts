@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {CanActivateFn, Router, UrlTree} from "@angular/router";
 import {HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
-import {catchError, Observable, throwError} from "rxjs";
+import {BehaviorSubject, catchError, Observable, Subject, throwError} from "rxjs";
 import {environment} from "../../environments/environment";
 
 @Injectable({
@@ -9,6 +9,9 @@ import {environment} from "../../environments/environment";
 })
 export class LoginService implements HttpInterceptor {
 	private _session:string;
+
+	/** Event issued when the user logs out or is logged out */
+	private logoutSubject:Subject<void> = new Subject<void>();
 
 	constructor(private router:Router) {
 		this._session = localStorage.getItem("session");
@@ -53,7 +56,9 @@ export class LoginService implements HttpInterceptor {
 
 	/** Log the user out of the App and redirect to the login page */
 	logout():void {
-		this._session = undefined
+		this._session = undefined;
+
+		this.logoutSubject.next();
 
 		//nav to the login page
 		this.router.navigate(['login']);
@@ -66,5 +71,10 @@ export class LoginService implements HttpInterceptor {
 
 	get hasSession() {
 		return this._session != null;
+	}
+
+	/** Event issued when the user logs out or is logged out */
+	get onLogout():Observable<void> {
+		return this.logoutSubject.asObservable();
 	}
 }

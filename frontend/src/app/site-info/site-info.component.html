@@ -1,0 +1,46 @@
+<div>
+	<h1>
+		@if (isNewSite) {
+			Create a New Site
+		} @else {
+			Edit Site
+		}
+	</h1>
+
+	<div>
+		<form [formGroup]="createForm" (ngSubmit)="submit()">
+			<mat-form-field>
+				<mat-label>The website url to check for changes</mat-label>
+				<input matInput placeholder="https://mywebsite.org" formControlName="url" required>
+				<mat-hint>This should be an https url</mat-hint>
+			</mat-form-field>
+
+			<mat-form-field>
+				<mat-label>A CSS selector to target an element for changes</mat-label>
+				<input matInput formControlName="selector" placeholder="body > .content">
+			</mat-form-field>
+
+			<div class="options">
+				<h3>Options</h3>
+				<mat-slide-toggle formControlName="enabled">Enabled for checking?</mat-slide-toggle>
+				<mat-slide-toggle formControlName="ignoreCss">Should "class" and "style" attributes be ignored as changes?
+				</mat-slide-toggle>
+				<mat-slide-toggle formControlName="ignoreAttributes">Should all HTML attributes be ignored as changes?
+				</mat-slide-toggle>
+				<mat-slide-toggle formControlName="ignoreScripts">Should "script" tags be ignored as changes?</mat-slide-toggle>
+			</div>
+		</form>
+	</div>
+
+	<div class="buttons">
+		<a mat-button type="button" routerLink="/list">Cancel</a>
+
+		<button mat-flat-button color="primary" [disabled]="createForm.invalid || createForm.disabled" (click)="submit()">
+			{{ isNewSite ? "Create" : "Save" }}
+		</button>
+	</div>
+</div>
+
+@if (!isNewSite) {
+	<app-revision-list [siteID]="data.siteID"></app-revision-list>
+}

@@ -1,0 +1,7 @@
+@use '@angular/material' as mat;
+
+:host {
+	display: block;
+	padding: 2em;
+	border-radius: 4px;
+}

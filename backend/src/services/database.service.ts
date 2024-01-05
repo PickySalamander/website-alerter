@@ -294,6 +294,14 @@ export class DatabaseService {
 
 		return response?.Item as RunThrough;
 	}
+
+	async getRunThroughs() {
+		const response = await this.client.send(new ScanCommand({
+			TableName: EnvironmentVars.runTableName
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as RunThrough[] : [];
+	}
 }
 
 export interface UserItem {

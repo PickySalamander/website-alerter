@@ -1,0 +1,13 @@
+@import "theme";
+
+.error {
+	color: map-get($warn-colors, 500);
+}
+
+.unchanged {
+	color: map-get($primary-colors, 500);
+}
+
+.changed {
+	color: map-get($accent-colors, 500);
+}

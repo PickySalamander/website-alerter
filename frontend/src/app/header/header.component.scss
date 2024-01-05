@@ -1,0 +1,39 @@
+@import "theme";
+
+header {
+	height: 4rem;
+
+	background-color: map-get($primary-colors, 500);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 2em;
+}
+
+.logo {
+	.content {
+		display: flex;
+		align-items: center;
+		color: white;
+		font-size: 20px;
+
+		img {
+			height: 2.5rem;
+			margin-right: 1em;
+		}
+	}
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 1em;
+
+	.mat-mdc-button:not(:disabled) {
+		color: white;
+	}
+
+	.active.mat-mdc-button {
+		color: map-get($accent-colors, 500);
+	}
+}

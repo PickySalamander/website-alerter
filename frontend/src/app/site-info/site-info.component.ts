@@ -1,29 +1,32 @@
-import {Component, Inject} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatButtonModule} from "@angular/material/button";
 import {FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
-import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from "@angular/material/dialog";
+import {MatDialogModule} from "@angular/material/dialog";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {HttpClient} from "@angular/common/http";
-import {environment} from "../../../environments/environment";
-import {SnackbarService} from "../../services/snackbar.service";
 import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
+import {SiteService} from "../services/site.service";
+import {SnackbarService} from "../services/snackbar.service";
+import {ActivatedRoute, Router, RouterLink} from "@angular/router";
+import {environment} from "../../environments/environment";
+import {RevisionListComponent} from "./revision-list/revision-list.component";
 
 @Component({
 	selector: 'app-add-site',
 	standalone: true,
-	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule],
-	templateUrl: './add-edit-site.component.html',
-	styleUrl: './add-edit-site.component.scss'
+	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
+	templateUrl: './site-info.component.html',
+	styleUrl: './site-info.component.scss'
 })
-export class AddEditSiteComponent {
+export class SiteInfoComponent implements OnInit {
 	private static readonly SITE_PATTERN = /^(https:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=]+$/;
 
 	/** The form fields to put on the page */
 	createForm = new FormGroup({
-		url: new FormControl('', [Validators.required, Validators.pattern(AddEditSiteComponent.SITE_PATTERN), Validators.maxLength(2048)]),
+		url: new FormControl('', [Validators.required, Validators.pattern(SiteInfoComponent.SITE_PATTERN), Validators.maxLength(2048)]),
 		selector: new FormControl('', [Validators.maxLength(2048)]),
 		enabled: new FormControl(true),
 		ignoreCss: new FormControl(false),
@@ -31,24 +34,35 @@ export class AddEditSiteComponent {
 		ignoreScripts: new FormControl(false),
 	});
 
-	private readonly initial;
+	data:WebsiteItem;
+
+	private initial:{ [key:string]:string | boolean };
 
 	constructor(private http:HttpClient,
-	            private snackbar:SnackbarService,
-	            private dialog:MatDialogRef<AddEditSiteComponent>,
-	            @Inject(MAT_DIALOG_DATA) public data:WebsiteItem) {
-		if(data) {
-			this.createForm.controls.url.setValue(data.site);
-			this.createForm.controls.url.disable();
-			this.createForm.controls.selector.setValue(data.selector ?? "");
-			this.createForm.controls.enabled.setValue(data.enabled ?? true);
-			this.createForm.controls.ignoreCss.setValue(data.options?.ignoreCss ?? false);
-			this.createForm.controls.ignoreAttributes.setValue(data.options?.ignoreAttributes ?? false);
-			this.createForm.controls.ignoreScripts.setValue(data.options?.ignoreScripts ?? false);
+	            private router:Router,
+	            private route:ActivatedRoute,
+	            private sites:SiteService,
+	            private snackbar:SnackbarService) {
+	}
 
-			this.initial = this.createForm.value;
+	ngOnInit() {
+		const siteID = this.route.snapshot?.paramMap?.get("siteID");
 
-			this.createForm.addValidators(() => this.notEqualValidator());
+		if(siteID) {
+			this.data = this.sites.getSite(siteID);
+			if(this.data) {
+				this.createForm.controls.url.setValue(this.data.site);
+				this.createForm.controls.url.disable();
+				this.createForm.controls.selector.setValue(this.data.selector ?? "");
+				this.createForm.controls.enabled.setValue(this.data.enabled ?? true);
+				this.createForm.controls.ignoreCss.setValue(this.data.options?.ignoreCss ?? false);
+				this.createForm.controls.ignoreAttributes.setValue(this.data.options?.ignoreAttributes ?? false);
+				this.createForm.controls.ignoreScripts.setValue(this.data.options?.ignoreScripts ?? false);
+
+				this.initial = this.createForm.value;
+
+				this.createForm.addValidators(() => this.notEqualValidator());
+			}
 		}
 	}
 
@@ -74,12 +88,20 @@ export class AddEditSiteComponent {
 			updated.siteID = this.data.siteID;
 
 			this.http.post<WebsiteItem>(`${environment.apiUrl}/sites`, updated).subscribe({
-				next: (response) => this.next(response),
+				next: (response) => {
+					this.snackbar.message("Successfully updated site!");
+					this.sites.putSite(response);
+					this.createForm.enable();
+				},
 				error: (error) => this.error(error)
 			});
 		} else {
 			this.http.put<WebsiteItem>(`${environment.apiUrl}/sites`, updated).subscribe({
-				next: (response) => this.next(response),
+				next: (response) => {
+					this.snackbar.message("Successfully added new site!");
+					this.sites.putSite(response);
+					this.router.navigate(["/", "list"]);
+				},
 				error: (error) => this.error(error)
 			});
 		}
@@ -87,7 +109,7 @@ export class AddEditSiteComponent {
 
 	next(response:WebsiteItem) {
 		this.snackbar.message(this.isNewSite ? "Successfully added new site!" : "Successfully updated site!");
-		this.dialog.close(response);
+		this.sites.putSite(response);
 	}
 
 	error(error:any) {

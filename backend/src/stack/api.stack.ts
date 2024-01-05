@@ -93,6 +93,18 @@ export class ApiStack {
 			function: stack.apiLambda.deleteSites,
 			schemaName: "delete-sites"
 		});
+
+		const revisions = this.api.root.addResource("revision").addResource("{siteID}");
+		this.addLambda(revisions, {
+			method: HttpMethod.Get,
+			function: stack.apiLambda.getRevision
+		});
+
+		const runs = this.api.root.addResource("runs");
+		this.addLambda(runs, {
+			method: HttpMethod.Get,
+			function: stack.apiLambda.getRuns
+		});
 	}
 
 	private addLambda(resource:Resource, props:LambdaOptions) {

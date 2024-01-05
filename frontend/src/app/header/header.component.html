@@ -1,0 +1,16 @@
+<header class="mat-elevation-z5">
+	<a mat-button routerLink="" class="logo">
+		<div class="content">
+			<img src="assets/favicon.svg" alt="The site logo"/>
+
+			Website Alerter
+		</div>
+	</a>
+
+	<div class="actions">
+		<a mat-button routerLink="list" routerLinkActive="active">Site List</a>
+		<a mat-button routerLink="runs" routerLinkActive="active">Run List</a>
+
+		<button mat-flat-button (click)="onLogout()">Logout</button>
+	</div>
+</header>

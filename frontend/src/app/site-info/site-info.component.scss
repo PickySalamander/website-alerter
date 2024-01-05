@@ -1,0 +1,25 @@
+@import "theme";
+
+:host {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 5em;
+}
+
+mat-form-field {
+	width: 100%;
+	margin-bottom: 20px;
+}
+
+.options mat-slide-toggle {
+	display: block;
+	margin-bottom: 1em;
+}
+
+.buttons {
+	margin-top: 1em;
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+}

@@ -10,22 +10,22 @@ import {MatIconModule} from "@angular/material/icon";
 import {SelectionModel} from "@angular/cdk/collections";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {SnackbarService} from "../services/snackbar.service";
-import {MatDialog} from "@angular/material/dialog";
-import {AddEditSiteComponent} from "./add-edit-site/add-edit-site.component";
 import {environment} from "../../environments/environment";
 import {RunScheduling, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {RouterLink} from "@angular/router";
+import {SiteService} from "../services/site.service";
+import {RevisionStateComponent} from "../revision-state/revision-state.component";
 
 @Component({
 	selector: 'app-index',
 	standalone: true,
-	imports: [CommonModule, MatTableModule, MatSortModule, MatCardModule, MatButtonModule, MatInputModule, MatIconModule, MatCheckboxModule],
-	templateUrl: './index.component.html',
-	styleUrl: './index.component.scss'
+	imports: [CommonModule, MatTableModule, MatSortModule, MatCardModule, MatButtonModule, MatInputModule, MatIconModule, MatCheckboxModule, RouterLink, RevisionStateComponent],
+	templateUrl: './site-list.component.html',
+	styleUrl: './site-list.component.scss'
 })
-export class IndexComponent implements OnInit, AfterViewInit {
+export class SiteListComponent implements OnInit, AfterViewInit {
 	displayedColumns:string[] = ["select", "enabled", "site", "lastCheck", "lastStatus", "nextCheck"];
-	items:WebsiteItem[];
-	dataSource:MatTableDataSource<WebsiteItem> = new MatTableDataSource<WebsiteItem>();
+	dataSource = new MatTableDataSource<WebsiteItem>();
 	selection = new SelectionModel<WebsiteItem>(true, []);
 	stateValues = SiteRevisionState;
 
@@ -36,58 +36,14 @@ export class IndexComponent implements OnInit, AfterViewInit {
 
 	constructor(private http:HttpClient,
 	            private snackbar:SnackbarService,
-	            private dialog:MatDialog) {
+	            private sites:SiteService) {
 	}
 
 	ngOnInit() {
-		// this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(response => {
-		// 	this.items = response;
-		//
-		// 	if(this.items && this.items.length > 0) {
-		// 		this.dataSource.data = this.items;
-		// 		this.table?.renderRows();
-		// 	}
-		// });
+		const items = this.sites.allItems
 
-		this.items = [
-			{
-				"siteID": "b",
-				"site": "https://unknownworlds.com/jobs/",
-				"selector": "#content-holder > section > div",
-				"enabled": false
-			},
-			{
-				"options": {
-					"ignoreAttributes": true,
-					"ignoreCss": true
-				},
-				"siteID": "c",
-				"site": "https://www.privatedivision.com/jobs/",
-				"selector": "#post-5548 > div",
-				"last": {
-					"revisionID": "d64eee14-316f-4e15-8e8b-acada3a64495",
-					"runID": "09f0b959-4671-40de-b38a-cb72db65a8cb",
-					"time": 1704400415098,
-					"siteState": 2
-				},
-				"enabled": true
-			},
-			{
-				"siteID": "a",
-				"site": "https://firaxis.com/careers/",
-				"selector": ".firaxis-careers-component ul.jobGrid",
-				"last": {
-					"revisionID": "c65f03a3-f0ad-4411-9c24-f29dd61a8e1c",
-					"runID": "09f0b959-4671-40de-b38a-cb72db65a8cb",
-					"time": 1704399981978,
-					"siteState": 0
-				},
-				"enabled": true
-			}
-		] as any;
-
-		if(this.items && this.items.length > 0) {
-			this.dataSource.data = this.items;
+		if(items && items.length > 0) {
+			this.dataSource.data = items;
 			this.table?.renderRows();
 		}
 	}
@@ -112,28 +68,6 @@ export class IndexComponent implements OnInit, AfterViewInit {
 		this.selection.select(...this.dataSource.data);
 	}
 
-	onAdd() {
-		this.dialog.open(AddEditSiteComponent).afterClosed().subscribe(value => {
-			if(value) {
-				this.items.push(value);
-				this.updateItems();
-			}
-		});
-	}
-
-	onEdit(row:WebsiteItem) {
-		this.dialog.open(AddEditSiteComponent, {data: row}).afterClosed().subscribe(value => {
-			if(value) {
-				const index = this.items.indexOf(row);
-				if(index >= 0) {
-					this.items[index] = value;
-				}
-
-				this.updateItems();
-			}
-		});
-	}
-
 	onDelete() {
 		if(!this.isEmptySelection) {
 			const toDelete = this.selection.selected.slice();
@@ -146,8 +80,7 @@ export class IndexComponent implements OnInit, AfterViewInit {
 			this.http.delete(`${environment.apiUrl}/sites`, {body: request}).subscribe({
 				next: () => {
 					for(const del of toDelete) {
-						const index = this.items.indexOf(del);
-						this.items.splice(index, 1);
+						this.sites.deleteSite(del.siteID);
 					}
 
 					this.updateItems();
@@ -163,7 +96,7 @@ export class IndexComponent implements OnInit, AfterViewInit {
 	}
 
 	private updateItems() {
-		this.dataSource.data = this.items;
+		this.dataSource.data = this.sites.allItems;
 		this.table.renderRows();
 		this.selection.clear();
 	}
@@ -184,6 +117,6 @@ export class IndexComponent implements OnInit, AfterViewInit {
 	}
 
 	get itemsExist() {
-		return this.items !== undefined
+		return this.dataSource?.data?.length ?? 0 > 0;
 	}
 }
