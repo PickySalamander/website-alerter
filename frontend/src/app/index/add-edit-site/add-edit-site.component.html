@@ -16,24 +16,16 @@
 
 		<mat-form-field>
 			<mat-label>A CSS selector to target an element for changes</mat-label>
-			<input matInput placeholder="body > .content" formControlName="selector">
-		</mat-form-field>
-
-		<mat-form-field>
-			<mat-label>Frequency of checks</mat-label>
-			<mat-select formControlName="frequency">
-				<mat-option [value]="frequencyValues.Never">Never</mat-option>
-				<mat-option [value]="frequencyValues.Weekly">Weekly</mat-option>
-				<mat-option [value]="frequencyValues.SemiWeekly">Semi-Weekly</mat-option>
-			</mat-select>
+			<input matInput formControlName="selector" placeholder="body > .content">
 		</mat-form-field>
 
 		<div class="options">
 			<h3>Options</h3>
-			<mat-checkbox formControlName="ignoreCss">Should "class" and "style" attributes be ignored as changes?
-			</mat-checkbox>
-			<mat-checkbox formControlName="ignoreAttributes">Should all HTML attributes be ignored as changes?</mat-checkbox>
-			<mat-checkbox formControlName="ignoreScripts">Should "script" tags be ignored as changes?</mat-checkbox>
+			<mat-slide-toggle formControlName="enabled">Enabled for checking?</mat-slide-toggle>
+			<mat-slide-toggle formControlName="ignoreCss">Should "class" and "style" attributes be ignored as changes?
+			</mat-slide-toggle>
+			<mat-slide-toggle formControlName="ignoreAttributes">Should all HTML attributes be ignored as changes?</mat-slide-toggle>
+			<mat-slide-toggle formControlName="ignoreScripts">Should "script" tags be ignored as changes?</mat-slide-toggle>
 		</div>
 	</form>
 </div>

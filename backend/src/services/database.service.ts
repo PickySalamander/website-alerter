@@ -75,7 +75,10 @@ export class DatabaseService {
 	async getSites() {
 		const response = await this.client.send(new ScanCommand({
 			TableName: EnvironmentVars.websiteTableName,
-			ProjectionExpression: "siteID, site, enabled, selector, options, created, last"
+			ProjectionExpression: "siteID, site, enabled, selector, options, created, #last",
+			ExpressionAttributeNames: {
+				"#last": "last"
+			}
 		}));
 
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];

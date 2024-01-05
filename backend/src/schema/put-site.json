@@ -11,9 +11,8 @@
 			"type": "string",
 			"maxLength": 2048
 		},
-		"frequency": {
-			"type": "string",
-			"pattern": "^(NEVER|WEEKLY|SEMI-WEEKLY)$"
+		"enabled": {
+			"type": "boolean"
 		},
 		"options": {
 			"type": "object",

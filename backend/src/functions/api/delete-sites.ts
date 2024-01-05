@@ -28,13 +28,6 @@ export class DeleteSites extends LambdaBase {
 			throw new createError.BadRequest(`Failed to find all ${toDelete.size} items in the database`);
 		}
 
-		for(const item of itemsToDelete) {
-			if(item.userID != user.userID) {
-				console.error(`User ${user.userID} not authorized to delete site ${item.siteID}`);
-				throw new createError.Forbidden("Not authorized to delete site");
-			}
-		}
-
 		await this.database.deleteSites(toDelete);
 
 		return {

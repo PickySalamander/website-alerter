@@ -2,58 +2,110 @@
 
 @include mat.core();
 
-$dark-primary-text: rgba(black, 0.87);
-$dark-accent-text: rgba(black, 0.54);
-$dark-disabled-text: rgba(black, 0.38);
-$dark-dividers: rgba(black, 0.12);
-$dark-focused: rgba(black, 0.12);
-$light-primary-text: white;
-$light-accent-text: rgba(white, 0.7);
-$light-disabled-text: rgba(white, 0.5);
-$light-dividers: rgba(white, 0.12);
-$light-focused: rgba(white, 0.12);
-
 $primary-colors: (
-	main: #3d5a80,
-	lighter: #c5ced9,
-	darker: #273f63,
-	200: #3d5a80, // For slide toggle,
-	contrast : (
-		main: $light-primary-text,
-		lighter: $dark-primary-text,
-		darker: $light-primary-text,
+	50 : #e8ebf0,
+	100 : #c5ced9,
+	200 : #9eadc0,
+	300 : #778ca6,
+	400 : #5a7393,
+	500 : #3d5a80,
+	600 : #375278,
+	700 : #2f486d,
+	800 : #273f63,
+	900 : #1a2e50,
+	A100 : #8fb5ff,
+	A200 : #5c93ff,
+	A400 : #2972ff,
+	A700 : #0f61ff,
+	contrast: (
+		50 : #000000,
+		100 : #000000,
+		200 : #000000,
+		300 : #000000,
+		400 : #ffffff,
+		500 : #ffffff,
+		600 : #ffffff,
+		700 : #ffffff,
+		800 : #ffffff,
+		900 : #ffffff,
+		A100 : #000000,
+		A200 : #000000,
+		A400 : #ffffff,
+		A700 : #ffffff,
 	)
 );
 
-$primary-palette: mat.define-palette($primary-colors, main, lighter, darker);
+$primary-palette: mat.define-palette($primary-colors, 500);
 
 $accent-colors: (
-	main: #ee6c4d,
-	lighter: #fad3ca,
-	darker: #e74f34,
-	200: #ee6c4d, // For slide toggle,
-	contrast : (
-		main: $dark-primary-text,
-		lighter: $dark-primary-text,
-		darker: $light-primary-text,
+	50 : #fdedea,
+	100 : #fad3ca,
+	200 : #f7b6a6,
+	300 : #f39882,
+	400 : #f18268,
+	500 : #ee6c4d,
+	600 : #ec6446,
+	700 : #e9593d,
+	800 : #e74f34,
+	900 : #e23d25,
+	A100 : #ffffff,
+	A200 : #ffecea,
+	A400 : #ffbfb7,
+	A700 : #ffa89d,
+	contrast: (
+		50 : #000000,
+		100 : #000000,
+		200 : #000000,
+		300 : #000000,
+		400 : #000000,
+		500 : #000000,
+		600 : #000000,
+		700 : #000000,
+		800 : #ffffff,
+		900 : #ffffff,
+		A100 : #000000,
+		A200 : #000000,
+		A400 : #000000,
+		A700 : #000000,
 	)
 );
 
-$accent-palette: mat.define-palette($accent-colors,  main, lighter, darker);
+$accent-palette: mat.define-palette($accent-colors, 500);
 
 $warn-colors: (
-	main: #d90429,
-	lighter: #f4b4bf,
-	darker: #ca0219,
-	200: #d90429, // For slide toggle,
-	contrast : (
-		main: $light-primary-text,
-		lighter: $dark-primary-text,
-		darker: $light-primary-text,
+	50 : #fae1e5,
+	100 : #f4b4bf,
+	200 : #ec8294,
+	300 : #e44f69,
+	400 : #df2a49,
+	500 : #d90429,
+	600 : #d50324,
+	700 : #cf031f,
+	800 : #ca0219,
+	900 : #c0010f,
+	A100 : #ffe9ea,
+	A200 : #ffb6b8,
+	A400 : #ff8387,
+	A700 : #ff696e,
+	contrast: (
+		50 : #000000,
+		100 : #000000,
+		200 : #000000,
+		300 : #ffffff,
+		400 : #ffffff,
+		500 : #ffffff,
+		600 : #ffffff,
+		700 : #ffffff,
+		800 : #ffffff,
+		900 : #ffffff,
+		A100 : #000000,
+		A200 : #000000,
+		A400 : #000000,
+		A700 : #000000,
 	)
 );
 
-$warn-palette: mat.define-palette($warn-colors, main, lighter, darker);
+$warn-palette: mat.define-palette($warn-colors, 500);
 
 $typography: mat.define-typography-config($font-family: "Roboto Slab");
 

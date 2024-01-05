@@ -37,10 +37,6 @@ export class DynamoStack {
 				name: "userID",
 				type: AttributeType.STRING,
 			},
-			sortKey: {
-				name: "email",
-				type: AttributeType.STRING
-			},
 			billingMode: BillingMode.PAY_PER_REQUEST,
 			removalPolicy: RemovalPolicy.DESTROY
 		});

@@ -42,6 +42,10 @@ table {
 	cursor: pointer;
 	transition: all 300ms;
 
+	&.disabled {
+		opacity: .6;
+	}
+
 	&:hover {
 		background-color: map-get($primary-colors, lighter);
 
@@ -51,14 +55,14 @@ table {
 	}
 
 	.error {
-		color: map-get($warn-colors, main);
+		color: map-get($warn-colors, 500);
 	}
 
 	.unchanged {
-		color: map-get($primary-colors, main);
+		color: map-get($primary-colors, 500);
 	}
 
 	.changed {
-		color: map-get($accent-colors, main);
+		color: map-get($accent-colors, 500);
 	}
 }

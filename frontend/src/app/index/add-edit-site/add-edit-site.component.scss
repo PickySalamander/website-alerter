@@ -1,3 +1,5 @@
+@import "theme";
+
 mat-card {
 	width: 1024px;
 	max-width: 100vw;
@@ -8,6 +10,14 @@ mat-form-field {
 	margin-bottom: 20px;
 }
 
-.options mat-checkbox {
+.options mat-slide-toggle {
 	display: block;
+	margin-bottom: 1em;
+
+	//--mdc-switch-selected-track-color:
+	//--mdc-switch-handle-surface-color: #ee6c4d;
+	//
+	//::ng-deep {
+	//	--mdc-switch-handle-surface-color: #ee6c4d;
+	//}
 }

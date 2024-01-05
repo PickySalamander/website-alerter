@@ -12,7 +12,7 @@ export class GetSites extends LambdaBase {
 
 		console.log(`Getting sites for user ${user.userID}`);
 
-		const sites = await this.database.getSites(user.userID);
+		const sites = await this.database.getSites();
 
 		console.log(`Returning ${sites.length} sites.`);
 

@@ -28,15 +28,15 @@ export class PutSite extends LambdaBase {
 
 		const siteItem:WebsiteItem = Object.assign(siteRequest, {
 			siteID: isNewSite ? v4() : siteRequest.siteID,
-			userID: user.userID,
+			enabled: siteRequest.enabled,
+			last: undefined,
+			updates: {},
 			created: new Date().getTime()
 		});
 
 		if(isNewSite) {
 			await this.database.putWebsite(siteItem);
 		} else {
-			//TODO validate they have access to the site
-			//TODO validate deletion of fields?
 			await this.database.editWebsite(siteItem);
 		}
 

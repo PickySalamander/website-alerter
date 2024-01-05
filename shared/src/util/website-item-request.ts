@@ -7,6 +7,9 @@ export interface WebsiteItemRequest {
 	/** The site's url */
 	site:string;
 
+	/** Is the site enabled for checking? */
+	enabled:boolean;
+
 	/**
 	 * A CSS selector of the part of the DOM to check for changes, this should only return <u><b>one</b></u> element
 	 */
