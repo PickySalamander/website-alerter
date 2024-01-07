@@ -8,11 +8,12 @@ import {RevisionStateComponent} from "../../revision-state/revision-state.compon
 import {HttpClient} from "@angular/common/http";
 import {environment} from "../../../environments/environment";
 import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
+import {RouterLink} from "@angular/router";
 
 @Component({
 	selector: 'app-revision-list',
 	standalone: true,
-	imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent, ShortUuidComponent],
+	imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent, ShortUuidComponent, RouterLink],
 	templateUrl: './revision-list.component.html',
 	styleUrl: './revision-list.component.scss'
 })
@@ -29,7 +30,7 @@ export class RevisionListComponent implements OnInit {
 	}
 
 	ngOnInit() {
-		this.http.get<SiteRevision[]>(`${environment.apiUrl}/revision/${this.siteID}`)
+		this.http.get<SiteRevision[]>(`${environment.apiUrl}/revisions/site/${this.siteID}`)
 			.subscribe(revisions => {
 				revisions.sort((a, b) => b.time = a.time);
 

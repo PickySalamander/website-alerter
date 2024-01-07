@@ -1,6 +1,6 @@
 <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
 	<ng-container matColumnDef="site">
-		<th mat-header-cell *matHeaderCellDef>Time</th>
+		<th mat-header-cell *matHeaderCellDef>Site URL</th>
 		<td mat-cell *matCellDef="let row">
 			<a [routerLink]="['/', 'site', getSiteID(row)]">{{ getSiteName(row) }}</a>
 		</td>
@@ -9,7 +9,7 @@
 	<ng-container matColumnDef="revisionID">
 		<th mat-header-cell *matHeaderCellDef>Revision ID</th>
 		<td mat-cell *matCellDef="let row">
-			<app-short-uuid [uuid]="row.revisionID"></app-short-uuid>
+			<a [routerLink]="['/', 'revision', row.revisionID]"><app-short-uuid [uuid]="row.revisionID"></app-short-uuid></a>
 		</td>
 	</ng-container>
 
