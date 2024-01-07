@@ -8,8 +8,8 @@
 	</a>
 
 	<div class="actions">
-		<a mat-button routerLink="list" routerLinkActive="active">Site List</a>
-		<a mat-button routerLink="runs" routerLinkActive="active">Run List</a>
+		<a mat-button routerLink="list" routerLinkActive="active" [routerLinkActiveOptions]="{exact:false}">Site List</a>
+		<a mat-button routerLink="runs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:false}">Run List</a>
 
 		<button mat-flat-button (click)="onLogout()">Logout</button>
 	</div>

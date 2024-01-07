@@ -30,6 +30,7 @@ export class ApiLambdaStack {
 			"USERS_TABLE": stack.dynamo.usersTable.tableName,
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
 			"ALLOWED_ORIGINS": allowOrigins,
 			"IS_PRODUCTION": "true"
 		};

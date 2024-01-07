@@ -11,7 +11,7 @@ import {
 	ScanCommand,
 	UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {RunThroughStats, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
 import {EnvironmentVars} from "../util/environment-vars";
 
@@ -186,17 +186,19 @@ export class DatabaseService {
 	/**
 	 * Update the entire run's state
 	 * @param runID the run to update
+	 * @param stats statistics for the front end
 	 * @param state the state to set to
 	 */
-	async updateRunState(runID:string, state:RunThroughState) {
+	async updateRunState(runID:string, stats:RunThroughStats, state:RunThroughState) {
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.runTableName,
 			Key: {
 				runID: runID
 			},
-			UpdateExpression: "SET runState = :state",
+			UpdateExpression: "SET runState = :state, stats = :stats",
 			ExpressionAttributeValues: {
-				":state": state
+				":state": state,
+				":stats": stats
 			}
 		}));
 	}

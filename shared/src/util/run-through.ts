@@ -14,16 +14,20 @@ export interface RunThrough {
 	/** Sites that were checked during the run */
 	sites:string[];
 
+	/** Statistics for the front end */
+	stats?:RunThroughStats;
+
 	/** The state of the entire run */
 	runState:RunThroughState;
 }
 
-export interface RunThroughData {
-	/** The id of the run through */
-	runID:string;
+/** Statistics for the front end */
+export interface RunThroughStats {
+	unchanged:number;
 
-	/** The revisions in the run */
-	revisions:SiteRevision[];
+	changed:number;
+
+	errored:number;
 }
 
 /** The state of an entire {@link RunThrough} */

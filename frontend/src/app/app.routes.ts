@@ -6,6 +6,7 @@ import {SiteInfoComponent} from "./site-info/site-info.component";
 import {SiteService} from "./services/site.service";
 import {RunListComponent} from "./run-list/run-list.component";
 import {RunService} from "./services/run.service";
+import {RunDetailComponent} from "./run-list/run-detail/run-detail.component";
 
 // @ts-ignore
 export const routes:Routes = [
@@ -42,7 +43,7 @@ export const routes:Routes = [
 		children: [
 			{
 				path: ":runID",
-				component: RunListComponent
+				component: RunDetailComponent
 			}
 		]
 	},

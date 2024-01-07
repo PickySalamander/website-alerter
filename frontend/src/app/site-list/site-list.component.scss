@@ -47,7 +47,7 @@ table {
 	}
 
 	&:hover {
-		background-color: map-get($primary-colors, lighter);
+		background-color: map-get($primary-colors, 200);
 
 		.site a {
 			opacity: 1;

@@ -1,6 +1,6 @@
 import {Handler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
-import {RunThroughState, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {RunThroughState, RunThroughStats, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {EnvironmentVars} from "../../util/environment-vars";
 import {PublishCommand, SNSClient} from "@aws-sdk/client-sns";
 import {DeleteObjectCommand} from "@aws-sdk/client-s3";
@@ -51,7 +51,13 @@ class ScheduledEnd extends LambdaBase {
 
 		await this.sendEmail(changed, errored);
 
-		await this.database.updateRunState(data.runID, RunThroughState.Complete);
+		const stats:RunThroughStats = {
+			unchanged: this.sites.size - (changed.size + errored.size),
+			changed: changed.size,
+			errored: errored.size
+		};
+
+		await this.database.updateRunState(data.runID, stats, RunThroughState.Complete);
 
 		await this.performMaintenance();
 
