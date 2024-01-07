@@ -54,6 +54,8 @@ export class IamStack {
 								`${stack.dynamo.runThroughTable.tableArn}/index/*`,
 								stack.dynamo.usersTable.tableArn,
 								`${stack.dynamo.usersTable.tableArn}/index/*`,
+								stack.dynamo.revisionTable.tableArn,
+								`${stack.dynamo.revisionTable.tableArn}/index/*`
 							]
 						}),
 						new PolicyStatement({

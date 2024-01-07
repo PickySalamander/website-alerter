@@ -1,0 +1,13 @@
+@import "theme";
+
+:host {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+}
+
+table {
+	margin-top: 2em;
+	border-radius: 4px;
+	width: 100%;
+}

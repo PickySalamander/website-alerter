@@ -15,7 +15,9 @@ export class ApiLambdaStack {
 
 	public readonly getRuns:FunctionBase;
 
-	public readonly getRevision:FunctionBase;
+	public readonly getRunRevisions:FunctionBase;
+
+	public readonly getSiteRevisions:FunctionBase;
 
 	constructor(stack:WebsiteAlerterStack) {
 		let allowOrigins = `https://${stack.cdn.cdn.attrDomainName}`;
@@ -62,15 +64,21 @@ export class ApiLambdaStack {
 			environment
 		});
 
-		this.getRevision = new AlerterJsFunction(stack, "GetRevision", {
+		this.getSiteRevisions = new AlerterJsFunction(stack, "GetSiteRevisions", {
 			description: "Get all revisions for a website",
-			entry: "src/functions/api/get-revision.ts",
+			entry: "src/functions/api/get-site-revisions.ts",
 			environment
 		});
 
 		this.getRuns = new AlerterJsFunction(stack, "GetRuns", {
 			description: "Get all runs in the database",
 			entry: "src/functions/api/get-runs.ts",
+			environment
+		});
+
+		this.getRunRevisions = new AlerterJsFunction(stack, "GetRunRevisions", {
+			description: "Get all more data on a particular run",
+			entry: "src/functions/api/get-run-revisions.ts",
 			environment
 		});
 	}

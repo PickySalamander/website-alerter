@@ -6,7 +6,7 @@ import {Construct} from "constructs";
 export class ParamsStack {
 	public readonly emailAddress:CfnParameter;
 
-	public readonly numRevisions:CfnParameter;
+	public readonly numRuns:CfnParameter;
 
 	public readonly enableSchedule:ICfnRuleConditionExpression;
 
@@ -16,9 +16,9 @@ export class ParamsStack {
 			description: "The email to send notification of run completions to"
 		});
 
-		this.numRevisions = new CfnParameter(stack, "numRevisions", {
+		this.numRuns = new CfnParameter(stack, "numRunsAllowed", {
 			default: 5,
-			description: "Number of revisions to leave in the database, defaults to 5"
+			description: "Number of runs to leave in the database, defaults to 5"
 		});
 
 		const enableScheduleParam = new CfnParameter(stack, "enableSchedule", {

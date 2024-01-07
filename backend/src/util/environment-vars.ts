@@ -21,6 +21,10 @@ export abstract class EnvironmentVars {
 		return process.env.RUN_TABLE;
 	}
 
+	static get revisionTableName():string {
+		return process.env.REVISION_TABLE;
+	}
+
 	static get allowedOrigins():string[] {
 		return process.env.ALLOWED_ORIGINS.split(",");
 	}
@@ -30,7 +34,7 @@ export abstract class EnvironmentVars {
 	}
 
 	static get numRevisions():number {
-		const parsed = parseInt(process.env.NUM_REVISIONS_ALLOWED);
+		const parsed = parseInt(process.env.NUM_RUNS_ALLOWED);
 		return isNaN(parsed) ? 5 : parsed;
 	}
 }

@@ -4,7 +4,7 @@ import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
-import {SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {DetectChangesData} from "../../util/step-data";
 
 /**
@@ -35,13 +35,16 @@ class ProcessSite extends LambdaBase {
 		this.currentRevision = v4();
 		console.log(`Starting new revision ${this.currentRevision}`);
 
-		//add a revision to the database
-		await this.database.addSiteRevision(data.siteID, {
+		const revision:SiteRevision = {
+			siteID: data.siteID,
 			runID: data.runID,
 			time: new Date().getTime(),
 			revisionID: this.currentRevision,
 			siteState: SiteRevisionState.Open
-		});
+		}
+
+		//add a revision to the database
+		await this.database.putSiteRevision(revision);
 
 		if(!this.browser) {
 			//set up the browser

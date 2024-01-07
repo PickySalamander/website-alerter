@@ -94,10 +94,18 @@ export class ApiStack {
 			schemaName: "delete-sites"
 		});
 
-		const revisions = this.api.root.addResource("revision").addResource("{siteID}");
-		this.addLambda(revisions, {
+		const revisions = this.api.root.addResource("revisions")
+
+		const revisionsForRun = revisions.addResource("run").addResource("{runID}");
+		this.addLambda(revisionsForRun, {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getRevision
+			function: stack.apiLambda.getRunRevisions
+		});
+
+		const revisionsForSite = revisions.addResource("site").addResource("{siteID}");
+		this.addLambda(revisionsForSite, {
+			method: HttpMethod.Get,
+			function: stack.apiLambda.getSiteRevisions
 		});
 
 		const runs = this.api.root.addResource("runs");

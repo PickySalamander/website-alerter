@@ -1,3 +1,5 @@
+import {SiteRevision} from "./site-revision";
+
 /** A run through of the website alerter tool in the database */
 export interface RunThrough {
 	/** The id of the run through */
@@ -14,6 +16,14 @@ export interface RunThrough {
 
 	/** The state of the entire run */
 	runState:RunThroughState;
+}
+
+export interface RunThroughData {
+	/** The id of the run through */
+	runID:string;
+
+	/** The revisions in the run */
+	revisions:SiteRevision[];
 }
 
 /** The state of an entire {@link RunThrough} */

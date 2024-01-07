@@ -7,18 +7,19 @@ import {MatSortModule} from "@angular/material/sort";
 import {RevisionStateComponent} from "../../revision-state/revision-state.component";
 import {HttpClient} from "@angular/common/http";
 import {environment} from "../../../environments/environment";
+import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
 
 @Component({
 	selector: 'app-revision-list',
 	standalone: true,
-	imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent],
+	imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent, ShortUuidComponent],
 	templateUrl: './revision-list.component.html',
 	styleUrl: './revision-list.component.scss'
 })
 export class RevisionListComponent implements OnInit {
 	@Input() siteID:string;
 
-	displayedColumns:string[] = ["time", "revisionID", "siteState"];
+	displayedColumns:string[] = ["time", "revisionID", "runID", "siteState"];
 	dataSource = new MatTableDataSource<SiteRevision>();
 
 	loading:boolean = true;

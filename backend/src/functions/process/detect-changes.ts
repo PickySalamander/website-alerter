@@ -4,13 +4,7 @@ import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";
 import {Parsed} from "../../util/parsed-html";
 import {DetectChangesData} from "../../util/step-data";
-import {
-	ChangeOptions,
-	getOrderedSiteRevisions,
-	SiteRevision,
-	SiteRevisionState,
-	WebsiteItem
-} from "website-alerter-shared";
+import {ChangeOptions, SiteRevision, SiteRevisionState} from "website-alerter-shared";
 
 /**
  * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
@@ -39,7 +33,7 @@ class DetectChanges extends LambdaBase {
 
 		console.log(`Checking the download ${site.site} for changes...`);
 
-		const currentRevision = site.updates[data.revisionID];
+		const currentRevision = await this.database.getSiteRevision(data.revisionID);
 		if(!currentRevision) {
 			throw new Error(`Failed to find ${data.revisionID} revision in the database.`);
 		}
@@ -49,7 +43,7 @@ class DetectChanges extends LambdaBase {
 			return SiteRevisionState.Open;
 		}
 
-		const lastRevision = this.findLastRevision(site, data.revisionID);
+		const lastRevision = await this.database.getSiteRevisionAfter(data.siteID, currentRevision.time);
 
 		//if there aren't enough revisions yet then abort
 		if(!lastRevision) {
@@ -60,7 +54,7 @@ class DetectChanges extends LambdaBase {
 			return SiteRevisionState.Unchanged;
 		}
 
-		console.log(`Comparing current:${currentRevision.revisionID} to last:${lastRevision.revisionID}...`);
+		console.log(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to last:${lastRevision.revisionID} (${new Date(lastRevision.time)})...`);
 
 		//get the current HTML revision and the previous
 		const current = await this.getContent(currentRevision, site.options);
@@ -110,18 +104,6 @@ class DetectChanges extends LambdaBase {
 
 		//return the html and pretty print it
 		return new Parsed(revision, html, options);
-	}
-
-	private findLastRevision(site:WebsiteItem, currentRevision:string) {
-		const orderedRevisions = getOrderedSiteRevisions(site, false);
-
-		for(const revision of orderedRevisions) {
-			if(revision.revisionID != currentRevision && revision.siteState != SiteRevisionState.Open) {
-				return revision;
-			}
-		}
-
-		return undefined;
 	}
 }
 

@@ -1,6 +1,6 @@
 import {Handler} from "aws-lambda";
 import {LambdaBase} from "../../util/lambda-base";
-import {getOrderedSiteRevisions, RunThroughState, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {RunThroughState, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {EnvironmentVars} from "../../util/environment-vars";
 import {PublishCommand, SNSClient} from "@aws-sdk/client-sns";
 import {DeleteObjectCommand} from "@aws-sdk/client-s3";
@@ -11,8 +11,6 @@ class ScheduledEnd extends LambdaBase {
 	private runID:string;
 
 	private sites:Map<string, WebsiteItem>;
-
-	private waiting:Promise<any>[];
 
 	public handler:Handler<ScheduledEndData, void> = async(data) => {
 		console.log(`Processing the end of run ${data.runID}`);
@@ -33,7 +31,6 @@ class ScheduledEnd extends LambdaBase {
 
 		const changed = new Set<string>();
 		const errored = new Set<string>();
-		const maintenance = new Set<string>();
 
 		for(const [, site] of this.sites) {
 			if(site.last.runID != data.runID) {
@@ -50,21 +47,15 @@ class ScheduledEnd extends LambdaBase {
 					changed.add(site.siteID);
 					break;
 			}
-
-			if(Object.keys(site.updates).length > EnvironmentVars.numRevisions) {
-				maintenance.add(site.siteID);
-			}
 		}
 
 		await this.sendEmail(changed, errored);
 
 		await this.database.updateRunState(data.runID, RunThroughState.Complete);
 
-		this.waiting = [];
-		await this.performMaintenance(maintenance);
+		await this.performMaintenance();
 
-		console.log("Waiting for final tasks to finish");
-		await Promise.all(this.waiting);
+		console.log("Done!");
 	}
 
 	private async sendEmail(changed:Set<string>, errored:Set<string>) {
@@ -94,36 +85,49 @@ class ScheduledEnd extends LambdaBase {
 	/**
 	 * Preform maintenance on all the sites in the database
 	 */
-	private async performMaintenance(maintenance:Set<string>) {
-		console.log(`Performing maintenance of ${maintenance.size} sites`);
+	private async performMaintenance() {
+		console.log(`Performing maintenance...`);
+
+		let runs = await this.database.getRunThroughs();
+
+		if(runs.length <= EnvironmentVars.numRevisions) {
+			console.log(`Only ${runs.length} revisions out of ${EnvironmentVars.numRevisions} allowed, skipping.`);
+			return;
+		}
+
+		const numDelete = runs.length - EnvironmentVars.numRevisions;
+		console.log(`Deleting ${numDelete} old runs that are over ${EnvironmentVars.numRevisions} allowed runs...`);
+
+		const runsToDelete:string[] = runs.sort((a, b) => a.time - b.time)
+			.slice(0, numDelete)
+			.map(value => value.runID);
+
+		const revisionsToDelete:string[] = [];
 
 		//got through each site in the config
-		for(const siteID of maintenance) {
-			//get the site from the database
-			const website = this.sites.get(siteID);
+		for(const runID of runsToDelete) {
+			console.log(`Deleting run ${runID}...`);
 
-			const orderedUpdates = getOrderedSiteRevisions(website);
-
-			const numDelete = orderedUpdates.length - EnvironmentVars.numRevisions;
-			const revisionsToDelete:string[] = []
-
-			console.log(`Deleting ${numDelete} old updates from site ${website.siteID}`);
-
-			//preform delete operations by deleting them from S3
-			for(let i = 0; i < numDelete; i++) {
-				const toDelete = orderedUpdates.shift().revisionID;
-				console.log(`Deleting revision ${toDelete}`);
-
-				this.waiting.push(this.deleteObject(toDelete, "diff"));
-				this.waiting.push(this.deleteObject(toDelete, "png"));
-				this.waiting.push(this.deleteObject(toDelete, "html"));
-
-				revisionsToDelete.push(toDelete);
+			const revisions = await this.database.getSiteRevisionsInRun(runID);
+			for(const revision of revisions) {
+				await this.deleteRevisionData(revision.revisionID);
+				revisionsToDelete.push(revision.revisionID);
 			}
-
-			//update the database with less revisions
-			this.waiting.push(this.database.deleteRevisions(siteID, revisionsToDelete));
 		}
+
+		console.log(`Deleting ${runsToDelete.length} runs and ${revisionsToDelete.length} revisions`);
+		await this.database.deleteRunsAndRevisions(runsToDelete, revisionsToDelete);
+	}
+
+	private deleteRevisionData(revisionID:string) {
+		//preform delete operations by deleting them from S3
+		console.log(`Deleting revision ${revisionID} from S3`);
+
+		return Promise.all([
+			this.deleteObject(revisionID, "diff"),
+			this.deleteObject(revisionID, "png"),
+			this.deleteObject(revisionID, "html")
+		]);
 	}
 
 	/**

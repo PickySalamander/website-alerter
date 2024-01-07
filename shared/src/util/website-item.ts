@@ -24,9 +24,6 @@ export interface WebsiteItem {
 
 	/** The last time the site was polled */
 	last:SiteRevision;
-
-	/** The last check on this site */
-	updates:{ [revisionID:string]:SiteRevision };
 }
 
 /** Options for detecting changes on the page */
@@ -39,10 +36,4 @@ export interface ChangeOptions {
 
 	/** ignore script tags on the page (default:true) */
 	ignoreScripts?:boolean;
-}
-
-export function getOrderedSiteRevisions(site:WebsiteItem, ascending:boolean = true) {
-	return Object.entries(site.updates)
-		.map(([, revision]) => revision)
-		.sort((a, b) => ascending ? a.time - b.time : b.time - a.time);
 }

@@ -19,7 +19,8 @@ export class LambdaStack {
 			"USERS_TABLE": stack.dynamo.usersTable.tableName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
-			"NUM_REVISIONS_ALLOWED": stack.params.numRevisions.valueAsString,
+			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
+			"NUM_RUNS_ALLOWED": stack.params.numRuns.valueAsString,
 			"NOTIFICATION_SNS": stack.notificationSns.topicArn,
 			"IS_PRODUCTION": "true"
 		};

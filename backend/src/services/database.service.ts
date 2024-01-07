@@ -131,70 +131,20 @@ export class DatabaseService {
 		}));
 	}
 
-	/**
-	 * Add a polled revision to the website's configuration ({@link WebsiteItem.updates})
-	 * @param siteID the site to update
-	 * @param revision the revision to add to the table
-	 */
-	async addSiteRevision(siteID:string, revision:SiteRevision) {
-		//run the update
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.websiteTableName,
-			Key: {
-				siteID
-			},
-			UpdateExpression: "SET #last = :revision, #updates.#revisionID = :revision",
-			ExpressionAttributeValues: {
-				":revision": revision
-			},
-			ExpressionAttributeNames: {
-				"#updates": "updates",
-				"#revisionID": revision.revisionID,
-				"#last": "last"
-			}
-		}));
-	}
-
-	async updateSiteRevision(siteID:string, revisionID:string, siteState:SiteRevisionState) {
-		//run the update
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.websiteTableName,
-			Key: {
-				siteID
-			},
-			UpdateExpression: "SET #last.siteState = :siteState, #updates.#revisionID.siteState = :siteState",
-			ExpressionAttributeValues: {
-				":siteState": siteState
-			},
-			ExpressionAttributeNames: {
-				"#updates": "updates",
-				"#revisionID": revisionID,
-				"#last": "last"
-			}
-		}));
-	}
-
 	async deleteSites(sitesIDs:Set<string>) {
 		if(sitesIDs.size > 25) {
 			throw new Error("Can only batch delete 25 at a time");
 		}
 
-		const params:BatchWriteCommandInput = {
-			RequestItems: {
-				[EnvironmentVars.websiteTableName]: []
-			}
+		const sitesToDelete:DeleteRequestElement[] = [];
+		for(const siteID of sitesIDs) {
+			sitesToDelete.push(DatabaseService.createDeleteItems("siteID", siteID));
 		}
 
-		const deleteRequests = params.RequestItems[EnvironmentVars.websiteTableName];
-
-		for(const siteID of sitesIDs) {
-			deleteRequests.push({
-				DeleteRequest: {
-					Key: {
-						siteID
-					}
-				}
-			})
+		const params:BatchWriteCommandInput = {
+			RequestItems: {
+				[EnvironmentVars.websiteTableName]: sitesToDelete
+			}
 		}
 
 		console.debug(`Deleting ${sitesIDs.size} sites: ${JSON.stringify(params)}`);
@@ -220,35 +170,6 @@ export class DatabaseService {
 
 		const get = await this.client.send(new BatchGetCommand(params));
 		return get.Responses[EnvironmentVars.websiteTableName] as WebsiteItem[];
-	}
-
-	async deleteRevisions(siteID:string, toDelete:string[]) {
-		let toRemoveExpression = "REMOVE ";
-		let toRemoveNames:Record<string, string> = {};
-
-		for(let i = 0; i < toDelete.length; i++) {
-			toRemoveExpression += `#updates.#rev${i}`;
-			toRemoveNames[`#rev${i}`] = toDelete[i];
-
-			if(i != toDelete.length - 1) {
-				toRemoveExpression += ", ";
-			}
-		}
-
-		console.debug(`Deleting revisions for ${siteID} with expression:${toRemoveExpression} and names:${JSON.stringify(toRemoveNames)}`);
-
-		//run the update
-		await this.client.send(new UpdateCommand({
-			TableName: EnvironmentVars.websiteTableName,
-			Key: {
-				siteID
-			},
-			UpdateExpression: toRemoveExpression,
-			ExpressionAttributeNames: {
-				"#updates": "updates",
-				...toRemoveNames
-			}
-		}));
 	}
 
 	/**
@@ -302,6 +223,145 @@ export class DatabaseService {
 
 		return response.Items && response.Items.length > 0 ? response.Items as RunThrough[] : [];
 	}
+
+	async putSiteRevision(revision:SiteRevision) {
+		await this.client.send(new PutCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			Item: revision
+		}));
+
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID: revision.siteID
+			},
+			UpdateExpression: "SET #last = :revision",
+			ExpressionAttributeValues: {
+				":revision": revision
+			},
+			ExpressionAttributeNames: {
+				"#last": "last"
+			}
+		}));
+	}
+
+	async updateSiteRevision(siteID:string, revisionID:string, state:SiteRevisionState) {
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			Key: {
+				revisionID
+			},
+			UpdateExpression: "SET siteState = :siteState",
+			ExpressionAttributeValues: {
+				":siteState": state
+			}
+		}));
+
+		await this.client.send(new UpdateCommand({
+			TableName: EnvironmentVars.websiteTableName,
+			Key: {
+				siteID
+			},
+			UpdateExpression: "SET #last.siteState = :state",
+			ExpressionAttributeValues: {
+				":state": state
+			},
+			ExpressionAttributeNames: {
+				"#last": "last"
+			}
+		}));
+	}
+
+	async getSiteRevision(revisionID:string):Promise<SiteRevision> {
+		const response = await this.client.send(new GetCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			Key: {
+				revisionID
+			}
+		}));
+
+		return response?.Item as SiteRevision;
+	}
+
+	async getSiteRevisionsInRun(runID:string):Promise<SiteRevision[]> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			IndexName: "run-index",
+			KeyConditionExpression: "runID = :runID",
+			ExpressionAttributeValues: {
+				":runID": runID
+			},
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
+	}
+
+	async getSiteRevisionsForSite(siteID:string):Promise<SiteRevision[]> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			IndexName: "site-index",
+			ScanIndexForward: false,
+			KeyConditionExpression: "siteID = :siteID",
+			ExpressionAttributeValues: {
+				":siteID": siteID
+			},
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
+	}
+
+	async getSiteRevisionAfter(siteID:string, time:number):Promise<SiteRevision> {
+		const response = await this.client.send(new QueryCommand({
+			TableName: EnvironmentVars.revisionTableName,
+			IndexName: "site-index",
+			ScanIndexForward: false,
+			KeyConditionExpression: "siteID = :siteID and #time < :time",
+			FilterExpression: " siteState <> :notOpen",
+			ExpressionAttributeNames: {
+				"#time": "time"
+			},
+			ExpressionAttributeValues: {
+				":siteID": siteID,
+				":time": time,
+				":notOpen": SiteRevisionState.Open
+			}
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items[0] as SiteRevision : undefined;
+	}
+
+	async deleteRunsAndRevisions(runsToDelete:string[], revisionsToDelete:string[]) {
+		if(runsToDelete.length + revisionsToDelete.length > 25) {
+			throw new Error("Can only batch delete 25 at a time");
+		}
+
+		const runDelete:DeleteRequestElement[] =
+			runsToDelete.map(value => DatabaseService.createDeleteItems("runID", value));
+
+		const revisionDelete:DeleteRequestElement[] =
+			revisionsToDelete.map(value => DatabaseService.createDeleteItems("revisionID", value));
+
+		const request:BatchWriteCommandInput = {
+			RequestItems: {
+				[EnvironmentVars.runTableName]: runDelete,
+				[EnvironmentVars.revisionTableName]: revisionDelete
+			}
+		}
+
+		console.debug(`Deleting runs and revisions: ${JSON.stringify(request)}`);
+
+		await this.client.send(new BatchWriteCommand(request));
+	}
+
+	private static createDeleteItems(key:string, value:string | number):DeleteRequestElement {
+		return {
+			DeleteRequest: {
+				Key: {
+					[key]: value
+				}
+			}
+		}
+	}
 }
 
 export interface UserItem {
@@ -311,3 +371,5 @@ export interface UserItem {
 
 	password:string;
 }
+
+declare type DeleteRequestElement = { DeleteRequest:{ Key:Record<string, any> } };
