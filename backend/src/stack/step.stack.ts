@@ -15,8 +15,10 @@ import {Duration} from "aws-cdk-lib";
 import {CfnFunction, FunctionBase} from "aws-cdk-lib/aws-lambda";
 
 export class StepStack {
+	public readonly stateMachine:StateMachine;
+
 	constructor(private stack:WebsiteAlerterStack) {
-		new StateMachine(stack, "WebsiteAlerterStateMachine", {
+		this.stateMachine = new StateMachine(stack, "WebsiteAlerterStateMachine", {
 			definitionBody: DefinitionBody.fromChainable(this.createAlerter()),
 			timeout: Duration.minutes(5),
 			comment: "Website Alerter processing chain",

@@ -13,7 +13,8 @@ import {Topic} from "aws-cdk-lib/aws-sns";
 import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 import {CfnRule, Rule, Schedule} from "aws-cdk-lib/aws-events";
 import {RunScheduling} from "website-alerter-shared";
-import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
+import {LambdaFunction, SfnStateMachine} from "aws-cdk-lib/aws-events-targets";
+import {StepFunctionsStartExecution} from "aws-cdk-lib/aws-stepfunctions-tasks";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
@@ -73,14 +74,14 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.lambda = new LambdaStack(this);
 
-		new StepStack(this);
+		const steps = new StepStack(this);
 
 		// create the event bridge rule that starts up the whole process every 7 days
 		const rule = new Rule(this, "ScheduledStartRule", {
 			description: "Schedule the lambda to queue up the websites",
 			schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
 			enabled: false,
-			targets: [new LambdaFunction(this.lambda.scheduledStart)]
+			targets: [new SfnStateMachine(steps.stateMachine)]
 		});
 
 		(rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
