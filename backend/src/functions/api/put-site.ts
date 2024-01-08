@@ -29,8 +29,6 @@ export class PutSite extends LambdaBase {
 		const siteItem:WebsiteItem = Object.assign(siteRequest, {
 			siteID: isNewSite ? v4() : siteRequest.siteID,
 			enabled: siteRequest.enabled,
-			last: undefined,
-			updates: {},
 			created: new Date().getTime()
 		});
 

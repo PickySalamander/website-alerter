@@ -2,7 +2,7 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatTable, MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {HttpClient} from "@angular/common/http";
-import {RunThrough, RunThroughState} from "website-alerter-shared";
+import {RunThrough, RunThroughState, SiteRevision} from "website-alerter-shared";
 import {SiteService} from "../services/site.service";
 import {RunService} from "../services/run.service";
 import {ShortUuidComponent} from "../short-uuid/short-uuid.component";
@@ -16,7 +16,7 @@ import {RouterLink, RouterOutlet} from "@angular/router";
 	styleUrl: './run-list.component.scss'
 })
 export class RunListComponent implements OnInit {
-	displayedColumns:string[] = ["time", "runID", "runState", "numSites", "changed", "unchanged", "errored"];
+	displayedColumns:string[] = ["time", "runID", "runState", "execution", "numSites", "changed", "unchanged", "errored"];
 	dataSource = new MatTableDataSource<RunThrough>();
 	RunThroughState = RunThroughState;
 
@@ -35,5 +35,20 @@ export class RunListComponent implements OnInit {
 			this.dataSource.data = items;
 			this.table?.renderRows();
 		}
+	}
+
+	getExecution(run:RunThrough) {
+		if(run.executionID && run.executionID.length > 0) {
+			const split = run.executionID.split(":")
+			const region = split[3];
+			return `https://${region}.console.aws.amazon.com/states/home?region=${region}#/v2/executions/details/${run.executionID}`;
+		}
+
+		return undefined;
+	}
+
+	getExecutionID(run:RunThrough) {
+		const index = run.executionID.lastIndexOf(":");
+		return index >= 0 ? run.executionID.substring(index + 1) : "unknown";
 	}
 }

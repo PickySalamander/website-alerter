@@ -23,56 +23,15 @@ export class SiteService {
 			return this;
 		}
 
-		// return new Promise<SiteService>(resolve => {
-		// 	this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(items => {
-		// 		if(items && items.length > 0) {
-		// 			this.sites = new Map<string, WebsiteItem>(items.map(value => [value.siteID, value]));
-		// 		}
-		//
-		// 		resolve(this);
-		// 	});
-		// })
+		return new Promise<SiteService>(resolve => {
+			this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(items => {
+				if(items && items.length > 0) {
+					this.sites = new Map<string, WebsiteItem>(items.map(value => [value.siteID, value]));
+				}
 
-		const items = [
-			{
-				"siteID": "b",
-				"site": "https://unknownworlds.com/jobs/",
-				"selector": "#content-holder > section > div",
-				"enabled": false
-			},
-			{
-				"options": {
-					"ignoreAttributes": true,
-					"ignoreCss": true
-				},
-				"siteID": "c",
-				"site": "https://www.privatedivision.com/jobs/",
-				"selector": "#post-5548 > div",
-				"last": {
-					"revisionID": "d64eee14-316f-4e15-8e8b-acada3a64495",
-					"runID": "09f0b959-4671-40de-b38a-cb72db65a8cb",
-					"time": 1704400415098,
-					"siteState": 2
-				},
-				"enabled": true
-			},
-			{
-				"siteID": "a",
-				"site": "https://firaxis.com/careers/",
-				"selector": ".firaxis-careers-component ul.jobGrid",
-				"last": {
-					"revisionID": "c65f03a3-f0ad-4411-9c24-f29dd61a8e1c",
-					"runID": "09f0b959-4671-40de-b38a-cb72db65a8cb",
-					"time": 1704399981978,
-					"siteState": 0
-				},
-				"enabled": true
-			}
-		] as WebsiteItem[];
-
-		this.sites = new Map<string, WebsiteItem>(items.map(value => [value.siteID, value]));
-
-		return this;
+				resolve(this);
+			});
+		});
 	}
 
 	getSite(siteID:string) {

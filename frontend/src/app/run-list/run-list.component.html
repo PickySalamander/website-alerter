@@ -35,6 +35,15 @@
 			</td>
 		</ng-container>
 
+		<ng-container matColumnDef="execution">
+			<th mat-header-cell *matHeaderCellDef>Execution</th>
+			<td mat-cell *matCellDef="let row">
+				<a [href]="getExecution(row)" target="_blank" (click)="$event.stopPropagation()">
+					<app-short-uuid [uuid]="getExecutionID(row)"></app-short-uuid>
+				</a>
+			</td>
+		</ng-container>
+
 		<ng-container matColumnDef="changed">
 			<th mat-header-cell *matHeaderCellDef>Changed</th>
 			<td mat-cell *matCellDef="let row">

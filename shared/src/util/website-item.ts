@@ -23,7 +23,7 @@ export interface WebsiteItem {
 	created:number;
 
 	/** The last time the site was polled */
-	last:SiteRevision;
+	last?:SiteRevision;
 }
 
 /** Options for detecting changes on the page */
