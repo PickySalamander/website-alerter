@@ -1,3 +1,5 @@
+@import "theme";
+
 html, body {
 	height: 100%;
 }
@@ -9,6 +11,15 @@ body {
 
 * {
 	box-sizing: border-box;
+}
+
+a {
+	color: map-get($accent-colors, 500);
+	transition: all 300ms;
+
+	&:hover {
+		color: map-get($accent-colors, 700);
+	}
 }
 
 .mat-mdc-no-data-row {

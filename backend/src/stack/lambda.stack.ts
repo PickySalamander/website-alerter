@@ -55,7 +55,10 @@ export class LambdaStack {
 			description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
 				"perform some final maintenance.",
 			entry: "src/functions/process/scheduled-end.ts",
-			environment
+			environment: {
+				"WEBSITE_URL": `https://${stack.cdn.cdn.attrDomainName}`,
+				...environment
+			}
 		});
 	}
 }

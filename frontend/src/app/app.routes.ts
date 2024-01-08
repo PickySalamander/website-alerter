@@ -7,6 +7,7 @@ import {SiteService} from "./services/site.service";
 import {RunListComponent} from "./run-list/run-list.component";
 import {RunService} from "./services/run.service";
 import {RunDetailComponent} from "./run-list/run-detail/run-detail.component";
+import {RevisionDetailComponent} from "./revision-detail/revision-detail.component";
 
 // @ts-ignore
 export const routes:Routes = [
@@ -46,6 +47,12 @@ export const routes:Routes = [
 				component: RunDetailComponent
 			}
 		]
+	},
+	{
+		path: "revision/:revisionID",
+		component: RevisionDetailComponent,
+		resolve: {sites: SiteService.resolve},
+		canActivate: [LoginService.canActivateLoggedIn],
 	},
 	{path: '**', redirectTo: 'list'}
 ];

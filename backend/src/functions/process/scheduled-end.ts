@@ -66,9 +66,11 @@ class ScheduledEnd extends LambdaBase {
 
 	private async sendEmail(changed:Set<string>, errored:Set<string>) {
 		//set up the email to send
-		let email = `Finished run through ${this.runID} of ${this.sites.size} sites. Output follows:\n\n`;
+		let email = `Finished run through ${this.runID} of ${this.sites.size} sites. Output follows:\n`;
 
-		email += `\tChanged: ${changed.size}\n\tErrored:${errored.size}`;
+		email += `\tChanged: ${changed.size}\n\tErrored:${errored.size}\n\n`;
+
+		email += `\tView changes here: ${EnvironmentVars.websiteUrl}/runs/${this.runID}`;
 
 		//if in production send an email to the user via SNS
 		if(EnvironmentVars.isProduction) {

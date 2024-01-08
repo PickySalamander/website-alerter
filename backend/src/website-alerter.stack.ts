@@ -1,6 +1,6 @@
-import {CfnOutput, Fn, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
+import {CfnOutput, RemovalPolicy, Stack, StackProps} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
-import {Bucket} from "aws-cdk-lib/aws-s3";
+import {Bucket, HttpMethods} from "aws-cdk-lib/aws-s3";
 import {IamStack} from "./stack/iam.stack";
 import {LambdaStack} from "./stack/lambda.stack";
 import {ApiStack} from "./stack/api.stack";
@@ -50,7 +50,8 @@ export class WebsiteAlerterStack extends Stack {
 		this.configBucket = new Bucket(this, 'ConfigurationBucket', {
 			removalPolicy: RemovalPolicy.DESTROY,
 			websiteIndexDocument: "index.html",
-			websiteErrorDocument: "index.html"
+			websiteErrorDocument: "index.html",
+			cors: []
 		});
 
 		new CfnOutput(this, "WebsiteAlerterBucket", {
@@ -59,6 +60,13 @@ export class WebsiteAlerterStack extends Stack {
 		});
 
 		this.cdn = new CdnStack(this);
+
+		this.configBucket.addCorsRule({
+			allowedHeaders: ["*"],
+			allowedMethods: [HttpMethods.GET],
+			allowedOrigins: ["*"],
+			maxAge: 3000
+		});
 
 		// create the role that all lambda functions use
 		this.iam = new IamStack(this);

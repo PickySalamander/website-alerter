@@ -33,6 +33,10 @@ export abstract class EnvironmentVars {
 		return process.env.NOTIFICATION_SNS;
 	}
 
+	static get websiteUrl():string {
+		return process.env.WEBSITE_URL;
+	}
+
 	static get numRevisions():number {
 		const parsed = parseInt(process.env.NUM_RUNS_ALLOWED);
 		return isNaN(parsed) ? 5 : parsed;

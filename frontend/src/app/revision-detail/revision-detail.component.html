@@ -1,0 +1,45 @@
+@if (!revision) {
+	<p>Loading revision...</p>
+} @else {
+	<h1>Revision {{ revision.revisionID }}</h1>
+	<div class="info">
+		<div><b>Time</b>: {{ revision.time | date : "short" }}</div>
+		<div><b>Site</b>:
+			<a [routerLink]="['/', 'site', site.siteID]">{{ site.site }}</a>
+			<a [href]="site.site" target="_blank" class="open-new">
+				<mat-icon [inline]="true">open_in_new</mat-icon>
+			</a>
+		</div>
+		<div><b>Final State</b>:
+			<app-revision-state [state]="revision.siteState"></app-revision-state>
+		</div>
+	</div>
+
+	<div class="info">
+		<div><b>Download:</b></div>
+		<div>
+			<a [href]="urls.screenshot" download>Screenshot</a>
+		</div>
+		<div>
+			<a [href]="urls.html" download>HTML</a>
+		</div>
+
+		@if (revision.siteState == SiteRevisionState.Changed) {
+			<div>
+				<a [href]="urls.diff" download>Unified Diff</a>
+			</div>
+		}
+	</div>
+
+	@if (diffHtml) {
+		<div class="diff" [innerHTML]="diffHtml"></div>
+	} @else if (revision.siteState == SiteRevisionState.Changed) {
+		<div>
+			Loading diff...
+		</div>
+	} @else {
+		<div>
+			No changes to show
+		</div>
+	}
+}

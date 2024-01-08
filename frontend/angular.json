@@ -30,7 +30,8 @@
 						],
 						"styles": [
 							"src/styles/theme.scss",
-							"src/styles/styles.scss"
+							"src/styles/styles.scss",
+							"diff2html/bundles/css/diff2html.min.css"
 						],
 						"stylePreprocessorOptions": {
 							"includePaths": [
@@ -101,7 +102,8 @@
 						],
 						"styles": [
 							"src/styles/theme.scss",
-							"src/styles/styles.scss"
+							"src/styles/styles.scss",
+							"diff2html/bundles/css/diff2html.min.css"
 						],
 						"stylePreprocessorOptions": {
 							"includePaths": [

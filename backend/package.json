@@ -40,6 +40,7 @@
 		"typescript": "~5.0.4"
 	},
 	"dependencies": {
+		"@aws-sdk/s3-request-presigner": "^3.485.0",
 		"@middy/core": "^5.1.0",
 		"@middy/error-logger": "^5.1.0",
 		"@middy/http-cors": "^5.1.0",

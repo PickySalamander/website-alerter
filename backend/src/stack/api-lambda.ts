@@ -19,6 +19,8 @@ export class ApiLambdaStack {
 
 	public readonly getSiteRevisions:FunctionBase;
 
+	public readonly getRevision:AlerterJsFunction;
+
 	constructor(stack:WebsiteAlerterStack) {
 		let allowOrigins = `https://${stack.cdn.cdn.attrDomainName}`;
 		if(process.env.INCLUDE_LOCAL_CORS === "true") {
@@ -78,8 +80,14 @@ export class ApiLambdaStack {
 		});
 
 		this.getRunRevisions = new AlerterJsFunction(stack, "GetRunRevisions", {
-			description: "Get all more data on a particular run",
+			description: "Get all the revisions in a particular run",
 			entry: "src/functions/api/get-run-revisions.ts",
+			environment
+		});
+
+		this.getRevision = new AlerterJsFunction(stack, "GetRevision", {
+			description: "Get the revision and pre-signed urls for accessing the data",
+			entry: "src/functions/api/get-revision.ts",
 			environment
 		});
 	}
