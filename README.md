@@ -15,4 +15,4 @@ The stack has two parts:
 2. **The weekly scraping process**: Using [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html) a weekly process is kicked off to queue the user's websites and check them for changes.
 
 ## Code 
-The [Angular project (frontend)](frontend) and [CDK project (backend)](backend) are stored in separate folders, refer to them for more details on their structure.
+The [Angular project (frontend)](frontend), [CDK project (backend)](backend), and [Shared library](shared) are stored in separate folders, refer to them for more details on their structure.
