@@ -29,7 +29,7 @@ The API supports the [Angular website](../frontend) and allows it to communicate
 ### Step Functions (src/functions/process)
 The step functions are queued off once a week by an EventBridge rule.
 
-[![stepfunctions_graph.png](stepfunctions_graph.png)](Step Functions Graph)
+![Step Functions Graph](stepfunctions_graph.png)
 
 Here's a description of the flow:
 
