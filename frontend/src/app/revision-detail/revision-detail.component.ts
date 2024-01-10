@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {HttpClient} from "@angular/common/http";
 import {SiteService} from "../services/site.service";
@@ -11,6 +11,7 @@ import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
 import * as Diff2Html from 'diff2html';
 
+/** Display the details of the revision along with a diff if the revision has a change */
 @Component({
 	selector: 'app-revision-detail',
 	standalone: true,
@@ -18,18 +19,21 @@ import * as Diff2Html from 'diff2html';
 	templateUrl: './revision-detail.component.html',
 	styleUrl: './revision-detail.component.scss'
 })
-export class RevisionDetailComponent implements OnInit, AfterViewInit {
+export class RevisionDetailComponent implements OnInit {
+	/** The revision being displayed */
 	revision:SiteRevision;
 
+	/** The pre-signed urls for the revision's assets */
 	urls:RevisionUrls;
 
+	/** The site this revision is for */
 	site:WebsiteItem;
 
+	/** The rendered unified diff from the diff2html library */
 	diffHtml:string;
 
-	SiteRevisionState = SiteRevisionState
-
-	private unifiedDiff:string;
+	/** The state of the site's polling and change detection */
+	SiteRevisionState = SiteRevisionState;
 
 	constructor(private http:HttpClient,
 	            private route:ActivatedRoute,
@@ -37,34 +41,30 @@ export class RevisionDetailComponent implements OnInit, AfterViewInit {
 	}
 
 	ngOnInit() {
+		//get the revision id from the route params
 		const revisionID = this.route.snapshot.paramMap.get("revisionID");
 
+		//load the revision from the API
 		this.http.get<GetRevisionResponse>(`${environment.apiUrl}/revisions/${revisionID}`).subscribe(response => {
 			this.revision = response.revision;
 			this.urls = response.urls;
 			this.site = this.siteService.getSite(response.revision.siteID);
 
-			this.getDiff();
+			//render the diff if there is one
+			if(this.revision.siteState == SiteRevisionState.Changed) {
+				this.getDiff();
+			}
 		});
 	}
 
-	ngAfterViewInit() {
-		if(this.unifiedDiff) {
-			this.setupDiffView();
-		}
-	}
-
+	/** Load the unified diff from the pre-signed url */
 	private getDiff() {
-		this.http.get(this.urls.diff, {responseType: "text"}).subscribe(value => {
-			this.unifiedDiff = value;
-			this.setupDiffView();
-		});
-	}
-
-	private setupDiffView() {
-		this.diffHtml = Diff2Html.html(this.unifiedDiff, {
-			drawFileList: false,
-			matching: 'lines'
+		this.http.get(this.urls.diff, {responseType: "text"}).subscribe(unifiedDiff => {
+			//render using diff2html
+			this.diffHtml = Diff2Html.html(unifiedDiff, {
+				drawFileList: false,
+				matching: 'lines'
+			});
 		});
 	}
 }

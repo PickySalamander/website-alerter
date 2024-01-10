@@ -13,6 +13,7 @@ import {Router} from "@angular/router";
 import {SnackbarService} from "../services/snackbar.service";
 import {LoginRequest, LoginResponse} from "website-alerter-shared";
 
+/** The login page */
 @Component({
 	selector: 'app-login',
 	standalone: true,
@@ -21,13 +22,16 @@ import {LoginRequest, LoginResponse} from "website-alerter-shared";
 	styleUrl: './login.component.scss'
 })
 export class LoginComponent {
+	/** the login form configuration */
 	loginForm = new FormGroup({
 		email: new FormControl('', Validators.required),
 		password: new FormControl('', Validators.required)
 	});
 
+	/** Whether to obfuscate the password on the login form */
 	hidePassword:boolean = true;
 
+	/** Whether the login routine is running, if so block input */
 	loggingIn:boolean = false;
 
 	constructor(private http:HttpClient,
@@ -36,7 +40,9 @@ export class LoginComponent {
 	            private router:Router) {
 	}
 
+	/** Called to submit the form */
 	submit() {
+		//ignore if invalid
 		if(this.loginForm.invalid) {
 			return;
 		}
@@ -54,6 +60,7 @@ export class LoginComponent {
 		this.http.post<LoginResponse>(`${environment.apiUrl}/login`, request, {observe: "response"})
 			.subscribe({
 				next: response => {
+					//get the session and save it if found
 					const session = response.headers.get("session");
 					if(session) {
 						this.loginService.session = session;
@@ -66,6 +73,7 @@ export class LoginComponent {
 			});
 	}
 
+	/** Report an error back to the user, using the snackbar */
 	private handleError(error?:HttpErrorResponse) {
 		this.loggingIn = false;
 		this.loginForm.controls.password.reset();

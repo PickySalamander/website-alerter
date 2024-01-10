@@ -8,6 +8,7 @@ import {RunService} from "../services/run.service";
 import {ShortUuidComponent} from "../short-uuid/short-uuid.component";
 import {RouterLink, RouterOutlet} from "@angular/router";
 
+/** Display of all the runs */
 @Component({
 	selector: 'app-run-list',
 	standalone: true,
@@ -16,28 +17,38 @@ import {RouterLink, RouterOutlet} from "@angular/router";
 	styleUrl: './run-list.component.scss'
 })
 export class RunListComponent implements OnInit {
+	/** Columns in the table to display */
 	displayedColumns:string[] = ["time", "runID", "runState", "execution", "numSites", "changed", "unchanged", "errored"];
-	dataSource = new MatTableDataSource<RunThrough>();
+
+	/** The run throughs to show in the table */
+	dataSource:MatTableDataSource<RunThrough> = new MatTableDataSource();
+
+	/** The state of an entire {@link RunThrough} */
 	RunThroughState = RunThroughState;
 
 	/** The table display on the page */
 	@ViewChild(MatTable) table:MatTable<RunThrough>;
 
-	constructor(private http:HttpClient,
-	            private runs:RunService,
-	            private sites:SiteService) {
+	constructor(private runService:RunService) {
 	}
 
 	ngOnInit() {
-		const items = this.runs.allItems.sort((a, b) => b.time - a.time);
+		//get all the runs from the service and sort them
+		const items = this.runService.sortedRuns;
 
+		//add the items to the table
 		if(items && items.length > 0) {
 			this.dataSource.data = items;
 			this.table?.renderRows();
 		}
 	}
 
+	/**
+	 * Get the URL for the step functions execution in the AWS console
+	 * @param run the run to get the execution url for
+	 */
 	getExecution(run:RunThrough) {
+		//parse the execution ARN and turn it into a url
 		if(run.executionID && run.executionID.length > 0) {
 			const split = run.executionID.split(":")
 			const region = split[3];
@@ -47,6 +58,10 @@ export class RunListComponent implements OnInit {
 		return undefined;
 	}
 
+	/**
+	 * Get the uuid of the execution from the execution's ARN
+	 * @param run the run to get the execution ID from
+	 */
 	getExecutionID(run:RunThrough) {
 		const index = run.executionID.lastIndexOf(":");
 		return index >= 0 ? run.executionID.substring(index + 1) : "unknown";

@@ -9,20 +9,23 @@ import {RunService} from "./services/run.service";
 import {RunDetailComponent} from "./run-list/run-detail/run-detail.component";
 import {RevisionDetailComponent} from "./revision-detail/revision-detail.component";
 
-// @ts-ignore
+/** All routes used by the application */
 export const routes:Routes = [
 	{
 		path: "login",
+		title: "Alerter - Login",
 		component: LoginComponent
 	},
 	{
 		path: "list",
+		title: "Alerter - Websites",
 		component: SiteListComponent,
 		resolve: {sites: SiteService.resolve},
 		canActivate: [LoginService.canActivateLoggedIn],
 	},
 	{
 		path: "site",
+		title: "Alerter - Website",
 		resolve: {sites: SiteService.resolve},
 		canActivate: [LoginService.canActivateLoggedIn],
 		children: [
@@ -38,6 +41,7 @@ export const routes:Routes = [
 	},
 	{
 		path: "runs",
+		title: "Alerter - Run Throughs",
 		component: RunListComponent,
 		resolve: {sites: SiteService.resolve, runs: RunService.resolve},
 		canActivate: [LoginService.canActivateLoggedIn],
@@ -50,6 +54,7 @@ export const routes:Routes = [
 	},
 	{
 		path: "revision/:revisionID",
+		title: "Alerter - Revision",
 		component: RevisionDetailComponent,
 		resolve: {sites: SiteService.resolve},
 		canActivate: [LoginService.canActivateLoggedIn],

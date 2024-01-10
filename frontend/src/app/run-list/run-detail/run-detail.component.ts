@@ -10,6 +10,7 @@ import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
 import {SiteService} from "../../services/site.service";
 import {RevisionStateComponent} from "../../revision-state/revision-state.component";
 
+/** Display the currently selected run's details along with a list of revisions */
 @Component({
 	selector: 'app-run-detail',
 	standalone: true,
@@ -18,11 +19,16 @@ import {RevisionStateComponent} from "../../revision-state/revision-state.compon
 	styleUrl: './run-detail.component.scss'
 })
 export class RunDetailComponent implements OnInit, OnDestroy {
+	/** Columns in the table to display */
 	displayedColumns:string[] = ["site", "revisionID", "runState"];
-	dataSource = new MatTableDataSource<SiteRevision>();
 
+	/** The revisions to show in the table */
+	dataSource:MatTableDataSource<SiteRevision> = new MatTableDataSource();
+
+	/** The table display on the page */
 	@ViewChild(MatTable) table:MatTable<WebsiteItem>;
 
+	/** Subscription waiting for navigation end */
 	private sub:Subscription;
 
 	constructor(private http:HttpClient,
@@ -30,6 +36,7 @@ export class RunDetailComponent implements OnInit, OnDestroy {
 	            private route:ActivatedRoute,
 	            private siteService:SiteService) {
 		this.sub = this.router.events.subscribe(event => {
+			//on navigation end the page changed, update the details on the page
 			if(event instanceof NavigationEnd) {
 				this.setup();
 			}
@@ -44,24 +51,28 @@ export class RunDetailComponent implements OnInit, OnDestroy {
 		this.sub.unsubscribe();
 	}
 
+	/** Download the revisions and set up the table */
 	private setup() {
+		//get the run id from the route's path parameters
 		const runID = this.route.snapshot.paramMap.get("runID");
 
+		//reset the table
 		this.dataSource.data = [];
 		this.table?.renderRows();
 
+		//download the revisions and update the table data
 		this.http.get<SiteRevision[]>(`${environment.apiUrl}/revisions/run/${runID}`).subscribe(revisions => {
 			this.dataSource.data = revisions;
 			this.table?.renderRows();
 		});
-
-		console.log(`Loading ${runID}`);
 	}
 
+	/** Return the url for the {@link WebsiteItem} in the given revision */
 	getSiteName(revision:SiteRevision) {
 		return this.siteService.getSite(revision.siteID).site;
 	}
 
+	/** Return the site ID for the {@link WebsiteItem} in the given revision */
 	getSiteID(revision:SiteRevision) {
 		return revision.siteID;
 	}

@@ -4,6 +4,7 @@ This is a build script to compile process-site and login to be used in a Docker 
 
 import * as esbuild from 'esbuild';
 import fs from "fs/promises";
+import path from "node:path";
 
 //build the typescript
 await esbuild.build({
@@ -17,9 +18,10 @@ await esbuild.build({
 });
 
 //copy required files
-await fs.copyFile("src/docker/process-site/Dockerfile", "build/process-site/Dockerfile");
-await fs.copyFile("src/docker/process-site/package.json", "build/process-site/package.json");
-await fs.copyFile("src/docker/process-site//puppeteer.config.js", "build/process-site/puppeteer.config.js");
+const processSitePath = "src/docker/process-site/";
+for(const file of await fs.readdir("src/docker/process-site/")) {
+	await fs.copyFile(path.resolve(processSitePath, file), path.resolve("build/process-site", file));
+}
 
 //build the typescript
 await esbuild.build({

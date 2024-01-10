@@ -1,12 +1,14 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {MatSnackBar} from "@angular/material/snack-bar";
 
+/** Helper service to make it easier to display {@link MatSnackBar} */
 @Injectable({
-  providedIn: 'root'
+	providedIn: 'root'
 })
 export class SnackbarService {
 
-	constructor(private snackbar:MatSnackBar) {}
+	constructor(private snackbar:MatSnackBar) {
+	}
 
 	/**
 	 * Show an error message to the user with an "ok" button

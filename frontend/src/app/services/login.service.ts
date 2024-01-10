@@ -1,22 +1,26 @@
 import {inject, Injectable} from '@angular/core';
 import {CanActivateFn, Router, UrlTree} from "@angular/router";
 import {HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
-import {BehaviorSubject, catchError, Observable, Subject, throwError} from "rxjs";
+import {catchError, Observable, Subject, throwError} from "rxjs";
 import {environment} from "../../environments/environment";
 
+/** Service for maintaining the user's logged in state and JWT session */
 @Injectable({
 	providedIn: 'root'
 })
 export class LoginService implements HttpInterceptor {
+	/** The current signed JWT being used */
 	private _session:string;
 
 	/** Event issued when the user logs out or is logged out */
 	private logoutSubject:Subject<void> = new Subject<void>();
 
 	constructor(private router:Router) {
+		//get any previously stored JWT from the local storage
 		this._session = localStorage.getItem("session");
 	}
 
+	/** Return whether the user can view a page if already logged in */
 	private canActivate():boolean | UrlTree {
 		if(this.hasSession) {
 			return true;
@@ -25,16 +29,13 @@ export class LoginService implements HttpInterceptor {
 		return this.router.createUrlTree(["login"]);
 	}
 
-	public static canActivateLoggedIn:CanActivateFn = route => {
-		return inject(LoginService).canActivate();
-	}
-
+	/** Intercept all HTTP requests made by the application */
 	intercept(request:HttpRequest<any>, next:HttpHandler):Observable<HttpEvent<any>> {
 		//if an api request
 		if(request.url.startsWith(environment.apiUrl) && this._session) {
 			let headers = request.headers;
 
-			//set the jwt session
+			//set the JWT session
 			headers = headers.set('Authorization', `Bearer ${this._session}`);
 
 			//clone the request to add the header and withCredentials (required for cors)
@@ -64,11 +65,13 @@ export class LoginService implements HttpInterceptor {
 		this.router.navigate(['login']);
 	}
 
+	/** Set the current session saving it in {@link localStorage} */
 	set session(value:string) {
 		this._session = value
 		localStorage.setItem("session", this._session);
 	}
 
+	/** Does the user have a JWT session set? */
 	get hasSession() {
 		return this._session != null;
 	}
@@ -76,5 +79,10 @@ export class LoginService implements HttpInterceptor {
 	/** Event issued when the user logs out or is logged out */
 	get onLogout():Observable<void> {
 		return this.logoutSubject.asObservable();
+	}
+
+	/** Return whether the user can view a page if already logged in */
+	public static canActivateLoggedIn:CanActivateFn = route => {
+		return inject(LoginService).canActivate();
 	}
 }

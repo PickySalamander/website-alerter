@@ -1,24 +1,29 @@
 <mat-card>
-  <form [formGroup]="loginForm" (ngSubmit)="submit()">
-    <mat-card-content>
-      <h1>Welcome to Website Alerter!</h1>
-      <h2>To get started please log in below</h2>
+	<form [formGroup]="loginForm" (ngSubmit)="submit()">
+		<mat-card-content>
+			<h1>Welcome to Website Alerter!</h1>
+			<h2>To get started please log in below</h2>
 
-      <mat-form-field>
-        <input matInput placeholder="Email" formControlName="email" required>
-      </mat-form-field>
+			<mat-form-field>
+				<input matInput placeholder="Email" formControlName="email" required>
+			</mat-form-field>
 
-      <mat-form-field>
-        <input formControlName="password" matInput placeholder="Password" [type]="hidePassword ? 'password' : 'text'" required>
-        <mat-icon matSuffix (click)="hidePassword = !hidePassword">{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
-      </mat-form-field>
-    </mat-card-content>
+			<mat-form-field>
+				<input formControlName="password" matInput placeholder="Password" [type]="hidePassword ? 'password' : 'text'"
+				       required>
+				<mat-icon matSuffix
+				          (click)="hidePassword = !hidePassword">{{ hidePassword ? 'visibility_off' : 'visibility' }}
+				</mat-icon>
+			</mat-form-field>
+		</mat-card-content>
 
-    <mat-card-actions>
-      <button color="primary" mat-flat-button [disabled]="!loginForm.valid || loggingIn" aria-label="Press to login">
-        <span>Login</span>
-        <mat-progress-bar *ngIf="loggingIn" mode="indeterminate"></mat-progress-bar>
-      </button>
-    </mat-card-actions>
-  </form>
+		<mat-card-actions>
+			<button color="primary" mat-flat-button [disabled]="!loginForm.valid || loggingIn" aria-label="Press to login">
+				<span>Login</span>
+				@if (loggingIn) {
+					<mat-progress-bar mode="indeterminate"></mat-progress-bar>
+				}
+			</button>
+		</mat-card-actions>
+	</form>
 </mat-card>

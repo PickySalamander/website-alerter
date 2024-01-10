@@ -10,6 +10,7 @@ import {environment} from "../../../environments/environment";
 import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
 import {RouterLink} from "@angular/router";
 
+/** Show a list of {@link SiteRevision}s for a {@link WebsiteItem} */
 @Component({
 	selector: 'app-revision-list',
 	standalone: true,
@@ -18,23 +19,26 @@ import {RouterLink} from "@angular/router";
 	styleUrl: './revision-list.component.scss'
 })
 export class RevisionListComponent implements OnInit {
+	/** The site to get revisions for */
 	@Input() siteID:string;
 
+	/** The columns in the table */
 	displayedColumns:string[] = ["time", "revisionID", "runID", "siteState"];
-	dataSource = new MatTableDataSource<SiteRevision>();
 
+	/** Data for the table */
+	dataSource: MatTableDataSource<SiteRevision> = new MatTableDataSource();
+
+	/** Are the revisions currently loading? */
 	loading:boolean = true;
 
-	constructor(private sites:SiteService,
-	            private http:HttpClient) {
+	constructor(private http:HttpClient) {
 	}
 
 	ngOnInit() {
+		//load the revisions from the server and display them
 		this.http.get<SiteRevision[]>(`${environment.apiUrl}/revisions/site/${this.siteID}`)
 			.subscribe(revisions => {
-				revisions.sort((a, b) => b.time = a.time);
-
-				this.dataSource.data = revisions;
+				this.dataSource.data = revisions.sort((a, b) => b.time = a.time);
 				this.loading = false;
 		});
 	}
