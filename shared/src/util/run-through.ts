@@ -1,5 +1,3 @@
-import {SiteRevision} from "./site-revision";
-
 /** A run through of the website alerter tool in the database */
 export interface RunThrough {
 	/** The id of the run through */
@@ -23,10 +21,13 @@ export interface RunThrough {
 
 /** Statistics for the front end */
 export interface RunThroughStats {
+	/** Number of unchanged sites */
 	unchanged:number;
 
+	/** Number of chanced sites */
 	changed:number;
 
+	/** Number of sites that failed to be checked */
 	errored:number;
 }
 
@@ -36,8 +37,5 @@ export enum RunThroughState {
 	Open,
 
 	/** The run through is complete without errors */
-	Complete,
-
-	/** The run through is complete with errors */
-	Expired
+	Complete
 }

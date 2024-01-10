@@ -1,7 +1,8 @@
 import {ChangeOptions} from "./website-item";
 
+/** Request to put a new or edit a website in the database */
 export interface WebsiteItemRequest {
-	/** The site to update (if specified) */
+	/** The site to update (undefined if putting a new site) */
 	siteID?:string;
 
 	/** The site's url */

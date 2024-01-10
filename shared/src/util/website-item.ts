@@ -2,7 +2,7 @@ import {SiteRevision} from "./site-revision";
 
 /** A website's configuration stored in the database */
 export interface WebsiteItem {
-	/** unique ID for the site */
+	/** Unique ID for the site */
 	siteID:string;
 
 	/** The site's url */

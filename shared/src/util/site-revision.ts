@@ -1,15 +1,15 @@
 /** The state of a check of a site in a {@link RunThrough} */
 export interface SiteRevision {
-	/** the revision of any changes found in S3 */
+	/** The id of the revision */
 	revisionID:string;
 
-	/** the run this revision was apart of */
+	/** The run this revision was apart of */
 	runID:string;
 
 	/** The id of the site that was checked */
 	siteID:string;
 
-	/** Last time it was updated */
+	/** The time the revision was created */
 	time:number;
 
 	/** The state of the site's polling and change detection */
