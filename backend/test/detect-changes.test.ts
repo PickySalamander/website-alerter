@@ -1,5 +1,4 @@
 // noinspection HtmlUnknownAttribute,CssInvalidHtmlTagReference,JSUnresolvedReference
-
 import * as path from "path";
 import * as fs from "fs/promises";
 import {ChangeDetector} from "../src/util/change-detector";

@@ -1,15 +1,19 @@
 import {Effect, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {WebsiteAlerterStack} from "../website-alerter.stack";
 
-/** Create the IAM role that all the lambda functions will use */
+/**
+ * Part of the CDK stack that concerns the IAM roles used
+ */
 export class IamStack {
+	/** Role for lambda functions */
 	public readonly lambdaRole:Role;
 
+	/** Role for the step function state machine */
 	public readonly processStateMachineRole:Role;
 
-	public readonly maintenanceStateMachineRole:Role;
-
+	/** Create the stack */
 	constructor(private stack:WebsiteAlerterStack) {
+		//create the lambda roles
 		this.lambdaRole = new Role(stack, "LambdaIAMRole", {
 			description: "Generic role for Lambdas in website-alerter stack",
 			assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
@@ -85,13 +89,9 @@ export class IamStack {
 			}
 		});
 
+		//create the state machine role (cdk will automatically add policies to this as state machine is built)
 		this.processStateMachineRole = new Role(stack, "StateMachineRole", {
 			description: "Generic role for process state machine in website-alerter stack",
-			assumedBy: new ServicePrincipal("states.amazonaws.com")
-		});
-
-		this.maintenanceStateMachineRole = new Role(stack, "MaintenanceStateMachineRole", {
-			description: "Generic role for maintenance state machine in website-alerter stack",
 			assumedBy: new ServicePrincipal("states.amazonaws.com")
 		});
 	}

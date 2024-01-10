@@ -1,3 +1,4 @@
+/** Http methods */
 export enum HttpMethod {
 	Get = "GET",
 	Post = "POST",

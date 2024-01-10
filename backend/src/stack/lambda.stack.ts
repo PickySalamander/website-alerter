@@ -4,16 +4,25 @@ import {DockerImageCode, FunctionBase} from "aws-cdk-lib/aws-lambda";
 import {Duration} from "aws-cdk-lib";
 import {AlerterDockerFunction, AlerterJsFunction} from "./alerter-js-function";
 
+/**
+ * Part of the CDK stack that concerns the lambda functions used by step functions
+ */
 export class LambdaStack {
+	/** Lambda that starts the run through */
 	public readonly scheduledStart:FunctionBase;
 
+	/** Lambda function the polls the sites */
 	public readonly processSite:FunctionBase;
 
+	/** Lambda function that detects changes from polled sites */
 	public readonly detectChanges:FunctionBase;
 
+	/** Lambda function that ends the run through and performs maintenance */
 	public readonly scheduledEnd:FunctionBase;
 
+	/** Create the stack */
 	constructor(stack:WebsiteAlerterStack) {
+		//setup default environmental variables for the functions
 		const environment = {
 			"CONFIG_S3": stack.configBucket.bucketName,
 			"USERS_TABLE": stack.dynamo.usersTable.tableName,
@@ -52,11 +61,10 @@ export class LambdaStack {
 
 		// called after the whole flow is finished to follow up on the whole process
 		this.scheduledEnd = new AlerterJsFunction(stack, "ScheduledEnd", {
-			description: "Finalize the whole flow by finishing up any lingering tasks, email the user via SNS, and " +
-				"perform some final maintenance.",
+			description: "Finalize the whole flow by emailing the user via SNS and performing final maintenance.",
 			entry: "src/functions/process/scheduled-end.ts",
 			environment: {
-				"WEBSITE_URL": `https://${stack.cdn.cdn.attrDomainName}`,
+				"WEBSITE_URL": `https://${stack.cdn.cdn.attrDomainName}`,   //final website url for the email
 				...environment
 			}
 		});

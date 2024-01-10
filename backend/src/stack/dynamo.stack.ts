@@ -2,17 +2,23 @@ import {WebsiteAlerterStack} from "../website-alerter.stack";
 import {AttributeType, BillingMode, Table} from "aws-cdk-lib/aws-dynamodb";
 import {RemovalPolicy} from "aws-cdk-lib";
 
+/**
+ * Part of the CDK stack that concerns the DynamoDB database tables
+ */
 export class DynamoStack {
-	/** Website dynamo table*/
+	/** Table for each website */
 	public readonly websiteTable:Table;
 
-	/** Alerter run dynamo table*/
+	/** Table for each run through of the state machine */
 	public readonly runThroughTable:Table;
 
+	/** Table for users that can access the frontend */
 	public readonly usersTable:Table;
 
+	/** Table for each revision of a website in a run */
 	public readonly revisionTable:Table;
 
+	/** Create the stack */
 	constructor(stack:WebsiteAlerterStack) {
 		// create the website table
 		this.websiteTable = new Table(stack, "WebsiteTable", {
@@ -34,6 +40,7 @@ export class DynamoStack {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
+		//create the user's table
 		this.usersTable = new Table(stack, "UserTable", {
 			partitionKey: {
 				name: "userID",
@@ -43,6 +50,7 @@ export class DynamoStack {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
+		//add an index for getting user's by their email address
 		this.usersTable.addGlobalSecondaryIndex({
 			indexName: "user-name-index",
 			partitionKey: {
@@ -65,6 +73,7 @@ export class DynamoStack {
 			removalPolicy: RemovalPolicy.DESTROY
 		});
 
+		//create an index for getting revisions by their site
 		this.revisionTable.addGlobalSecondaryIndex({
 			indexName: "site-index",
 			partitionKey: {
@@ -77,6 +86,7 @@ export class DynamoStack {
 			}
 		});
 
+		//create an index for getting revisions by their run
 		this.revisionTable.addGlobalSecondaryIndex({
 			indexName: "run-index",
 			partitionKey: {

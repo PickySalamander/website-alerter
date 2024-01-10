@@ -13,29 +13,35 @@ import {Topic} from "aws-cdk-lib/aws-sns";
 import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 import {CfnRule, Rule, Schedule} from "aws-cdk-lib/aws-events";
 import {RunScheduling} from "website-alerter-shared";
-import {LambdaFunction, SfnStateMachine} from "aws-cdk-lib/aws-events-targets";
-import {StepFunctionsStartExecution} from "aws-cdk-lib/aws-stepfunctions-tasks";
+import {SfnStateMachine} from "aws-cdk-lib/aws-events-targets";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
 	/** S3 bucket for configuration and storage of files */
 	public readonly configBucket:Bucket;
 
+	/** Iam roles created */
 	public readonly iam:IamStack;
 
+	/** Lambda step function tasks */
 	public readonly lambda:LambdaStack;
 
+	/** Lambda REST functions */
 	public readonly apiLambda:ApiLambdaStack;
 
+	/** All database tables */
 	public readonly dynamo:DynamoStack;
 
+	/** CloudFront CDN for frontend */
 	public readonly cdn:CdnStack;
 
+	/** CloudFormation input parameters */
 	public readonly params:ParamsStack;
 
 	/** Email notification SNS queue */
 	public readonly notificationSns:Topic;
 
+	/** Create the stack */
 	constructor(scope:Construct, id:string, props?:StackProps) {
 		super(scope, id, props);
 
@@ -52,9 +58,17 @@ export class WebsiteAlerterStack extends Stack {
 			removalPolicy: RemovalPolicy.DESTROY,
 			websiteIndexDocument: "index.html",
 			websiteErrorDocument: "index.html",
-			cors: []
+
+			//open-ended cors for downloading assets
+			cors: [{
+				allowedHeaders: ["*"],
+				allowedMethods: [HttpMethods.GET],
+				allowedOrigins: ["*"],
+				maxAge: 3000
+			}]
 		});
 
+		//output the bucket name
 		new CfnOutput(this, "WebsiteAlerterBucket", {
 			description: "The alerter bucket with content",
 			value: this.configBucket.bucketName
@@ -62,14 +76,6 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.cdn = new CdnStack(this);
 
-		this.configBucket.addCorsRule({
-			allowedHeaders: ["*"],
-			allowedMethods: [HttpMethods.GET],
-			allowedOrigins: ["*"],
-			maxAge: 3000
-		});
-
-		// create the role that all lambda functions use
 		this.iam = new IamStack(this);
 
 		this.lambda = new LambdaStack(this);
@@ -84,6 +90,7 @@ export class WebsiteAlerterStack extends Stack {
 			targets: [new SfnStateMachine(steps.stateMachine)]
 		});
 
+		//set whether the rule starts enabled
 		(rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
 
 		this.apiLambda = new ApiLambdaStack(this);

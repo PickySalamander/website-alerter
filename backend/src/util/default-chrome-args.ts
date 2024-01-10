@@ -1,7 +1,9 @@
 import puppeteer from "puppeteer";
 
-/** Returns default arguments for the running of Chromium, most of these were taken from
- * <a href="https://github.com/Sparticuz/chromium/blob/master/source/index.ts#L149">@sparticuz/chromium</a>.*/
+/**
+ * Returns default arguments for the running of Chromium, most of these were taken from
+ * <a href="https://github.com/Sparticuz/chromium/blob/master/source/index.ts#L149">@sparticuz/chromium</a>.
+ */
 export function DefaultChromeArgs() {
 	//default puppeteer arguments
 	const puppeteerFlags = puppeteer.defaultArgs();

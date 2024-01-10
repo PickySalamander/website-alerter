@@ -4,23 +4,29 @@ import {DefaultChromeArgs} from "../../util/default-chrome-args";
 import {v4} from "uuid";
 import {LambdaBase} from "../../util/lambda-base";
 import {PutObjectCommand} from "@aws-sdk/client-s3";
-import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {DetectChangesData} from "../../util/step-data";
+import {SiteRevision, SiteRevisionState, WebsiteItem, RunThrough} from "website-alerter-shared";
+import {DetectChangesData} from "../../util/detect-changes-data";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
  * relevant dependencies required. ProcessSite will start Puppeteer, poll the provided website, wait for JS to render
- * the site enough, save an HTML and PNG of the site to S3, and finally dispatch an event to have the site parsed for
- * changes.
+ * the site enough, save an HTML and PNG of the site to S3, and finally return information on the {@link SiteRevision}
+ * so that it can be parsed for changes.
  */
 class ProcessSite extends LambdaBase {
 	/** The current chromium browser running */
 	private browser:Browser;
 
+	/** The current {@link SiteRevision.revisionID} being processed */
 	private currentRevision:string;
 
+	/** The current site being polled */
 	private site:WebsiteItem;
 
+	/**
+	 * Entry point from the state machine
+	 * @param data data from the previous step that contains information about the site to check
+	 */
 	public handler:Handler<ProcessSiteData, DetectChangesData> = async(data) => {
 		console.log(`Starting to parse site ${data.siteID} in run ${data.runID}`);
 
@@ -32,6 +38,7 @@ class ProcessSite extends LambdaBase {
 			throw new Error(`Site ${data.siteID} doesn't exist in the database, aborting`);
 		}
 
+		//generate a new revision
 		this.currentRevision = v4();
 		console.log(`Starting new revision ${this.currentRevision}`);
 
@@ -43,18 +50,20 @@ class ProcessSite extends LambdaBase {
 			siteState: SiteRevisionState.Open
 		}
 
-		//add a revision to the database
+		//add the revision to the database
 		await this.database.putSiteRevision(revision);
 
+		//set up the browser if it isn't already running
 		if(!this.browser) {
-			//set up the browser
 			await this.initializeBrowser();
 		}
 
+		//poll the site and save the html
 		const wasPolled = await this.parseSite();
 
 		console.log("Done.");
 
+		//return to the next step the information on the revision and if it was successfully polled
 		return {
 			runID: data.runID,
 			siteID: data.siteID,
@@ -78,6 +87,10 @@ class ProcessSite extends LambdaBase {
 		console.log(`Puppeteer started, running chrome ${browserVersion}`);
 	}
 
+	/**
+	 * Poll the website and wait for it to render, then save the HTML content to S3
+	 * @returns true if the site was successfully polled, false if otherwise
+	 */
 	private async parseSite() {
 		console.log(`Navigating to ${this.site.site} in browser...`);
 
@@ -116,13 +129,21 @@ class ProcessSite extends LambdaBase {
 			console.error("Failed to process website", e);
 			return false;
 		} finally {
-			//close the page
+			//make sure to close the page
 			await page.close();
 		}
 
 		return true;
 	}
 
+	/**
+	 * Navigate the browser to the page, wait for it to render, and get the HTML content from it. This will either use
+	 * the provided CSS {@link WebsiteItem.selector} or just wait for the body to render if a
+	 * {@link WebsiteItem.selector} was not provided.
+	 * @param site the site to navigate to
+	 * @param page the browser page to navigate with
+	 * @returns the final HTML content loaded on the page
+	 */
 	private async navigateToPage(site:WebsiteItem, page:Page) {
 		// if a selector is defined then select with it, otherwise we just wait for the network to load and select the
 		// body
@@ -159,8 +180,12 @@ class ProcessSite extends LambdaBase {
 	}
 }
 
+/** Incoming data from the previous state machine step */
 interface ProcessSiteData {
+	/** The current {@link RunThrough.runID} being run through the state machine */
 	runID:string;
+
+	/** The current {@link WebsiteItem.siteID} to process */
 	siteID:string;
 }
 

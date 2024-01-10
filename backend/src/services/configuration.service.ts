@@ -2,7 +2,7 @@ import {GetObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {EnvironmentVars} from "../util/environment-vars";
 
 /**
- * Helper service for getting the configuration JSON from S3. It won't reload a fresh JSON if already loaded.
+ * Helper service for interacting with S3 assets
  */
 export class ConfigurationService {
 	/** Saved S3 service to be reused */
@@ -27,6 +27,7 @@ export class ConfigurationService {
 		this.s3 = s3 ?? new S3Client({});
 	}
 
+	/** Load the JWT signature in S3 */
 	public async loadJwt():Promise<Buffer> {
 		if(!this.cachedJwt) {
 			console.log(`Loading jwt key from s3://${this.configurationPath}/jwt.key`);
@@ -46,7 +47,7 @@ export class ConfigurationService {
 		return this.cachedJwt;
 	}
 
-	/** Get the bucket the configuration is loaded from */
+	/** Get the bucket for this project */
 	get configPath():string {
 		return this.configurationPath;
 	}

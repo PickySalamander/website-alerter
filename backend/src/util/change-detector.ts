@@ -14,7 +14,12 @@ export class ChangeDetector {
 	/** Were changes detected? */
 	private readonly _isChanged:boolean;
 
-	constructor(private lastRevision:Parsed, private currentRevision:Parsed) {
+	/**
+	 * Perform that change parsing
+	 * @param lastRevision the last revision
+	 * @param currentRevision the current revision
+	 */
+	constructor(lastRevision:Parsed, currentRevision:Parsed) {
 		//if either aren't there (usually because of an error), abort
 		if(!currentRevision || !lastRevision) {
 			return;

@@ -3,19 +3,25 @@ import {LambdaBase} from "../../util/lambda-base";
 import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {ChangeDetector} from "../../util/change-detector";
 import {Parsed} from "../../util/parsed-html";
-import {DetectChangesData} from "../../util/step-data";
+import {DetectChangesData} from "../../util/detect-changes-data";
 import {ChangeOptions, SiteRevision, SiteRevisionState} from "website-alerter-shared";
 
 /**
- * Lambda function that checks HTML revisions downloaded into S3 for changes. If there are any changes they will be put
- * into a unified diff and uploaded to S3 for the user to check later.
+ * Lambda step function task that checks HTML {@link SiteRevision} downloaded into S3 for changes. If there are any
+ * changes they will be put into a unified diff and uploaded to S3 for the user to check later.
  */
 class DetectChanges extends LambdaBase {
+
+	/**
+	 * Entry point from the state machine
+	 * @param data data from the previous step that contains information about the revision to check
+	 */
 	public handler:Handler<DetectChangesData> = async(data) => {
 		console.log(`Checking for changes in ${JSON.stringify(data)}.`);
 
 		await this.setupServices();
 
+		//check the site and see if it changed since last time
 		const finalState = await this.checkSite(data);
 
 		console.log(`Updating final state...`);
@@ -25,7 +31,13 @@ class DetectChanges extends LambdaBase {
 		console.log("Done.");
 	}
 
+	/**
+	 * Check the current site and see if it has changed since the last {@link SiteRevision}
+	 * @param data data from the previous step that contains information about the revision to check
+	 * @returns what the final {@link SiteRevisionState} of the {@link SiteRevision} should be.
+	 */
 	private async checkSite(data:DetectChangesData):Promise<SiteRevisionState> {
+		//Get the site that is being checked and make sure it exists
 		const site = await this.database.getSite(data.siteID);
 		if(!site) {
 			throw new Error(`Failed to find site from revision ${site.siteID}`);
@@ -33,28 +45,29 @@ class DetectChanges extends LambdaBase {
 
 		console.log(`Checking the download ${site.site} for changes...`);
 
+		//get the revision that was just polled and make sure it exists
 		const currentRevision = await this.database.getSiteRevision(data.revisionID);
 		if(!currentRevision) {
 			throw new Error(`Failed to find ${data.revisionID} revision in the database.`);
 		}
 
+		//make sure that the site was actually polled (we don't care if we're recomputing)
 		if(currentRevision.siteState == SiteRevisionState.Open) {
 			console.warn(`Could not check ${data.revisionID} since it was not polled`);
 			return SiteRevisionState.Open;
 		}
 
+		//get the last successful revision in the database
 		const lastRevision = await this.database.getSiteRevisionAfter(data.siteID, currentRevision.time);
 
 		//if there aren't enough revisions yet then abort
 		if(!lastRevision) {
 			console.log("Website has too few updates, skipping.");
-
-			//update the database that there aren't changes
-
 			return SiteRevisionState.Unchanged;
 		}
 
-		console.log(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to last:${lastRevision.revisionID} (${new Date(lastRevision.time)})...`);
+		console.log(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
+			`last:${lastRevision.revisionID} (${new Date(lastRevision.time)})...`);
 
 		//get the current HTML revision and the previous
 		const current = await this.getContent(currentRevision, site.options);
@@ -65,7 +78,7 @@ class DetectChanges extends LambdaBase {
 		//detect changes in the versions
 		const detection = new ChangeDetector(last, current);
 
-		//If there are no changes then update the database and finish up
+		//If there are no changes
 		if(!detection.isChanged) {
 			console.log("Found no differences, moving on");
 			return SiteRevisionState.Unchanged;
@@ -82,7 +95,7 @@ class DetectChanges extends LambdaBase {
 			Body: detection.body
 		}));
 
-		//update the database that there are changes
+		//return that there are changes
 		return SiteRevisionState.Changed;
 	}
 
@@ -90,7 +103,7 @@ class DetectChanges extends LambdaBase {
 	 * Retrieve the relevant HTML from S3
 	 * @param revision the revision of HTML and where it is located
 	 * @param options options for detecting changes on the page
-	 * @return the parsed HTML and the revision
+	 * @returns the parsed HTML and the revision
 	 */
 	private async getContent(revision:SiteRevision, options?:ChangeOptions):Promise<Parsed> {
 		//get the html from S3

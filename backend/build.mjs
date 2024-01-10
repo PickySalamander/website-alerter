@@ -1,5 +1,5 @@
 /*
-This is a build script to compile process-site to be used in a Docker image and then copy over required files.
+This is a build script to compile process-site and login to be used in a Docker image and then copy over required files.
  */
 
 import * as esbuild from 'esbuild';

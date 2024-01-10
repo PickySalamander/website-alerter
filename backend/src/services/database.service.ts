@@ -11,8 +11,14 @@ import {
 	ScanCommand,
 	UpdateCommand
 } from "@aws-sdk/lib-dynamodb";
-import {RunThroughStats, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {RunThrough, RunThroughState} from "website-alerter-shared/dist/util/run-through";
+import {
+	RunThrough,
+	RunThroughState,
+	RunThroughStats,
+	SiteRevision,
+	SiteRevisionState,
+	WebsiteItem
+} from "website-alerter-shared";
 import {EnvironmentVars} from "../util/environment-vars";
 
 /**
@@ -43,7 +49,12 @@ export class DatabaseService {
 		this.client = DynamoDBDocumentClient.from(client);
 	}
 
+	/**
+	 * Get a user from the database by email
+	 * @param email the email to get the user by
+	 */
 	async getUser(email:string):Promise<UserItem> {
+		//query the database
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.usersTableName,
 			IndexName: "user-name-index",
@@ -59,7 +70,7 @@ export class DatabaseService {
 
 	/**
 	 * Get a website's configuration from the database
-	 * @param siteID the url of the site to get
+	 * @param siteID the site's ID in the database
 	 */
 	async getSite(siteID:string) {
 		const response = await this.client.send(new GetCommand({
@@ -72,6 +83,7 @@ export class DatabaseService {
 		return response.Item as WebsiteItem;
 	}
 
+	/** Get all the sites in the database */
 	async getSites() {
 		const response = await this.client.send(new ScanCommand({
 			TableName: EnvironmentVars.websiteTableName,
@@ -84,6 +96,7 @@ export class DatabaseService {
 		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
 	}
 
+	/** Get all enabled sites in the database by ID*/
 	async getSitesForRun() {
 		const response = await this.client.send(new ScanCommand({
 			TableName: EnvironmentVars.websiteTableName,
@@ -116,6 +129,10 @@ export class DatabaseService {
 		}));
 	}
 
+	/**
+	 * Edit an existing website's configuration in the database
+	 * @param item the website to edit
+	 */
 	async editWebsite(item:WebsiteItem) {
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.websiteTableName,
@@ -131,11 +148,16 @@ export class DatabaseService {
 		}));
 	}
 
+	/**
+	 * Delete a series of sites in the database
+	 * @param sitesIDs the site IDs of the sites to delete
+	 */
 	async deleteSites(sitesIDs:Set<string>) {
 		if(sitesIDs.size > 25) {
 			throw new Error("Can only batch delete 25 at a time");
 		}
 
+		//set up the deletion query
 		const sitesToDelete:DeleteRequestElement[] = [];
 		for(const siteID of sitesIDs) {
 			sitesToDelete.push(DatabaseService.createDeleteItems("siteID", siteID));
@@ -152,6 +174,10 @@ export class DatabaseService {
 		await this.client.send(new BatchWriteCommand(params));
 	}
 
+	/**
+	 * Batch get a series of {@link WebsiteItem}s from the database
+	 * @param sitesIDs the id's of the sites to get
+	 */
 	async getSitesByID(sitesIDs:Set<string>) {
 		const keys:Record<string, any>[] = [];
 		for(const siteID of sitesIDs) {
@@ -184,7 +210,7 @@ export class DatabaseService {
 	}
 
 	/**
-	 * Update the entire run's state
+	 * Update the a {@link RunThrough}s state and stats in the database
 	 * @param runID the run to update
 	 * @param stats statistics for the front end
 	 * @param state the state to set to
@@ -204,7 +230,7 @@ export class DatabaseService {
 	}
 
 	/**
-	 * Get a run through from the database
+	 * Get a {@link RunThrough} from the database
 	 * @param runID the run's id to get
 	 */
 	async getRunThrough(runID:string) {
@@ -218,6 +244,7 @@ export class DatabaseService {
 		return response?.Item as RunThrough;
 	}
 
+	/** Get all {@link RunThrough}s from the database */
 	async getRunThroughs() {
 		const response = await this.client.send(new ScanCommand({
 			TableName: EnvironmentVars.runTableName
@@ -226,12 +253,19 @@ export class DatabaseService {
 		return response.Items && response.Items.length > 0 ? response.Items as RunThrough[] : [];
 	}
 
+	/**
+	 * Put a new {@link SiteRevision} into the database. This will also update the {@link WebsiteItem.last} value in
+	 * the database that this revision concerns.
+	 * @param revision the revision to put in
+	 */
 	async putSiteRevision(revision:SiteRevision) {
+		//put the new revision
 		await this.client.send(new PutCommand({
 			TableName: EnvironmentVars.revisionTableName,
 			Item: revision
 		}));
 
+		//update the site's last
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Key: {
@@ -247,7 +281,15 @@ export class DatabaseService {
 		}));
 	}
 
+	/**
+	 * Update a {@link SiteRevision} in the database. This will also update the {@link WebsiteItem.last} value in
+	 * the database that this revision concerns.
+	 * @param siteID the site this revision is for
+	 * @param revisionID the revision to update
+	 * @param state the new state of the revision
+	 */
 	async updateSiteRevision(siteID:string, revisionID:string, state:SiteRevisionState) {
+		//update the revision
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.revisionTableName,
 			Key: {
@@ -259,6 +301,7 @@ export class DatabaseService {
 			}
 		}));
 
+		//update the site's last
 		await this.client.send(new UpdateCommand({
 			TableName: EnvironmentVars.websiteTableName,
 			Key: {
@@ -274,6 +317,10 @@ export class DatabaseService {
 		}));
 	}
 
+	/**
+	 * Get a {@link SiteRevision} from the database
+	 * @param revisionID the id of the revision to get
+	 */
 	async getSiteRevision(revisionID:string):Promise<SiteRevision> {
 		const response = await this.client.send(new GetCommand({
 			TableName: EnvironmentVars.revisionTableName,
@@ -285,6 +332,10 @@ export class DatabaseService {
 		return response?.Item as SiteRevision;
 	}
 
+	/**
+	 * Get all the {@link SiteRevision}s in a {@link RunThrough}
+	 * @param runID the run's ID to get revisions for
+	 */
 	async getSiteRevisionsInRun(runID:string):Promise<SiteRevision[]> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
@@ -298,6 +349,10 @@ export class DatabaseService {
 		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
 	}
 
+	/**
+	 * Get all the {@link SiteRevision}s for a {@link WebsiteItem}
+	 * @param siteID the site's ID to get revisions for
+	 */
 	async getSiteRevisionsForSite(siteID:string):Promise<SiteRevision[]> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
@@ -312,6 +367,11 @@ export class DatabaseService {
 		return response.Items && response.Items.length > 0 ? response.Items as SiteRevision[] : [];
 	}
 
+	/**
+	 * Get all the successful polled {@link SiteRevision}s for a {@link WebsiteItem} made after a certain time
+	 * @param siteID the site's ID to get revisions for
+	 * @param time the epoch time to get revisions after
+	 */
 	async getSiteRevisionAfter(siteID:string, time:number):Promise<SiteRevision> {
 		const response = await this.client.send(new QueryCommand({
 			TableName: EnvironmentVars.revisionTableName,
@@ -332,6 +392,11 @@ export class DatabaseService {
 		return response.Items && response.Items.length > 0 ? response.Items[0] as SiteRevision : undefined;
 	}
 
+	/**
+	 * Batch delete a series of runs and revisions
+	 * @param runsToDelete the runs to delete
+	 * @param revisionsToDelete the revisions to delete
+	 */
 	async deleteRunsAndRevisions(runsToDelete:string[], revisionsToDelete:string[]) {
 		if(runsToDelete.length + revisionsToDelete.length > 25) {
 			throw new Error("Can only batch delete 25 at a time");
@@ -355,6 +420,12 @@ export class DatabaseService {
 		await this.client.send(new BatchWriteCommand(request));
 	}
 
+	/**
+	 * Helper function to create a batch delete request in DynamoDB
+	 * @param key the name of the partition key
+	 * @param value the value of the partition key to delete
+	 * @returns the portion of the delete request
+	 */
 	private static createDeleteItems(key:string, value:string | number):DeleteRequestElement {
 		return {
 			DeleteRequest: {
@@ -366,12 +437,17 @@ export class DatabaseService {
 	}
 }
 
+/** A user in the website alerter */
 export interface UserItem {
+	/** The user's ID */
 	userID:string;
 
+	/** The user's email */
 	email:string;
 
+	/** The user's encrypted password */
 	password:string;
 }
 
+/** Portion of dynamo batch delete operation */
 declare type DeleteRequestElement = { DeleteRequest:{ Key:Record<string, any> } };

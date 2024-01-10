@@ -26,7 +26,7 @@ export abstract class LambdaBase {
 		}
 	}
 
-	/** Get the bucket the configuration is loaded from */
+	/** Get the S3 bucket the website alerter uses */
 	get configPath() {
 		return this._configService.configPath;
 	}

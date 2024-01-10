@@ -6,7 +6,15 @@ import httpErrorHandler from "@middy/http-error-handler";
 import {EnvironmentVars} from "./environment-vars";
 import {HttpMethod} from "./http-method";
 
+/**
+ * Utilities for interacting with the Middy framework
+ * @see https://middy.js.org/
+ */
 export abstract class MiddyUtil {
+	/**
+	 * Add CORS configuration to the response of a request
+	 * @param methods enable cors for the following HTTP methods
+	 */
 	static cors(...methods:HttpMethod[]) {
 		const origins = EnvironmentVars.allowedOrigins;
 
@@ -18,6 +26,7 @@ export abstract class MiddyUtil {
 		});
 	}
 
+	/** Add the default Middy configuration */
 	static defaultMiddy() {
 		return middy()
 			.use(errorLogger())

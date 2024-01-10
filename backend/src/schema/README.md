@@ -1,0 +1,2 @@
+# Website Alerter JSON Schema Files
+These are [JSON Schema](https://json-schema.org/) files that enforce the requests to various API functions. That way we can ensure that API requests are formatted properly and don't include extraneous data.

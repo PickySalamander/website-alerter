@@ -1,3 +1,4 @@
+/** Data passed from DetectChanges to ProcessSite */
 export interface DetectChangesData {
 	/** The current run operation */
 	runID:string;
@@ -8,5 +9,6 @@ export interface DetectChangesData {
 	/** Current revision id being worked on */
 	revisionID:string;
 
+	/** Was the site successfully polled? */
 	wasPolled:boolean;
 }

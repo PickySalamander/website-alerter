@@ -8,7 +8,7 @@ The first challenge was that there were several SPA websites I was looking at, s
 
 The main problem was that Puppeteer isn't really designed to run in a serverless lambda function: It has to download Chrome/Chromium or work with an already downloaded version of it. There are a few libraries out there that do this like [chrome-aws-lambda](https://github.com/alixaxel/chrome-aws-lambda) and [@sparticuz/chromium](https://github.com/Sparticuz/chromium). Unfortunately, chrome-aws-lambda doesn't seem to be supported anymore and @sparticuz/chromium works, but I had a few concerns (future support and getting it into my TypeScript builds). Also, I was trying to challenge myself! So I decided to go with a [Lambda container image](https://docs.aws.amazon.com/lambda/latest/dg/images-create.html) that had no reliance on external Puppeteer libraries.
 
-The project builds a Node.js 18 Docker container that has Chromium and it's dependencies already installed. Puppeteer can now run and scrape the sites and pass off the data to other Lambda functions in the stack.
+The project builds a Node.js 20 Docker container that has Chromium and it's dependencies already installed. Puppeteer can now run and scrape the sites and pass off the data to other Lambda functions in the stack.
 
 ## Stack
 There are two parts of the backend the API and the Step Functions, they're documented below:
@@ -43,7 +43,7 @@ Here's a description of the flow:
 Here are the steps for building for local development and production.
 
 ## Prerequisites
-- Node.js 18+
+- Node.js 20+
 - Docker
 - [CDK CLI](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 

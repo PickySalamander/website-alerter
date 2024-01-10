@@ -2,7 +2,7 @@
 Here are the instructions for developing and running this project locally. Building and testing locally is best done with [AWS SAM](https://aws.amazon.com/serverless/sam/).
 
 # Prerequisites
-- Node.js 18+
+- Node.js 20+
 - Docker
 - [CDK CLI](https://docs.aws.amazon.com/cdk/v2/guide/cli.html)
 - [SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)

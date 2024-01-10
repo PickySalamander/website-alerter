@@ -9,7 +9,18 @@ import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
 import {HttpMethod} from "../../util/http-method";
 
+/**
+ * Login a user into the API by verifying their credentials and returning a signed JWT. This function runs in its own
+ * Docker container which installs the <a href="https://www.npmjs.com/package/bcrypt>bcrypt</a> framework properly.
+ * bcrypt relies on <a href="https://github.com/nodejs/node-gyp">node-gyp</a> to work, so a specialized container is
+ * needed.
+ */
 class Login extends LambdaBase {
+
+	/**
+	 * Entry point from API Gateway
+	 * @param event data from the client
+	 */
 	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
 		//make sure there was a body
 		if(!event.body) {
@@ -20,8 +31,9 @@ class Login extends LambdaBase {
 
 		//get the login request
 		const request = JSON.parse(event.body);
-		const user = await this.database.getUser(request.email);
 
+		//find the user and make sure they exist
+		const user = await this.database.getUser(request.email);
 		if(!user) {
 			throw new createError.Forbidden("bad credentials")
 		}
@@ -31,6 +43,7 @@ class Login extends LambdaBase {
 			throw new createError.Forbidden("bad credentials")
 		}
 
+		//if checked successful load the jwt key and sign a JWT to return
 		const key = await this.configService.loadJwt();
 		const signed = await Login.getSignedJwt(user, v4(), key);
 
@@ -48,6 +61,12 @@ class Login extends LambdaBase {
 		};
 	}
 
+	/**
+	 * Return a signed JWT for the given user
+	 * @param user the user to put in the JWT
+	 * @param sessionID the session ID for the user
+	 * @param key the signing key
+	 */
 	public static getSignedJwt(user:UserItem, sessionID:string, key:Buffer) {
 
 		//create a promise and sign
