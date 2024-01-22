@@ -12,10 +12,25 @@ export class LoginService implements HttpInterceptor {
 	/** The current signed JWT being used */
 	private _session:string;
 
+	/** Stored redirection for the user to go to after they login */
+	private initialUrl:string[];
+
 	/** Event issued when the user logs out or is logged out */
 	private logoutSubject:Subject<void> = new Subject<void>();
 
 	constructor(private router:Router) {
+		//get the initial url the user wanted to go to
+		this.initialUrl = window.location.pathname.split('/').filter(value => value.length > 0);
+		if(this.initialUrl[0] == "login") {
+			this.clearInitial();
+		}
+
+		//determine if login token is still good
+		const timeout = parseInt(localStorage.getItem("sessionTimeout"));
+		if(isNaN(timeout) || new Date().getTime() > timeout) {
+			return;
+		}
+
 		//get any previously stored JWT from the local storage
 		this._session = localStorage.getItem("session");
 	}
@@ -42,9 +57,9 @@ export class LoginService implements HttpInterceptor {
 			const authReq = request.clone({headers, withCredentials: true});
 			return next.handle(authReq).pipe(
 				catchError((error:HttpErrorResponse) => {
-					if(error.status == 403) {
+					if(error.status == 403 || error.status == 0) {
 						console.log("Authorization error", error);
-						this.logout();
+						this.logout(false);
 					}
 
 					return throwError(() => error);
@@ -56,19 +71,39 @@ export class LoginService implements HttpInterceptor {
 	}
 
 	/** Log the user out of the App and redirect to the login page */
-	logout():void {
+	logout(clearInitial:boolean = true):void {
 		this._session = undefined;
 
 		this.logoutSubject.next();
 
+		if(clearInitial) {
+			this.clearInitial();
+		}
+
 		//nav to the login page
 		this.router.navigate(['login']);
+	}
+
+	/** Redirect to the initial url that the user wanted to go to or the root location */
+	sendInitialUrl() {
+		const initial = this.initialUrl;
+		this.clearInitial();
+		return this.router.navigate(initial);
+	}
+
+	/** Reset the initial url to the root of the site */
+	private clearInitial() {
+		this.initialUrl = ["list"];
 	}
 
 	/** Set the current session saving it in {@link localStorage} */
 	set session(value:string) {
 		this._session = value
 		localStorage.setItem("session", this._session);
+
+		//current time + hours - 6 minutes for leeway
+		const timeout = new Date().getTime() + (environment.sessionTimeout * 3.6e+6) - 3e+5;
+		localStorage.setItem("sessionTimeout", timeout.toString());
 	}
 
 	/** Does the user have a JWT session set? */
@@ -82,7 +117,7 @@ export class LoginService implements HttpInterceptor {
 	}
 
 	/** Return whether the user can view a page if already logged in */
-	public static canActivateLoggedIn:CanActivateFn = route => {
+	public static canActivateLoggedIn:CanActivateFn = () => {
 		return inject(LoginService).canActivate();
 	}
 }

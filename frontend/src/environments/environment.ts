@@ -3,5 +3,8 @@ export const environment = {
 	production: true,
 
 	/** location of the api to query */
-	apiUrl: 'https://5tc7tm4v57.execute-api.us-east-1.amazonaws.com/prod'
+	apiUrl: 'https://5tc7tm4v57.execute-api.us-east-1.amazonaws.com/prod',
+
+	/** Timeout of the session in hours */
+	sessionTimeout: 8
 };

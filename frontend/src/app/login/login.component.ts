@@ -64,7 +64,7 @@ export class LoginComponent {
 					const session = response.headers.get("session");
 					if(session) {
 						this.loginService.session = session;
-						this.router.navigate(['index']);
+						this.loginService.sendInitialUrl();
 					} else {
 						this.handleError();
 					}
