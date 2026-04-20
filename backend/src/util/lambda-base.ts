@@ -1,48 +1,43 @@
 import {DatabaseService} from "../services/database.service";
-import {ConfigurationService} from "../services/configuration.service";
-import {S3Client} from "@aws-sdk/client-s3";
+import {SNSClient} from "@aws-sdk/client-sns";
+import {S3Service} from "../services/s3.service";
 
 /** Base class for all Lambda functions in tool */
 export abstract class LambdaBase {
-	/** Cached configuration from S3 */
-	private _configService:ConfigurationService;
 
 	/** Cached database connection to Dynamo */
 	private _database:DatabaseService;
 
-	/** Cached S3 client */
-	private _s3:S3Client;
+	/** Cached S3 service */
+	private _s3:S3Service;
 
-	/** Have all the services been loaded? */
-	private init:boolean = false;
+	/** Cached SNS client */
+	private _sns:SNSClient;
 
-	/** Load and setup all the services required */
-	protected async setupServices():Promise<void> {
-		if(!this.init) {
-			this._database = new DatabaseService();
-			this._s3 = new S3Client({});
-			this._configService = new ConfigurationService(this.s3);
-			this.init = true;
-		}
-	}
-
-	/** Get the S3 bucket the website alerter uses */
-	get configPath() {
-		return this._configService.configPath;
-	}
-
-	/** Get the configuration service for loading from S3 */
-	get configService() {
-		return this._configService;
-	}
-
-	/** Cached S3 client */
+	/** Cached S3 service */
 	get s3() {
+		if(!this._s3) {
+			this._s3 = new S3Service();
+		}
+
 		return this._s3;
 	}
 
 	/** Cached database connection to Dynamo */
 	get database() {
+		if(!this._database) {
+			this._database = new DatabaseService();
+		}
+
 		return this._database;
+	}
+
+	/** Cached SNS client */
+	get sns() {
+		if(!this._sns) {
+			this._sns = new SNSClient();
+		}
+
+		return this._sns;
 	}
 }

@@ -1,80 +1,50 @@
-import puppeteer from "puppeteer";
-
 /**
  * Returns default arguments for the running of Chromium, most of these were taken from
- * <a href="https://github.com/Sparticuz/chromium/blob/master/source/index.ts#L149">@sparticuz/chromium</a>.
+ * <a href="https://github.com/Sparticuz/chromium/blob/master/source/index.ts">@sparticuz/chromium</a>.
  */
 export function DefaultChromeArgs() {
-	//default puppeteer arguments
-	const puppeteerFlags = puppeteer.defaultArgs();
-
-	//disable unneeded puppeteer features
-	const puppeteerDisableFeatures = [
-		"Translate",
-		"BackForwardCache",
-		// AcceptCHFrame disabled because of crbug.com/1348106.
-		"AcceptCHFrame",
-		"MediaRouter",
-		"OptimizationHints",
-	];
-
-	//enable needed puppeteer features
-	const puppeteerEnableFeatures = ["NetworkServiceInProcess2"];
-
-	//setchromium features
 	const chromiumFlags = [
-		"--disable-domain-reliability",
-		"--disable-print-preview",
-		"--disable-speech-api",
-		"--disk-cache-size=33554432",
-		"--mute-audio",
-		"--no-default-browser-check",
-		"--no-pings",
-		"--single-process", // Needs to be single-process to avoid `prctl(PR_SET_NO_NEW_PRIVS) failed` error
+		"--ash-no-nudges", // Avoids blue bubble "user education" nudges (eg., "… give your browser a new look", Memory Saver)
+		"--disable-domain-reliability", // Disables Domain Reliability Monitoring, which tracks whether the browser has difficulty contacting Google-owned sites and uploads reports to Google.
+		"--disable-print-preview", // https://source.chromium.org/search?q=lang:cpp+symbol:kDisablePrintPreview&ss=chromium
+		"--disk-cache-size=33554432", // https://source.chromium.org/search?q=lang:cpp+symbol:kDiskCacheSize&ss=chromium Forces the maximum disk space to be used by the disk cache, in bytes.
+		"--no-default-browser-check", // Disable the default browser check, do not prompt to set it as such. (This is already set by Playwright, but not Puppeteer)
+		"--no-pings", // Don't send hyperlink auditing pings
+		"--single-process", // Runs the renderer and plugins in the same process as the browser. NOTES: Needs to be single-process to avoid `prctl(PR_SET_NO_NEW_PRIVS) failed` error
+		"--font-render-hinting=none", // https://github.com/puppeteer/puppeteer/issues/2410#issuecomment-560573612
 	];
-
-	//disable unneeded chromium features
 	const chromiumDisableFeatures = [
 		"AudioServiceOutOfProcess",
 		"IsolateOrigins",
-		"site-per-process",
+		"site-per-process", // Disables OOPIF. https://www.chromium.org/Home/chromium-security/site-isolation
 	];
-
-	//enabled needed chromium features
 	const chromiumEnableFeatures = ["SharedArrayBuffer"];
 
-	//set graphics flags
 	const graphicsFlags = [
-		"--hide-scrollbars",
-		"--ignore-gpu-blocklist",
-		"--in-process-gpu",
-		"--window-size=1920,1080",
+		"--ignore-gpu-blocklist", // https://source.chromium.org/search?q=lang:cpp+symbol:kIgnoreGpuBlocklist&ss=chromium
+		"--in-process-gpu", // Saves some memory by moving GPU process into a browser process thread
 		"--disable-webgl"
 	];
 
-	//set insecure flags, these get in the way of headless running
 	const insecureFlags = [
-		"--allow-running-insecure-content",
-		"--disable-setuid-sandbox",
-		"--disable-site-isolation-trials",
-		"--disable-web-security",
-		"--no-sandbox",
-		"--no-zygote",
+		"--allow-running-insecure-content", // https://source.chromium.org/search?q=lang:cpp+symbol:kAllowRunningInsecureContent&ss=chromium
+		"--disable-setuid-sandbox", // Lambda runs as root, so this is required to allow Chromium to run as root
+		"--disable-site-isolation-trials", // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableSiteIsolation&ss=chromium
+		"--disable-web-security", // https://source.chromium.org/search?q=lang:cpp+symbol:kDisableWebSecurity&ss=chromium
 	];
 
-	//combine and return all the flags
+	const headlessFlags = [
+		"--headless='shell'", // We only support running chrome-headless-shell
+		"--no-sandbox", // https://source.chromium.org/search?q=lang:cpp+symbol:kNoSandbox&ss=chromium
+		"--no-zygote", // https://source.chromium.org/search?q=lang:cpp+symbol:kNoZygote&ss=chromium
+	];
+
 	return [
-		...puppeteerFlags,
 		...chromiumFlags,
-		`--disable-features=${[
-			...puppeteerDisableFeatures,
-			...chromiumDisableFeatures,
-		].join(",")}`,
-		`--enable-features=${[
-			...puppeteerEnableFeatures,
-			...chromiumEnableFeatures,
-		].join(",")}`,
+		`--disable-features=${[...chromiumDisableFeatures].join(",")}`,
+		`--enable-features=${[...chromiumEnableFeatures].join(",")}`,
 		...graphicsFlags,
 		...insecureFlags,
+		...headlessFlags,
 	];
 }

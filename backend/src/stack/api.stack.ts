@@ -1,37 +1,31 @@
-import {WebsiteAlerterStack} from "../website-alerter.stack";
+import {WebsiteAlerterStack} from "./website-alerter.stack";
 import {
 	AuthorizationType,
-	CfnMethod,
 	JsonSchema,
 	LambdaIntegration,
-	Method,
 	Resource,
 	ResponseType,
-	RestApi,
-	TokenAuthorizer
+	RestApi
 } from "aws-cdk-lib/aws-apigateway";
 import * as fs from "fs";
 import path from "node:path";
 import {FunctionBase} from "aws-cdk-lib/aws-lambda";
 import {HttpMethod} from "../util/http-method";
+import {Construct} from "constructs";
 
 /**
  * Part of the CDK stack that concerns API Gateway
  */
-export class ApiStack {
+export class ApiStack extends Construct {
 	/** The newly built API Gateway REST API */
 	public readonly api:RestApi;
 
 	/** Create the stack */
 	constructor(stack:WebsiteAlerterStack) {
-		//the custom authorizer
-		const authorizer = new TokenAuthorizer(stack, "Authorizor", {
-			handler: stack.apiLambda.auth,
-			validationRegex: "^Bearer [-0-9a-zA-Z\\._]*$"
-		});
+		super(stack, "API");
 
 		//allowed origins allowed for cors
-		const allowOrigins = [`https://${stack.cdn.cdn.attrDomainName}`];
+		const allowOrigins = [`https://${stack.cdn.cdn.distributionDomainName}`];
 
 		//if the env variable is set add localhost
 		if(process.env.INCLUDE_LOCAL_CORS === "true") {
@@ -41,11 +35,11 @@ export class ApiStack {
 		}
 
 		//build the rest API
-		this.api = new RestApi(stack, "WebsiteAlerterApi", {
+		this.api = new RestApi(this, "WebsiteAlerterApi", {
+			restApiName: "website-alerter-api",
 			description: "Website Alerter API for website functions",
 			defaultMethodOptions: {
-				authorizationType: AuthorizationType.CUSTOM,
-				authorizer
+				authorizationType: AuthorizationType.NONE
 			},
 			defaultCorsPreflightOptions: {
 				allowCredentials: true,
@@ -73,37 +67,28 @@ export class ApiStack {
 			}
 		});
 
-		//add login lambda function to the api
-		const login = this.api.root.addResource("login");
-		this.addLambda(login, {
-			method: HttpMethod.Post,
-			function: stack.apiLambda.login,
-			authorizer: false,
-			schemaName: "login"
-		});
-
 		//add the sites path and get, put, post, and delete functions
 		const sites = this.api.root.addResource("sites");
 		this.addLambda(sites, {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getSites
+			function: stack.lambda.getSites
 		});
 
 		this.addLambda(sites, {
 			method: HttpMethod.Put,
-			function: stack.apiLambda.putSite,
+			function: stack.lambda.putSite,
 			schemaName: "put-site"
 		});
 
 		this.addLambda(sites, {
 			method: HttpMethod.Post,
-			function: stack.apiLambda.putSite,
+			function: stack.lambda.putSite,
 			schemaName: "update-site"
 		});
 
 		this.addLambda(sites, {
 			method: HttpMethod.Delete,
-			function: stack.apiLambda.deleteSites,
+			function: stack.lambda.deleteSites,
 			schemaName: "delete-sites"
 		});
 
@@ -112,24 +97,24 @@ export class ApiStack {
 
 		this.addLambda(revisions.addResource("{revisionID}"), {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getRevision
+			function: stack.lambda.getRevision
 		});
 
 		this.addLambda(revisions.addResource("run").addResource("{runID}"), {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getRunRevisions
+			function: stack.lambda.getRunRevisions
 		});
 
 		this.addLambda(revisions.addResource("site").addResource("{siteID}"), {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getSiteRevisions
+			function: stack.lambda.getSiteRevisions
 		});
 
 		//add get all runs function
 		const runs = this.api.root.addResource("runs");
 		this.addLambda(runs, {
 			method: HttpMethod.Get,
-			function: stack.apiLambda.getRuns
+			function: stack.lambda.getRuns
 		});
 	}
 
@@ -159,26 +144,7 @@ export class ApiStack {
 		}
 
 		//add the lambda function to the resource under the required method
-		const method = resource.addMethod(props.method, new LambdaIntegration(props.function), methodOptions);
-
-		//if no authorizer required then remove it (it's always added by default)
-		if(props.authorizer === false) {
-			this.noAuthorizer(method);
-		}
-	}
-
-	/**
-	 * Remove the default authorizer from a route in the REST API
-	 * @param method the route to remove the authorizer from
-	 */
-	private noAuthorizer(method:Method) {
-		//get the L1 construct (can't do this to the L2 now)
-		const cfnMethod = method.node.defaultChild as CfnMethod;
-
-		//remove the authorizer
-		cfnMethod.addPropertyOverride("ApiKeyRequired", false);
-		cfnMethod.addPropertyOverride("AuthorizationType", "NONE");
-		cfnMethod.addPropertyDeletionOverride("AuthorizerId");
+		resource.addMethod(props.method, new LambdaIntegration(props.function), methodOptions);
 	}
 
 	/**

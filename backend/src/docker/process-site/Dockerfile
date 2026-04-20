@@ -12,10 +12,7 @@ RUN rpm --import linux_signing_key.pub
 RUN dnf install -y google-chrome-stable
 
 # Copy the compiled package.json, Typescript, and Puppeteer config over
-COPY package.json index.js puppeteer.config.js ./
-
-# Force puppeteer to use the version it was built with: https://pptr.dev/chromium-support
-ENV PUPPETEER_BROWSER_REVISION 115.0.5790.102
+COPY package.json index.js index.js.map ./
 
 # Install Puppeteer and any other dependencies not built into the index.js
 RUN npm install --silent

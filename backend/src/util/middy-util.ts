@@ -31,7 +31,7 @@ export abstract class MiddyUtil {
 		return middy()
 			.use(errorLogger())
 			.use(httpHeaderNormalizer())
-			.use(httpErrorHandler());
+			.use(httpErrorHandler({logger: console.warn}));
 	}
 }
 

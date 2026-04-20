@@ -46,7 +46,12 @@ export class DatabaseService {
 			});
 		}
 
-		this.client = DynamoDBDocumentClient.from(client);
+		this.client = DynamoDBDocumentClient.from(client, {
+			marshallOptions: {
+				//make sure that undefined values don't break puts
+				removeUndefinedValues: true
+			}
+		});
 	}
 
 	/**
@@ -106,16 +111,10 @@ export class DatabaseService {
 			},
 			ExpressionAttributeValues: {
 				":true": true
-			},
-			ProjectionExpression: "siteID"
+			}
 		}));
 
-		if(response.Items && response.Items.length > 0) {
-			const items = response.Items as WebsiteItem[];
-			return items.map(value => value.siteID);
-		}
-
-		return [];
+		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
 	}
 
 	/**
@@ -139,11 +138,10 @@ export class DatabaseService {
 			Key: {
 				siteID: item.siteID
 			},
-			UpdateExpression: "SET selector = :selector, enabled = :enabled, options = :options",
+			UpdateExpression: "SET selector = :selector, enabled = :enabled",
 			ExpressionAttributeValues: {
 				":selector": item.selector,
-				":enabled": item.enabled,
-				":options": item.options
+				":enabled": item.enabled
 			}
 		}));
 	}
@@ -227,6 +225,26 @@ export class DatabaseService {
 				":stats": stats
 			}
 		}));
+	}
+
+	/**
+	 * Get {@link RunThrough}s older than a time from the database
+	 * @param time the epoch time to get runs older than or equal to
+	 */
+	async getOldRunThroughs(time:number) {
+		const response = await this.client.send(new ScanCommand({
+			TableName: EnvironmentVars.runTableName,
+			FilterExpression: "#time <= :time",
+			ExpressionAttributeNames: {
+				"#time": "time",
+				"#modified": "modified"
+			},
+			ExpressionAttributeValues: {
+				":time": time
+			}
+		}));
+
+		return response.Items && response.Items.length > 0 ? response.Items as RunThrough[] : [];
 	}
 
 	/**

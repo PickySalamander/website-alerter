@@ -1,124 +1,149 @@
-import {Handler} from "aws-lambda";
-import {LambdaBase} from "../../util/lambda-base";
-import {GetObjectCommand, PutObjectCommand} from "@aws-sdk/client-s3";
-import {ChangeDetector} from "../../util/change-detector";
-import {Parsed} from "../../util/parsed-html";
-import {DetectChangesData} from "../../util/detect-changes-data";
-import {ChangeOptions, SiteRevision, SiteRevisionState} from "website-alerter-shared";
+import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {BedrockRuntimeClient, ConverseCommand} from "@aws-sdk/client-bedrock-runtime";
+import {ProcessSites} from "./process-sites";
+import {Logger} from "@aws-lambda-powertools/logger";
 
-/**
- * Lambda step function task that checks HTML {@link SiteRevision} downloaded into S3 for changes. If there are any
- * changes they will be put into a unified diff and uploaded to S3 for the user to check later.
- */
-class DetectChanges extends LambdaBase {
+const logger = new Logger({serviceName: 'detect-changes'});
+
+export class DetectChanges {
+	private readonly ModelID:string = "us.anthropic.claude-sonnet-4-6";
+
+	private systemPrompt:string;
+
+	private schema:string;
+
+	private bedrock:BedrockRuntimeClient;
+
+	private changed:WebsiteItem[];
 
 	/**
-	 * Entry point from the state machine
-	 * @param data data from the previous step that contains information about the revision to check
+	 * Create the class that detects changes in a site
+	 * @param parent function running this
+	 * @param sites the sites to be parsed
 	 */
-	public handler:Handler<DetectChangesData> = async(data) => {
-		console.log(`Checking for changes in ${JSON.stringify(data)}.`);
+	constructor(private parent:ProcessSites, private sites:WebsiteItem[]) {
+		this.bedrock = new BedrockRuntimeClient();
+	}
 
-		await this.setupServices();
+	async run() {
+		logger.info(`Checking for changes in ${this.sites.length} sites...`);
 
-		//check the site and see if it changed since last time
-		const finalState = await this.checkSite(data);
+		if(!this.systemPrompt) {
+			logger.info("Loading system prompt for the first time...");
+			this.systemPrompt = await this.parent.s3.getString("prompt/system-prompt.txt");
+			this.schema = await this.parent.s3.getString("prompt/system-prompt.txt");
+		}
 
-		console.log(`Updating final state...`);
+		this.changed = [];
 
-		await this.database.updateSiteRevision(data.siteID, data.revisionID, finalState);
+		await Promise.all(this.sites.map(async site => this.checkSite(site)));
 
-		console.log("Done.");
+		return this.changed;
 	}
 
 	/**
-	 * Check the current site and see if it has changed since the last {@link SiteRevision}
-	 * @param data data from the previous step that contains information about the revision to check
+	 * Check the site and see if it has changed since the last {@link SiteRevision}
+	 * @param site the site to check
 	 * @returns what the final {@link SiteRevisionState} of the {@link SiteRevision} should be.
 	 */
-	private async checkSite(data:DetectChangesData):Promise<SiteRevisionState> {
-		//Get the site that is being checked and make sure it exists
-		const site = await this.database.getSite(data.siteID);
-		if(!site) {
-			throw new Error(`Failed to find site from revision ${site.siteID}`);
-		}
-
-		console.log(`Checking the download ${site.site} for changes...`);
+	private async checkSite(site:WebsiteItem):Promise<void> {
+		logger.info(`Checking the download ${site.site} for changes...`);
 
 		//get the revision that was just polled and make sure it exists
-		const currentRevision = await this.database.getSiteRevision(data.revisionID);
-		if(!currentRevision) {
-			throw new Error(`Failed to find ${data.revisionID} revision in the database.`);
-		}
+		const currentRevision = site.last;
 
 		//make sure that the site was actually polled (we don't care if we're recomputing)
 		if(currentRevision.siteState == SiteRevisionState.Open) {
-			console.warn(`Could not check ${data.revisionID} since it was not polled`);
-			return SiteRevisionState.Open;
+			logger.warn(`Could not check ${currentRevision.revisionID} since it was not polled`);
+			return;
 		}
 
-		//get the last successful revision in the database
-		const lastRevision = await this.database.getSiteRevisionAfter(data.siteID, currentRevision.time);
+		//get the previous successful revision in the database
+		const previousRevision =
+			await this.parent.database.getSiteRevisionAfter(site.siteID, currentRevision.time);
 
 		//if there aren't enough revisions yet then abort
-		if(!lastRevision) {
-			console.log("Website has too few updates, skipping.");
-			return SiteRevisionState.Unchanged;
+		if(!previousRevision) {
+			logger.info("Website has too few updates, skipping.");
+			return this.unchanged(site);
 		}
 
-		console.log(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
-			`last:${lastRevision.revisionID} (${new Date(lastRevision.time)})...`);
+		logger.info(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
+			`previous:${previousRevision.revisionID} (${new Date(previousRevision.time)})...`);
 
-		//get the current HTML revision and the previous
-		const current = await this.getContent(currentRevision, site.options);
-		const last = await this.getContent(lastRevision, site.options);
+		const detection = await this.queryAi(site.siteID, previousRevision, currentRevision);
 
-		console.log(`Getting content changes (ignore ${site.options ? JSON.stringify(site.options) : "unset"})`);
-
-		//detect changes in the versions
-		const detection = new ChangeDetector(last, current);
+		if(!detection) {
+			return;
+		}
 
 		//If there are no changes
-		if(!detection.isChanged) {
-			console.log("Found no differences, moving on");
-			return SiteRevisionState.Unchanged;
+		if(!detection.changes) {
+			logger.info("Found no differences, moving on");
+			return this.unchanged(site);
 		}
 
-		//if there are changes upload the diff to S3
-		const s3Key = `content/${current.revision.revisionID}.diff`
-
-		console.log(`Found differences, uploading to s3://${this.configPath}/${s3Key}`);
-
-		await this.s3.send(new PutObjectCommand({
-			Bucket: this.configPath,
-			Key: s3Key,
-			Body: detection.body
-		}));
-
-		//return that there are changes
-		return SiteRevisionState.Changed;
+		currentRevision.siteState = SiteRevisionState.Changed;
+		currentRevision.differences = detection.differences;
+		await this.parent.database.putSiteRevision(currentRevision);
+		this.changed.push(site);
 	}
 
-	/**
-	 * Retrieve the relevant HTML from S3
-	 * @param revision the revision of HTML and where it is located
-	 * @param options options for detecting changes on the page
-	 * @returns the parsed HTML and the revision
-	 */
-	private async getContent(revision:SiteRevision, options?:ChangeOptions):Promise<Parsed> {
-		//get the html from S3
-		const s3Result = await this.s3.send(new GetObjectCommand({
-			Bucket: this.configPath,
-			Key: `content/${revision.revisionID}.html`
-		}));
+	private async queryAi(siteID:string, lastRevision:SiteRevision, currentRevision:SiteRevision) {
+		//get the current HTML revision and the previous
+		const previous = await this.parent.s3.getString(`content/${siteID}/${lastRevision.revisionID}.html`);
+		const current = await this.parent.s3.getString(`content/${siteID}/${currentRevision.revisionID}.html`);
 
-		//get the html string
-		const html = await s3Result.Body.transformToString("utf8");
+		const request = new ConverseCommand({
+			modelId: this.ModelID,
+			system: [{text: this.systemPrompt}],
+			inferenceConfig: {maxTokens: 1024},
+			messages: [
+				{
+					role: "user",
+					content: [{text: previous}, {text: current}]
+				}
+			],
+			outputConfig: {
+				textFormat: {
+					type: "json_schema",
+					structure: {
+						jsonSchema: {
+							schema: this.schema,
+							name: "compare",
+							description: "Comparing results of two different versions of a website"
+						}
+					}
+				}
+			}
+		});
 
-		//return the html and pretty print it
-		return new Parsed(revision, html, options);
+		try {
+			// Send the command to the model and wait for the response
+			const response = await this.bedrock.send(request);
+
+			// parse the response
+			logger.info(JSON.stringify(response.output.message));
+			const responseText = response.output.message.content[0].text;
+			return JSON.parse(responseText) as AiResponse;
+		} catch(e) {
+			logger.error(`Failed to query the AI for site ${siteID}`, e as Error);
+		}
+
+		return undefined;
+	}
+
+	private async unchanged(site:WebsiteItem) {
+		await this.parent.database.updateSiteRevision(site.siteID, site.last.revisionID, SiteRevisionState.Unchanged);
+		site.last.siteState = SiteRevisionState.Unchanged;
 	}
 }
 
-// noinspection JSUnusedGlobalSymbols
-export const handler = new DetectChanges().handler;
+/** Description of the revision from the AI */
+interface AiResponse {
+	/** Were changes detected? */
+	changes:boolean;
+
+	/** The differences as explained by AI */
+	differences:string[];
+}

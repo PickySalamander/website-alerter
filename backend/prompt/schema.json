@@ -1,0 +1,21 @@
+{
+	"type": "object",
+	"properties": {
+		"changes": {
+			"type": "boolean",
+			"description": "Should be true if there are changes between the two versions of the HTML files and false if otherwise"
+		},
+		"differences": {
+			"type": "array",
+			"description": "All the changes that were found between the two versions",
+			"items": {
+				"type": "string",
+				"description": "Description of one thing that has changed between each version"
+			}
+		}
+	},
+	"required": [
+		"changes"
+	],
+	"additionalProperties": false
+}

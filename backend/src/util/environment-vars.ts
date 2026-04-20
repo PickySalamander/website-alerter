@@ -45,6 +45,11 @@ export abstract class EnvironmentVars {
 		return process.env.WEBSITE_URL;
 	}
 
+	/** The url of the website alerter frontend */
+	static get pollSitesArn():string {
+		return process.env.POLL_SITES_ARN;
+	}
+
 	/** The maximum number of runs allowed in the database and S3 */
 	static get numRunsAllowed():number {
 		const parsed = parseInt(process.env.NUM_RUNS_ALLOWED);
