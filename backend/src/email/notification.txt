@@ -1,0 +1,4 @@
+Finished run through ${runID} of ${this.sites.size} sites. Output follows:
+
+Changed: ${changed}\n\tErrored:${errored}\n\n` +
+View changes here: ${EnvironmentVars.websiteUrl}/runs/${this.runID}`;

@@ -2,12 +2,9 @@ import {Handler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
 import {LambdaBase} from "../../util/lambda-base";
 import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {Logger} from "@aws-lambda-powertools/logger";
 import {PollSiteData} from "./poll-site-data";
 import {randomUUID} from "crypto";
-import { DefaultChromeArgs } from "../../util/default-chrome-args";
-
-const logger = new Logger({serviceName: 'process-sites'});
+import {DefaultChromeArgs} from "../../util/default-chrome-args";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
@@ -31,7 +28,9 @@ class PollSites extends LambdaBase {
 	 */
 	public handler:Handler<PollSiteData, WebsiteItem[]> = async(data) => {
 		try {
-			logger.info(`Starting to poll ${data.sites.length} sites in run ${data.runID}`);
+			console.info(`Starting to poll ${data.sites.length} sites in run ${data.runID}`);
+
+			this.runID = data.runID;
 
 			this.successfullyParsed = [];
 
@@ -45,13 +44,13 @@ class PollSites extends LambdaBase {
 
 			return this.successfullyParsed;
 		} catch(e) {
-			logger.error("Uncaught exception", e as Error);
+			console.error("Uncaught exception", e);
 		}
 	}
 
 	/** Start up a Puppeteer browser instance */
 	private async initialize() {
-		logger.info("Starting up puppeteer for the first time...");
+		console.info("Starting up puppeteer for the first time...");
 
 		//start up a headless browser
 		this.browser = await puppeteer.launch({
@@ -61,7 +60,7 @@ class PollSites extends LambdaBase {
 		});
 
 		const browserVersion = await this.browser.version();
-		logger.info(`Puppeteer started, running chrome ${browserVersion}`);
+		console.info(`Puppeteer started, running chrome ${browserVersion}`);
 	}
 
 	/**
@@ -84,7 +83,7 @@ class PollSites extends LambdaBase {
 		//add the revision to the database
 		await this.database.putSiteRevision(site.last);
 
-		logger.info(`Parsing site ${site.siteID} with revision ${revisionID}`);
+		console.info(`Parsing site ${site.siteID} with revision ${revisionID}`);
 
 		//poll the site and save the html
 		const result = await this.pollSite(site);
@@ -93,7 +92,7 @@ class PollSites extends LambdaBase {
 			return;
 		}
 
-		logger.info("Parsed site successfully, uploading to S3");
+		console.info("Parsed site successfully, uploading to S3");
 
 		//put the HTML in S3
 		await this.s3.putObject(`content/${site.siteID}/${revisionID}.html`, result.content);
@@ -109,7 +108,7 @@ class PollSites extends LambdaBase {
 	}
 
 	private async pollSite(site:WebsiteItem):Promise<PageResult> {
-		logger.info(`Navigating to ${site.site} in browser...`);
+		console.info(`Navigating to ${site.site} in browser...`);
 
 		//open a new page in the browser
 		const page = await this.browser.newPage();
@@ -133,7 +132,7 @@ class PollSites extends LambdaBase {
 				screenshot
 			}
 		} catch(e) {
-			logger.warn("Failed to parse website", e as Error);
+			console.warn("Failed to parse website", e as Error);
 			return undefined;
 		} finally {
 			await page.close();

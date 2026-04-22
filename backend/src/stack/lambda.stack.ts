@@ -40,18 +40,25 @@ export class LambdaStack extends Construct {
 	constructor(private stack:WebsiteAlerterStack) {
 		super(stack, "Lambdas");
 
-		//allowed origins allowed for cors
-		let allowOrigins = `https://${stack.cdn.cdn.distributionDomainName}`;
-
-		//if the env variable is set add localhost
-		if(process.env.INCLUDE_LOCAL_CORS === "true") {
-			allowOrigins += ",http://localhost:4200";
-		}
+		//TODO re-enable
+		// //allowed origins allowed for cors
+		// let allowOrigins = `https://${stack.cdn.cdn.distributionDomainName}`;
+		//
+		// //if the env variable is set add localhost
+		// if(stack.isLocal) {
+		// 	allowOrigins += ",http://localhost:4200";
+		// }
 
 		//setup default environmental variables for the functions
 		this.environment = {
-			...stack.environmentVars,
-			"ALLOWED_ORIGINS": allowOrigins
+			"CONFIG_S3": stack.configBucket.bucketName,
+			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
+			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
+			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
+			"NODE_OPTIONS": "--enable-source-maps",
+			"IS_PRODUCTION": "true",
+			// TODO re-enable
+			// "ALLOWED_ORIGINS": allowOrigins
 		};
 
 		//TODO re-enable all when site back up (also remove from tsconfig.json)
@@ -92,7 +99,7 @@ export class LambdaStack extends Construct {
 
 		this.pollSites = new DockerImageFunction(this, 'PollSites', {
 			functionName: "website-alerter-poll-sites",
-			timeout: Duration.minutes(30),
+			timeout: Duration.minutes(15),
 			memorySize: 1024,
 			role: this.stack.iam.lambdaRole,
 			code: DockerImageCode.fromImageAsset("build/process-site"),
@@ -119,11 +126,11 @@ export class LambdaStack extends Construct {
 			functionName: `website-alerter-${LambdaStack.kebabCase(name)}`,
 			timeout: Duration.seconds(30),
 			logGroup: this.createLogGroup(name),
-			runtime: Runtime.NODEJS_20_X,
+			runtime: Runtime.NODEJS_24_X,
 			handler: "handler",
 			role: this.stack.iam.lambdaRole,
 			bundling: {
-				externalModules: ["@aws-sdk/*"],
+				externalModules: this.stack.isLocal ? [] : ["@aws-sdk/*"],
 				metafile: true,
 				minify: true,
 				sourceMap: true

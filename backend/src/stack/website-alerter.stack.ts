@@ -15,9 +15,6 @@ export class WebsiteAlerterStack extends Stack {
 	/** Iam roles created */
 	readonly iam:IamStack;
 
-	/** Environmental variables that lambdas and processes will use */
-	readonly environmentVars:{ [p:string]:string };
-
 	/** Lambda functions */
 	readonly lambda:LambdaStack;
 
@@ -68,19 +65,10 @@ export class WebsiteAlerterStack extends Stack {
 			value: this.configBucket.bucketName
 		});
 
-		this.cdn = new CdnStack(this);
+		//TODO re=enable this
+		// this.cdn = new CdnStack(this);
 
 		this.iam = new IamStack(this);
-
-		//setup default environmental variables for the functions
-		this.environmentVars = {
-			"CONFIG_S3": this.configBucket.bucketName,
-			"RUN_TABLE": this.dynamo.runThroughTable.tableName,
-			"WEBSITE_TABLE": this.dynamo.websiteTable.tableName,
-			"REVISION_TABLE": this.dynamo.revisionTable.tableName,
-			"NODE_OPTIONS": "--enable-source-maps",
-			"IS_PRODUCTION": "true"
-		};
 
 		this.lambda = new LambdaStack(this);
 

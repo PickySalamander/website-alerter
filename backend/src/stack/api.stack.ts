@@ -28,7 +28,7 @@ export class ApiStack extends Construct {
 		const allowOrigins = [`https://${stack.cdn.cdn.distributionDomainName}`];
 
 		//if the env variable is set add localhost
-		if(process.env.INCLUDE_LOCAL_CORS === "true") {
+		if(stack.isLocal) {
 			console.warn("Including localhost for cors checks");
 			//SAM likes the localhost to come first otherwise won't use it
 			allowOrigins.unshift("http://localhost:4200")

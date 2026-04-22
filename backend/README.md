@@ -37,7 +37,7 @@ Here's a description of the flow:
 2. [scheduled-start.ts](src/functions/process/scheduled-start.ts) creates a new run through in the RunThroughTable and returns each website from the database that needs to be scrapped.
 3. [process-site.ts](src/functions/process/process-site.ts) will one-by-one go through each site and scrape it. It will do this by starting up a Puppeteer instance, polling the requested website, and saving the HTML to S3. Finally, it will return whether the polling was successful (sometimes it can fail if the site is down or the CSS selector doesn't work).
 4. [detect-changes.ts](src/functions/process/detect-changes.ts) checks to see if sites that were polled have changed. It compares the downloaded HTML to the previous week's scrape. If there is a change, it will generate a unified diff to S3. Finally, it updates the database with whether the two versions have changed.
-5. Finally, after all the sites are polled and checked [scheduled-end.ts](src/functions/process/scheduled-end.ts) will parse all the changes detected and send an email via SNS to the user.
+5. Finally, after all the sites are polled and checked [scheduled-end.ts](src/functions/process/cleanup.ts) will parse all the changes detected and send an email via SNS to the user.
 
 # Building
 Here are the steps for building for local development and production.

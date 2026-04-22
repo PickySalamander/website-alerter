@@ -1,11 +1,9 @@
 import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {BedrockRuntimeClient, ConverseCommand} from "@aws-sdk/client-bedrock-runtime";
-import {ProcessSites} from "./process-sites";
-import {Logger} from "@aws-lambda-powertools/logger";
+import {DurableChild} from "../../util/durable-child";
+import {DurableContext} from "@aws/durable-execution-sdk-js";
 
-const logger = new Logger({serviceName: 'detect-changes'});
-
-export class DetectChanges {
+export class DetectChanges extends DurableChild {
 	private readonly ModelID:string = "us.anthropic.claude-sonnet-4-6";
 
 	private systemPrompt:string;
@@ -16,22 +14,19 @@ export class DetectChanges {
 
 	private changed:WebsiteItem[];
 
-	/**
-	 * Create the class that detects changes in a site
-	 * @param parent function running this
-	 * @param sites the sites to be parsed
-	 */
-	constructor(private parent:ProcessSites, private sites:WebsiteItem[]) {
+	constructor(context:DurableContext, private sites:WebsiteItem[]) {
+		super(context);
+
 		this.bedrock = new BedrockRuntimeClient();
 	}
 
 	async run() {
-		logger.info(`Checking for changes in ${this.sites.length} sites...`);
+		this.logger.info(`Checking for changes in ${this.sites.length} sites...`);
 
 		if(!this.systemPrompt) {
-			logger.info("Loading system prompt for the first time...");
-			this.systemPrompt = await this.parent.s3.getString("prompt/system-prompt.txt");
-			this.schema = await this.parent.s3.getString("prompt/system-prompt.txt");
+			this.logger.info("Loading system prompt for the first time...");
+			this.systemPrompt = await this.s3.getString("prompt/system-prompt.txt");
+			this.schema = await this.s3.getString("prompt/schema.json");
 		}
 
 		this.changed = [];
@@ -47,28 +42,28 @@ export class DetectChanges {
 	 * @returns what the final {@link SiteRevisionState} of the {@link SiteRevision} should be.
 	 */
 	private async checkSite(site:WebsiteItem):Promise<void> {
-		logger.info(`Checking the download ${site.site} for changes...`);
+		this.logger.info(`Checking the download ${site.site} for changes...`);
 
 		//get the revision that was just polled and make sure it exists
 		const currentRevision = site.last;
 
 		//make sure that the site was actually polled (we don't care if we're recomputing)
 		if(currentRevision.siteState == SiteRevisionState.Open) {
-			logger.warn(`Could not check ${currentRevision.revisionID} since it was not polled`);
+			this.logger.warn(`Could not check ${currentRevision.revisionID} since it was not polled`);
 			return;
 		}
 
 		//get the previous successful revision in the database
 		const previousRevision =
-			await this.parent.database.getSiteRevisionAfter(site.siteID, currentRevision.time);
+			await this.database.getSiteRevisionAfter(site.siteID, currentRevision.time);
 
 		//if there aren't enough revisions yet then abort
 		if(!previousRevision) {
-			logger.info("Website has too few updates, skipping.");
+			this.logger.info("Website has too few updates, skipping.");
 			return this.unchanged(site);
 		}
 
-		logger.info(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
+		this.logger.info(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
 			`previous:${previousRevision.revisionID} (${new Date(previousRevision.time)})...`);
 
 		const detection = await this.queryAi(site.siteID, previousRevision, currentRevision);
@@ -79,20 +74,24 @@ export class DetectChanges {
 
 		//If there are no changes
 		if(!detection.changes) {
-			logger.info("Found no differences, moving on");
+			this.logger.info("Found no differences, moving on");
 			return this.unchanged(site);
 		}
 
+		this.logger.info(`Found ${detection.differences.length} differences`);
+
 		currentRevision.siteState = SiteRevisionState.Changed;
 		currentRevision.differences = detection.differences;
-		await this.parent.database.putSiteRevision(currentRevision);
+		await this.database.putSiteRevision(currentRevision);
 		this.changed.push(site);
 	}
 
 	private async queryAi(siteID:string, lastRevision:SiteRevision, currentRevision:SiteRevision) {
 		//get the current HTML revision and the previous
-		const previous = await this.parent.s3.getString(`content/${siteID}/${lastRevision.revisionID}.html`);
-		const current = await this.parent.s3.getString(`content/${siteID}/${currentRevision.revisionID}.html`);
+		const previous = await this.s3.getString(`content/${siteID}/${lastRevision.revisionID}.html`);
+		const current = await this.s3.getString(`content/${siteID}/${currentRevision.revisionID}.html`);
+
+		this.logger.info(`Making AI request of ${this.ModelID}...`);
 
 		const request = new ConverseCommand({
 			modelId: this.ModelID,
@@ -123,18 +122,17 @@ export class DetectChanges {
 			const response = await this.bedrock.send(request);
 
 			// parse the response
-			logger.info(JSON.stringify(response.output.message));
 			const responseText = response.output.message.content[0].text;
 			return JSON.parse(responseText) as AiResponse;
 		} catch(e) {
-			logger.error(`Failed to query the AI for site ${siteID}`, e as Error);
+			this.logger.error(`Failed to query the AI for site ${siteID}`, e as Error);
 		}
 
 		return undefined;
 	}
 
 	private async unchanged(site:WebsiteItem) {
-		await this.parent.database.updateSiteRevision(site.siteID, site.last.revisionID, SiteRevisionState.Unchanged);
+		await this.database.updateSiteRevision(site.siteID, site.last.revisionID, SiteRevisionState.Unchanged);
 		site.last.siteState = SiteRevisionState.Unchanged;
 	}
 }

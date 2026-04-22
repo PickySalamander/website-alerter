@@ -8,7 +8,8 @@
 		"start:process": "npx tsx --env-file=process.env src/process/process-sites.ts",
 		"test": "vitest",
 		"clean": "rimraf cdk.out && rimraf build",
-		"deploy": "cdk deploy --quiet --require-approval never",
+		"deploy": "tsc -noEmit && cdk deploy --quiet --require-approval never",
+		"deploy:prompt": "aws s3 cp prompt/schema.json s3://website-alerter-468451602170/prompt/ && aws s3 cp prompt/system-prompt.txt s3://website-alerter-468451602170/prompt/",
 		"synth": "cdk synth"
 	},
 	"devDependencies": {
@@ -18,15 +19,14 @@
 		"@aws-sdk/client-sns": "^3.1000.0",
 		"@aws-sdk/client-sqs": "^3.1000.0",
 		"@aws-sdk/lib-dynamodb": "^3.1000.0",
-		"@aws/durable-execution-sdk-js": "^1.0.2",
 		"@types/aws-lambda": "^8.10.161",
 		"@types/http-errors": "^2.0.5",
 		"aws-cdk": "^2.1108.0",
 		"esbuild": "^0.27.3"
 	},
 	"dependencies": {
-		"@aws-lambda-powertools/logger": "^2.31.0",
 		"@aws-sdk/s3-request-presigner": "^3.1000.0",
+		"@aws/durable-execution-sdk-js": "^1.0.2",
 		"@middy/core": "^7.1.2",
 		"@middy/error-logger": "^7.1.2",
 		"@middy/http-cors": "^7.1.2",
