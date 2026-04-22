@@ -10,6 +10,7 @@ import {EnvironmentVars} from "../../util/environment-vars";
 import {PublishCommand} from "@aws-sdk/client-sns";
 import {DurableChild} from "../../util/durable-child";
 import {DurableContext} from "@aws/durable-execution-sdk-js";
+import Handlebars from "handlebars";
 
 /**
  * Function that is called when the whole website polling queue is completed successfully. This will email the user
@@ -17,7 +18,7 @@ import {DurableContext} from "@aws/durable-execution-sdk-js";
  */
 export class Cleanup extends DurableChild {
 	/** All sites that were polled during this run */
-	private sites:Map<string, WebsiteItem>;
+	private sites:WebsiteItem[];
 
 	/**
 	 * Create the cleanup routine
@@ -39,15 +40,14 @@ export class Cleanup extends DurableChild {
 
 		//get all the site entries in the run and store in a Map for easy lookup
 		const siteIDs = new Set<string>(runThrough.sites);
-		this.sites =
-			new Map((await this.database.getSitesByID(siteIDs)).map(value => [value.siteID, value]));
+		this.sites = await this.database.getSitesByID(siteIDs);
 
 		//keep track of all the changed and errored sites
-		let changed:number = 0;
+		const changed:SiteRevision[] = [];
 		let errored:number = 0;
 
 		//go through each site and check its last state
-		for(const [, site] of this.sites) {
+		for(const site of this.sites) {
 			//if the site wasn't updated during the last run don't process it
 			if(site.last.runID != this.runID) {
 				console.warn(`Site ${site.siteID} (${site.site}) was not updated for run ${this.runID}`);
@@ -61,7 +61,7 @@ export class Cleanup extends DurableChild {
 					errored++;
 					break;
 				case SiteRevisionState.Changed:
-					changed++;
+					changed.push(site.last);
 					break;
 			}
 		}
@@ -71,8 +71,8 @@ export class Cleanup extends DurableChild {
 
 		//save the stats on this current run for reporting on the frontend
 		const stats:RunThroughStats = {
-			unchanged: this.sites.size - (changed + errored),
-			changed,
+			unchanged: this.sites.length - (changed.length + errored),
+			changed: changed.length,
 			errored,
 		};
 
@@ -87,16 +87,22 @@ export class Cleanup extends DurableChild {
 
 	/**
 	 * Email the user on the final status of the {@link RunThrough}
-	 * @param changed the number of sites that changed
+	 * @param changed the revisions that were changed
 	 * @param errored the number of sites that errored
 	 */
-	private async sendEmail(changed:number, errored:number) {
-		//set up the email to send
-		let email = `Finished run through ${this.runID} of ${this.sites.size} sites. Output follows:\n` +
-			`\tChanged: ${changed}\n\tErrored:${errored}\n\n` +
-			`\tView changes here: ${EnvironmentVars.websiteUrl}/runs/${this.runID}`;
+	private async sendEmail(changed:SiteRevision[], errored:number) {
+		const template =
+			Handlebars.compile(await this.s3.getString("email/notification.txt"));
 
-		//if in production email the user via SNS
+		const email = template({
+			changed,
+			errored,
+			total:this.sites.length,
+			sites: Object.fromEntries(this.sites.map(value => [value.siteID, value.site])),
+			websiteUrl: `${EnvironmentVars.websiteUrl}/runs/${this.runID}`
+		});
+
+		//if in production, email the user via SNS
 		if(EnvironmentVars.isProduction) {
 			this.logger.info("Sending email");
 
