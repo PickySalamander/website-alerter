@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {MatButtonModule} from "@angular/material/button";
 import {FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
@@ -17,7 +17,7 @@ import {RevisionListComponent} from "./revision-list/revision-list.component";
 /** Display information on a site and the add/edit form */
 @Component({
     selector: 'app-add-site',
-    imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
+    imports: [MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
     templateUrl: './site-info.component.html',
     styleUrl: './site-info.component.scss'
 })

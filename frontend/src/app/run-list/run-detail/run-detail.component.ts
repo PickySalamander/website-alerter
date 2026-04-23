@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import { HttpClient } from "@angular/common/http";
 import {ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterOutlet} from "@angular/router";
 import {Subscription} from "rxjs";
@@ -13,7 +13,7 @@ import {RevisionStateComponent} from "../../revision-state/revision-state.compon
 /** Display the currently selected run's details along with a list of revisions */
 @Component({
     selector: 'app-run-detail',
-    imports: [CommonModule, MatTableModule, RouterOutlet, ShortUuidComponent, RevisionStateComponent, RouterLink],
+    imports: [MatTableModule, RouterOutlet, ShortUuidComponent, RevisionStateComponent, RouterLink],
     templateUrl: './run-detail.component.html',
     styleUrl: './run-detail.component.scss'
 })

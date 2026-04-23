@@ -1,11 +1,11 @@
 import {Component, Input} from '@angular/core';
-import {CommonModule} from '@angular/common';
+
 import {SiteRevisionState} from "website-alerter-shared";
 
 /** Display a colored label for the {@link SiteRevisionState} */
 @Component({
     selector: 'app-revision-state',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './revision-state.component.html',
     styleUrl: './revision-state.component.scss'
 })
