@@ -12,8 +12,5 @@
 	"scripts": {
 		"build": "rimraf dist && tsc",
 		"test": "vitest --passWithNoTests"
-	},
-	"devDependencies": {
-		"aws-cron-parser": "^1.1.12"
 	}
 }
