@@ -7,7 +7,7 @@
 		"build:local": "tsc -noEmit && cdk synth --context config=local --no-staging --quiet && sam build -t cdk.out/WebsiteAlerter.template.json",
 		"start:process": "npx tsx --env-file=process.env src/process/process-sites.ts",
 		"test": "vitest",
-		"clean": "rimraf cdk.out && rimraf build",
+		"clean": "rimraf cdk.out build .aws-sam .durable-executions-local",
 		"deploy": "tsc -noEmit && cdk deploy --quiet --require-approval never",
 		"deploy:prompt": "aws s3 cp prompt/schema.json s3://website-alerter-468451602170/prompt/ && aws s3 cp prompt/system-prompt.txt s3://website-alerter-468451602170/prompt/",
 		"synth": "cdk synth"
