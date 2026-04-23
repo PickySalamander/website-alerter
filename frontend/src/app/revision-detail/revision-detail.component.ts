@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import { HttpClient } from "@angular/common/http";
+import {HttpClient} from "@angular/common/http";
 import {SiteService} from "../services/site.service";
 import {environment} from "../../environments/environment";
 import {ActivatedRoute, RouterLink} from "@angular/router";
@@ -9,14 +9,13 @@ import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shar
 import {RevisionStateComponent} from "../revision-state/revision-state.component";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
-import * as Diff2Html from 'diff2html';
 
 /** Display the details of the revision along with a diff if the revision has a change */
 @Component({
-    selector: 'app-revision-detail',
-    imports: [CommonModule, RevisionStateComponent, RouterLink, MatButtonModule, MatIconModule],
-    templateUrl: './revision-detail.component.html',
-    styleUrl: './revision-detail.component.scss'
+	selector: 'app-revision-detail',
+	imports: [CommonModule, RevisionStateComponent, RouterLink, MatButtonModule, MatIconModule],
+	templateUrl: './revision-detail.component.html',
+	styleUrl: './revision-detail.component.scss'
 })
 export class RevisionDetailComponent implements OnInit {
 	/** The revision being displayed */
@@ -48,22 +47,6 @@ export class RevisionDetailComponent implements OnInit {
 			this.revision = response.revision;
 			this.urls = response.urls;
 			this.site = this.siteService.getSite(response.revision.siteID);
-
-			//render the diff if there is one
-			if(this.revision.siteState == SiteRevisionState.Changed) {
-				this.getDiff();
-			}
-		});
-	}
-
-	/** Load the unified diff from the pre-signed url */
-	private getDiff() {
-		this.http.get(this.urls.diff, {responseType: "text"}).subscribe(unifiedDiff => {
-			//render using diff2html
-			this.diffHtml = Diff2Html.html(unifiedDiff, {
-				drawFileList: false,
-				matching: 'lines'
-			});
 		});
 	}
 }

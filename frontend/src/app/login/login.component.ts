@@ -1,24 +1,22 @@
 import {Component} from '@angular/core';
-
 import {MatCardModule} from "@angular/material/card";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {MatIconModule} from "@angular/material/icon";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {MatButtonModule} from "@angular/material/button";
-import { HttpClient, HttpErrorResponse } from "@angular/common/http";
+import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {environment} from "../../environments/environment";
 import {LoginService} from "../services/login.service";
-import {Router} from "@angular/router";
 import {SnackbarService} from "../services/snackbar.service";
 import {LoginRequest, LoginResponse} from "website-alerter-shared";
 
 /** The login page */
 @Component({
-    selector: 'app-login',
-    imports: [MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
-    templateUrl: './login.component.html',
-    styleUrl: './login.component.scss'
+	selector: 'app-login',
+	imports: [MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
+	templateUrl: './login.component.html',
+	styleUrl: './login.component.scss'
 })
 export class LoginComponent {
 	/** the login form configuration */
@@ -35,8 +33,7 @@ export class LoginComponent {
 
 	constructor(private http:HttpClient,
 	            private loginService:LoginService,
-	            private snackbar:SnackbarService,
-	            private router:Router) {
+	            private snackbar:SnackbarService) {
 	}
 
 	/** Called to submit the form */

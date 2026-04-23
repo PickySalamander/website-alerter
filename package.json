@@ -2,7 +2,8 @@
 	"name": "website-alerter-main",
 	"workspaces": [
 		"shared",
-		"backend"
+		"backend",
+		"frontend"
 	],
 	"scripts": {
 		"clean": "npm run clean --workspaces"
