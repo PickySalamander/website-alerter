@@ -5,7 +5,7 @@ import {SiteRevision} from "website-alerter-shared";
 import {MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatSortModule} from "@angular/material/sort";
 import {RevisionStateComponent} from "../../revision-state/revision-state.component";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {environment} from "../../../environments/environment";
 import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
 import {RouterLink} from "@angular/router";

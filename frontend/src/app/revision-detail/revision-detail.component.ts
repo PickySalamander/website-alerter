@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {SiteService} from "../services/site.service";
 import {environment} from "../../environments/environment";
 import {ActivatedRoute, RouterLink} from "@angular/router";

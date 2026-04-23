@@ -1,7 +1,7 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatTable, MatTableDataSource, MatTableModule} from "@angular/material/table";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {RunThrough, RunThroughState, SiteRevision} from "website-alerter-shared";
 import {SiteService} from "../services/site.service";
 import {RunService} from "../services/run.service";

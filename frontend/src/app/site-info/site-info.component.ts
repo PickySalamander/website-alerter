@@ -5,7 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validator
 import {MatInputModule} from "@angular/material/input";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatCheckboxModule} from "@angular/material/checkbox";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {SiteService} from "../services/site.service";
