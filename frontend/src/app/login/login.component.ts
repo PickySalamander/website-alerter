@@ -15,11 +15,10 @@ import {LoginRequest, LoginResponse} from "website-alerter-shared";
 
 /** The login page */
 @Component({
-	selector: 'app-login',
-	standalone: true,
-	imports: [CommonModule, MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
-	templateUrl: './login.component.html',
-	styleUrl: './login.component.scss'
+    selector: 'app-login',
+    imports: [CommonModule, MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
+    templateUrl: './login.component.html',
+    styleUrl: './login.component.scss'
 })
 export class LoginComponent {
 	/** the login form configuration */

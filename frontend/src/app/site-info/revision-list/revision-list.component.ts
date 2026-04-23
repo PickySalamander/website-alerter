@@ -12,11 +12,10 @@ import {RouterLink} from "@angular/router";
 
 /** Show a list of {@link SiteRevision}s for a {@link WebsiteItem} */
 @Component({
-	selector: 'app-revision-list',
-	standalone: true,
-	imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent, ShortUuidComponent, RouterLink],
-	templateUrl: './revision-list.component.html',
-	styleUrl: './revision-list.component.scss'
+    selector: 'app-revision-list',
+    imports: [CommonModule, MatTableModule, MatSortModule, RevisionStateComponent, ShortUuidComponent, RouterLink],
+    templateUrl: './revision-list.component.html',
+    styleUrl: './revision-list.component.scss'
 })
 export class RevisionListComponent implements OnInit {
 	/** The site to get revisions for */

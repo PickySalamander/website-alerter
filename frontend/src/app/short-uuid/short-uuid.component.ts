@@ -4,11 +4,10 @@ import {MatTooltipModule} from "@angular/material/tooltip";
 
 /** Small component to display a shortened v4 uuid and a tooltip of its full length */
 @Component({
-  selector: 'app-short-uuid',
-  standalone: true,
-	imports: [CommonModule, MatTooltipModule],
-  templateUrl: './short-uuid.component.html',
-  styleUrl: './short-uuid.component.scss'
+    selector: 'app-short-uuid',
+    imports: [CommonModule, MatTooltipModule],
+    templateUrl: './short-uuid.component.html',
+    styleUrl: './short-uuid.component.scss'
 })
 export class ShortUuidComponent implements OnInit {
 	/** The uuid to use */

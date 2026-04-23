@@ -13,11 +13,10 @@ import * as Diff2Html from 'diff2html';
 
 /** Display the details of the revision along with a diff if the revision has a change */
 @Component({
-	selector: 'app-revision-detail',
-	standalone: true,
-	imports: [CommonModule, RevisionStateComponent, RouterLink, MatButtonModule, MatIconModule],
-	templateUrl: './revision-detail.component.html',
-	styleUrl: './revision-detail.component.scss'
+    selector: 'app-revision-detail',
+    imports: [CommonModule, RevisionStateComponent, RouterLink, MatButtonModule, MatIconModule],
+    templateUrl: './revision-detail.component.html',
+    styleUrl: './revision-detail.component.scss'
 })
 export class RevisionDetailComponent implements OnInit {
 	/** The revision being displayed */

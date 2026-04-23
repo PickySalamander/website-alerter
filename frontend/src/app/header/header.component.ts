@@ -7,11 +7,10 @@ import {LoginService} from "../services/login.service";
 
 /** Handle the header on top of the application */
 @Component({
-	selector: 'app-header',
-	standalone: true,
-	imports: [CommonModule, NgOptimizedImage, MatButtonModule, RouterLink, MatRippleModule, RouterLinkActive],
-	templateUrl: './header.component.html',
-	styleUrl: './header.component.scss'
+    selector: 'app-header',
+    imports: [CommonModule, NgOptimizedImage, MatButtonModule, RouterLink, MatRippleModule, RouterLinkActive],
+    templateUrl: './header.component.html',
+    styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
 	constructor(private login:LoginService) {

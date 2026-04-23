@@ -12,11 +12,10 @@ import {RevisionStateComponent} from "../../revision-state/revision-state.compon
 
 /** Display the currently selected run's details along with a list of revisions */
 @Component({
-	selector: 'app-run-detail',
-	standalone: true,
-	imports: [CommonModule, MatTableModule, RouterOutlet, ShortUuidComponent, RevisionStateComponent, RouterLink],
-	templateUrl: './run-detail.component.html',
-	styleUrl: './run-detail.component.scss'
+    selector: 'app-run-detail',
+    imports: [CommonModule, MatTableModule, RouterOutlet, ShortUuidComponent, RevisionStateComponent, RouterLink],
+    templateUrl: './run-detail.component.html',
+    styleUrl: './run-detail.component.scss'
 })
 export class RunDetailComponent implements OnInit, OnDestroy {
 	/** Columns in the table to display */

@@ -16,11 +16,10 @@ import {RevisionListComponent} from "./revision-list/revision-list.component";
 
 /** Display information on a site and the add/edit form */
 @Component({
-	selector: 'app-add-site',
-	standalone: true,
-	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
-	templateUrl: './site-info.component.html',
-	styleUrl: './site-info.component.scss'
+    selector: 'app-add-site',
+    imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
+    templateUrl: './site-info.component.html',
+    styleUrl: './site-info.component.scss'
 })
 export class SiteInfoComponent implements OnInit {
 	/** Regex for validating a site url (must be https)*/
