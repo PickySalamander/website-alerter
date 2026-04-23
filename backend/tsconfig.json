@@ -6,8 +6,5 @@
 	},
 	"include": [
 		"src/**/*.ts"
-	],
-	"exclude": [
-		"src/functions/api/*.ts"
 	]
 }

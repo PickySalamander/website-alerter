@@ -40,14 +40,13 @@ export class LambdaStack extends Construct {
 	constructor(private stack:WebsiteAlerterStack) {
 		super(stack, "Lambdas");
 
-		//TODO re-enable
-		// //allowed origins allowed for cors
-		// let allowOrigins = `https://${stack.cdn.cdn.distributionDomainName}`;
-		//
-		// //if the env variable is set add localhost
-		// if(stack.isLocal) {
-		// 	allowOrigins += ",http://localhost:4200";
-		// }
+		//allowed origins allowed for cors
+		let allowOrigins = `https://${stack.cdn.cdn.distributionDomainName}`;
+
+		//if the env variable is set add localhost
+		if(stack.isLocal) {
+			allowOrigins += ",http://localhost:4200";
+		}
 
 		//setup default environmental variables for the functions
 		this.environment = {
@@ -55,47 +54,45 @@ export class LambdaStack extends Construct {
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
+			"ALLOWED_ORIGINS": allowOrigins,
 			"NODE_OPTIONS": "--enable-source-maps",
-			"IS_PRODUCTION": "true",
-			// TODO re-enable
-			// "ALLOWED_ORIGINS": allowOrigins
+			"IS_PRODUCTION": "true"
 		};
 
-		//TODO re-enable all when site back up (also remove from tsconfig.json)
-		// this.getSites = this.addFunction("GetSites", {
-		// 	description: "Get a list of sites for the user already configured in the backend",
-		// 	entry: "src/functions/api/get-sites.ts"
-		// });
-		//
-		// this.putSite = this.addFunction("PutSite", {
-		// 	description: "Put or edit a site into the backend for a user",
-		// 	entry: "src/functions/api/put-site.ts"
-		// });
-		//
-		// this.deleteSites = this.addFunction("DeleteSites", {
-		// 	description: "Delete site(s) in the backend for a user",
-		// 	entry: "src/functions/api/delete-sites.ts"
-		// });
-		//
-		// this.getSiteRevisions = this.addFunction("GetSiteRevisions", {
-		// 	description: "Get all revisions for a website",
-		// 	entry: "src/functions/api/get-site-revisions.ts"
-		// });
-		// ``
-		// this.getRuns = this.addFunction("GetRuns", {
-		// 	description: "Get all runs in the database",
-		// 	entry: "src/functions/api/get-runs.ts"
-		// });
-		//
-		// this.getRunRevisions = this.addFunction("GetRunRevisions", {
-		// 	description: "Get all the revisions in a particular run",
-		// 	entry: "src/functions/api/get-run-revisions.ts"
-		// });
-		//
-		// this.getRevision = this.addFunction("GetRevision", {
-		// 	description: "Get the revision and pre-signed urls for accessing the data",
-		// 	entry: "src/functions/api/get-revision.ts"
-		// });
+		this.getSites = this.addFunction("GetSites", {
+			description: "Get a list of sites for the user already configured in the backend",
+			entry: "src/functions/api/get-sites.ts"
+		});
+
+		this.putSite = this.addFunction("PutSite", {
+			description: "Put or edit a site into the backend for a user",
+			entry: "src/functions/api/put-site.ts"
+		});
+
+		this.deleteSites = this.addFunction("DeleteSites", {
+			description: "Delete site(s) in the backend for a user",
+			entry: "src/functions/api/delete-sites.ts"
+		});
+
+		this.getSiteRevisions = this.addFunction("GetSiteRevisions", {
+			description: "Get all revisions for a website",
+			entry: "src/functions/api/get-site-revisions.ts"
+		});
+		``
+		this.getRuns = this.addFunction("GetRuns", {
+			description: "Get all runs in the database",
+			entry: "src/functions/api/get-runs.ts"
+		});
+
+		this.getRunRevisions = this.addFunction("GetRunRevisions", {
+			description: "Get all the revisions in a particular run",
+			entry: "src/functions/api/get-run-revisions.ts"
+		});
+
+		this.getRevision = this.addFunction("GetRevision", {
+			description: "Get the revision and pre-signed urls for accessing the data",
+			entry: "src/functions/api/get-revision.ts"
+		});
 
 		this.pollSites = new DockerImageFunction(this, 'PollSites', {
 			functionName: "website-alerter-poll-sites",

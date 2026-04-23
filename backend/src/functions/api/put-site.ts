@@ -1,29 +1,21 @@
-import {LambdaBase} from "../../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../../util/user-jwt";
+import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
-import {v4} from "uuid";
 import {HttpMethod} from "../../util/http-method";
+import {randomUUID} from "crypto";
+import {ApiLambda} from "../../util/api-lambda";
 
 /**
  * Add or edit a {@link WebsiteItem} in the database
  */
-export class PutSite extends LambdaBase {
+export class PutSite extends ApiLambda {
 
-	/**
-	 * Entry point from API Gateway
-	 * @param event data from the client
-	 */
-	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
+	protected async handle(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
 		//make sure there was a body
 		if(!event.body) {
 			throw new createError.BadRequest("Body was not specified");
 		}
-
-		//get user from context
-		const user = event.requestContext.authorizer as UserJwt;
 
 		//if a PUT method, then this is a new site
 		const isNewSite = event.httpMethod.toUpperCase() == HttpMethod.Put;
@@ -31,14 +23,12 @@ export class PutSite extends LambdaBase {
 		//parse the body of the request
 		const siteRequest = JSON.parse(event.body) as WebsiteItemRequest;
 
-		console.log(`User "${user.userID}" ${isNewSite ? "adding" : "updating"} site ${siteRequest.site}`);
-
-		await this.setupServices();
+		console.log(`User "${this.user.sub}" ${isNewSite ? "adding" : "updating"} site ${siteRequest.site}`);
 
 		//create a new item for the database (we can trust siteRequest since it is pre-verified by a json schema)
 		const siteItem:WebsiteItem = Object.assign(siteRequest, {
-			siteID: isNewSite ? v4() : siteRequest.siteID,
-			enabled: siteRequest.enabled,
+			siteID: isNewSite ? randomUUID() : siteRequest.siteID,
+			enabled: siteRequest.enabled ?? true,
 			created: new Date().getTime()
 		});
 

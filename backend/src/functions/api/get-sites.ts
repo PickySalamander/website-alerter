@@ -1,26 +1,16 @@
-import {LambdaBase} from "../../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../../util/user-jwt";
+import {APIGatewayProxyResult} from "aws-lambda";
 import {MiddyUtil} from "../../util/middy-util";
 import {HttpMethod} from "../../util/http-method";
 import {WebsiteItem} from "website-alerter-shared";
+import {ApiLambda} from "../../util/api-lambda";
 
 /**
  * Get all the {@link WebsiteItem}'s in the database and return to the client
  */
-export class GetSites extends LambdaBase {
+export class GetSites extends ApiLambda {
 
-	/**
-	 * Entry point from API Gateway
-	 * @param event data from the client
-	 */
-	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
-		//get user from context
-		const user = event.requestContext.authorizer as UserJwt;
-
-		await this.setupServices();
-
-		console.log(`Getting sites for user ${user.userID}`);
+	protected async handle():Promise<APIGatewayProxyResult> {
+		console.log(`Getting sites for user ${this.user.sub}`);
 
 		//get the sites
 		const sites = await this.database.getSites();

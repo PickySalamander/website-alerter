@@ -6,6 +6,8 @@ import {DynamoStack} from "./dynamo.stack";
 import {CdnStack} from "./cdn.stack";
 import {LambdaStack} from "./lambda.stack";
 import {Topic} from "aws-cdk-lib/aws-sns";
+import {CognitoStack} from "./cognito.stack";
+import {ApiStack} from "./api.stack";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
@@ -26,6 +28,9 @@ export class WebsiteAlerterStack extends Stack {
 
 	/** Email notification SNS queue */
 	readonly notificationSns:Topic;
+
+	/** Cognito configuration */
+	readonly cognito:CognitoStack;
 
 	/** Create the stack */
 	constructor(scope:Construct, id:string, public readonly isLocal:boolean) {
@@ -65,8 +70,9 @@ export class WebsiteAlerterStack extends Stack {
 			value: this.configBucket.bucketName
 		});
 
-		//TODO re=enable this
-		// this.cdn = new CdnStack(this);
+		this.cognito = new CognitoStack(this);
+
+		this.cdn = new CdnStack(this);
 
 		this.iam = new IamStack(this);
 
@@ -84,8 +90,7 @@ export class WebsiteAlerterStack extends Stack {
 		// //set whether the rule starts enabled
 		// (rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
 
-		//TODO re-enable this
-		// new ApiStack(this);
+		new ApiStack(this);
 	}
 
 	get accountId() {

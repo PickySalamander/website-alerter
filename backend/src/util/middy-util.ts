@@ -5,6 +5,7 @@ import httpHeaderNormalizer from "@middy/http-header-normalizer";
 import httpErrorHandler from "@middy/http-error-handler";
 import {EnvironmentVars} from "./environment-vars";
 import {HttpMethod} from "./http-method";
+import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 
 /**
  * Utilities for interacting with the Middy framework
@@ -28,7 +29,7 @@ export abstract class MiddyUtil {
 
 	/** Add the default Middy configuration */
 	static defaultMiddy() {
-		return middy()
+		return middy<APIGatewayProxyEvent, APIGatewayProxyResult>()
 			.use(errorLogger())
 			.use(httpHeaderNormalizer())
 			.use(httpErrorHandler({logger: console.warn}));

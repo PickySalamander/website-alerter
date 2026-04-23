@@ -55,25 +55,6 @@ export class DatabaseService {
 	}
 
 	/**
-	 * Get a user from the database by email
-	 * @param email the email to get the user by
-	 */
-	async getUser(email:string):Promise<UserItem> {
-		//query the database
-		const response = await this.client.send(new QueryCommand({
-			TableName: EnvironmentVars.usersTableName,
-			IndexName: "user-name-index",
-			KeyConditionExpression: "email = :email",
-			ExpressionAttributeValues: {
-				":email": email
-			},
-			Limit: 1
-		}));
-
-		return response.Items && response.Items.length > 0 ? response.Items[0] as UserItem : undefined;
-	}
-
-	/**
 	 * Get a website's configuration from the database
 	 * @param siteID the site's ID in the database
 	 */
@@ -225,26 +206,6 @@ export class DatabaseService {
 				":stats": stats
 			}
 		}));
-	}
-
-	/**
-	 * Get {@link RunThrough}s older than a time from the database
-	 * @param time the epoch time to get runs older than or equal to
-	 */
-	async getOldRunThroughs(time:number) {
-		const response = await this.client.send(new ScanCommand({
-			TableName: EnvironmentVars.runTableName,
-			FilterExpression: "#time <= :time",
-			ExpressionAttributeNames: {
-				"#time": "time",
-				"#modified": "modified"
-			},
-			ExpressionAttributeValues: {
-				":time": time
-			}
-		}));
-
-		return response.Items && response.Items.length > 0 ? response.Items as RunThrough[] : [];
 	}
 
 	/**
@@ -453,18 +414,6 @@ export class DatabaseService {
 			}
 		}
 	}
-}
-
-/** A user in the website alerter */
-export interface UserItem {
-	/** The user's ID */
-	userID:string;
-
-	/** The user's email */
-	email:string;
-
-	/** The user's encrypted password */
-	password:string;
 }
 
 /** Portion of dynamo batch delete operation */

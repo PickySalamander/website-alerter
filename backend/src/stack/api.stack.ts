@@ -1,6 +1,7 @@
 import {WebsiteAlerterStack} from "./website-alerter.stack";
 import {
 	AuthorizationType,
+	CognitoUserPoolsAuthorizer,
 	JsonSchema,
 	LambdaIntegration,
 	Resource,
@@ -34,12 +35,17 @@ export class ApiStack extends Construct {
 			allowOrigins.unshift("http://localhost:4200")
 		}
 
+		const authorizer = new CognitoUserPoolsAuthorizer(this, "Authorizer", {
+			cognitoUserPools: [stack.cognito.pool]
+		})
+
 		//build the rest API
 		this.api = new RestApi(this, "WebsiteAlerterApi", {
 			restApiName: "website-alerter-api",
 			description: "Website Alerter API for website functions",
 			defaultMethodOptions: {
-				authorizationType: AuthorizationType.NONE
+				authorizer,
+				authorizationType: AuthorizationType.COGNITO
 			},
 			defaultCorsPreflightOptions: {
 				allowCredentials: true,
