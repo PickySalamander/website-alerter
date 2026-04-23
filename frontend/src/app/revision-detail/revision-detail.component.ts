@@ -9,12 +9,10 @@ import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shar
 import {RevisionStateComponent} from "../revision-state/revision-state.component";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
-import * as Diff2Html from 'diff2html';
 
 /** Display the details of the revision along with a diff if the revision has a change */
 @Component({
 	selector: 'app-revision-detail',
-	standalone: true,
 	imports: [CommonModule, RevisionStateComponent, RouterLink, MatButtonModule, MatIconModule],
 	templateUrl: './revision-detail.component.html',
 	styleUrl: './revision-detail.component.scss'
@@ -49,22 +47,6 @@ export class RevisionDetailComponent implements OnInit {
 			this.revision = response.revision;
 			this.urls = response.urls;
 			this.site = this.siteService.getSite(response.revision.siteID);
-
-			//render the diff if there is one
-			if(this.revision.siteState == SiteRevisionState.Changed) {
-				this.getDiff();
-			}
-		});
-	}
-
-	/** Load the unified diff from the pre-signed url */
-	private getDiff() {
-		this.http.get(this.urls.diff, {responseType: "text"}).subscribe(unifiedDiff => {
-			//render using diff2html
-			this.diffHtml = Diff2Html.html(unifiedDiff, {
-				drawFileList: false,
-				matching: 'lines'
-			});
 		});
 	}
 }

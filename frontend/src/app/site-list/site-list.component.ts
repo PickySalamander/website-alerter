@@ -2,7 +2,7 @@ import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MatTable, MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {MatSort, MatSortModule} from "@angular/material/sort";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {MatCardModule} from "@angular/material/card";
 import {MatButtonModule} from "@angular/material/button";
 import {MatInputModule} from "@angular/material/input";
@@ -18,11 +18,10 @@ import {RevisionStateComponent} from "../revision-state/revision-state.component
 
 /** Root of the site that displays all the {@link WebsiteItem}s in the database */
 @Component({
-	selector: 'app-index',
-	standalone: true,
-	imports: [CommonModule, MatTableModule, MatSortModule, MatCardModule, MatButtonModule, MatInputModule, MatIconModule, MatCheckboxModule, RouterLink, RevisionStateComponent],
-	templateUrl: './site-list.component.html',
-	styleUrl: './site-list.component.scss'
+    selector: 'app-index',
+    imports: [CommonModule, MatTableModule, MatSortModule, MatCardModule, MatButtonModule, MatInputModule, MatIconModule, MatCheckboxModule, RouterLink, RevisionStateComponent],
+    templateUrl: './site-list.component.html',
+    styleUrl: './site-list.component.scss'
 })
 export class SiteListComponent implements OnInit, AfterViewInit {
 	/** Columns displayed in the table */

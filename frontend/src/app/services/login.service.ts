@@ -1,6 +1,6 @@
 import {inject, Injectable} from '@angular/core';
 import {CanActivateFn, Router, UrlTree} from "@angular/router";
-import {HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest} from "@angular/common/http";
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from "@angular/common/http";
 import {catchError, Observable, Subject, throwError} from "rxjs";
 import {environment} from "../../environments/environment";
 

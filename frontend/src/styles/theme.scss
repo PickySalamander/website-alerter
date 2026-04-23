@@ -1,6 +1,7 @@
 @use '@angular/material' as mat;
 
-@include mat.core();
+@include mat.elevation-classes();
+@include mat.app-background();
 
 $primary-colors: (
 	50 : #e8ebf0,
@@ -35,7 +36,7 @@ $primary-colors: (
 	)
 );
 
-$primary-palette: mat.define-palette($primary-colors, 500);
+$primary-palette: mat.m2-define-palette($primary-colors, 500);
 
 $accent-colors: (
 	50 : #fdedea,
@@ -70,7 +71,7 @@ $accent-colors: (
 	)
 );
 
-$accent-palette: mat.define-palette($accent-colors, 500);
+$accent-palette: mat.m2-define-palette($accent-colors, 500);
 
 $warn-colors: (
 	50 : #fae1e5,
@@ -105,11 +106,11 @@ $warn-colors: (
 	)
 );
 
-$warn-palette: mat.define-palette($warn-colors, 500);
+$warn-palette: mat.m2-define-palette($warn-colors, 500);
 
-$typography: mat.define-typography-config($font-family: "Roboto Slab");
+$typography: mat.m2-define-typography-config($font-family: "Roboto Slab");
 
-$theme: mat.define-light-theme((
+$theme: mat.m2-define-light-theme((
 	color: (
 		primary: $primary-palette,
 		accent: $accent-palette,

@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {CommonModule} from '@angular/common';
 import {MatCardModule} from "@angular/material/card";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
@@ -9,15 +8,13 @@ import {MatButtonModule} from "@angular/material/button";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {environment} from "../../environments/environment";
 import {LoginService} from "../services/login.service";
-import {Router} from "@angular/router";
 import {SnackbarService} from "../services/snackbar.service";
 import {LoginRequest, LoginResponse} from "website-alerter-shared";
 
 /** The login page */
 @Component({
 	selector: 'app-login',
-	standalone: true,
-	imports: [CommonModule, MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
+	imports: [MatCardModule, MatInputModule, ReactiveFormsModule, MatIconModule, MatProgressBarModule, MatButtonModule],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.scss'
 })
@@ -36,8 +33,7 @@ export class LoginComponent {
 
 	constructor(private http:HttpClient,
 	            private loginService:LoginService,
-	            private snackbar:SnackbarService,
-	            private router:Router) {
+	            private snackbar:SnackbarService) {
 	}
 
 	/** Called to submit the form */

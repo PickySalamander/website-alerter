@@ -1,5 +1,4 @@
 import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
 import {MatButtonModule} from "@angular/material/button";
 import {FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
@@ -17,8 +16,16 @@ import {RevisionListComponent} from "./revision-list/revision-list.component";
 /** Display information on a site and the add/edit form */
 @Component({
 	selector: 'app-add-site',
-	standalone: true,
-	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
+	imports: [
+		MatButtonModule,
+		ReactiveFormsModule,
+		MatInputModule,
+		MatCheckboxModule,
+		MatDialogModule,
+		MatSlideToggleModule,
+		RouterLink,
+		RevisionListComponent
+	],
 	templateUrl: './site-info.component.html',
 	styleUrl: './site-info.component.scss'
 })
@@ -62,9 +69,6 @@ export class SiteInfoComponent implements OnInit {
 				this.createForm.controls.url.disable();
 				this.createForm.controls.selector.setValue(this.data.selector ?? "");
 				this.createForm.controls.enabled.setValue(this.data.enabled ?? true);
-				this.createForm.controls.ignoreCss.setValue(this.data.options?.ignoreCss ?? false);
-				this.createForm.controls.ignoreAttributes.setValue(this.data.options?.ignoreAttributes ?? false);
-				this.createForm.controls.ignoreScripts.setValue(this.data.options?.ignoreScripts ?? false);
 
 				//add the initial values and set up the change validator
 				this.initial = this.createForm.value;
@@ -87,12 +91,7 @@ export class SiteInfoComponent implements OnInit {
 		const updated:WebsiteItemRequest = {
 			site: this.createForm.value.url,
 			selector: this.createForm.value.selector ?? undefined,
-			enabled: this.createForm.value.enabled ?? true,
-			options: {
-				ignoreCss: this.createForm.value.ignoreCss ?? false,
-				ignoreScripts: this.createForm.value.ignoreScripts ?? false,
-				ignoreAttributes: this.createForm.value.ignoreAttributes ?? false
-			}
+			enabled: this.createForm.value.enabled ?? true
 		};
 
 		//if we're updating...

@@ -1,7 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {ResolveFn} from "@angular/router";
 import {RunThrough} from "website-alerter-shared";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {LoginService} from "./login.service";
 import {environment} from "../../environments/environment";
 

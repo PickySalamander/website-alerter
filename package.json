@@ -2,13 +2,20 @@
 	"name": "website-alerter-main",
 	"workspaces": [
 		"shared",
-		"backend"
+		"backend",
+		"frontend"
 	],
+	"scripts": {
+		"clean": "npm run clean --workspaces"
+	},
 	"devDependencies": {
 		"@tsconfig/node24": "^24.0.4",
 		"cross-env": "^10.1.0",
 		"rimraf": "^6.1.3",
-		"typescript": "^5.9.0",
+		"typescript": "~5.9.3",
 		"vitest": "^4.0.18"
+	},
+	"dependencies": {
+		"aws-cron-parser": "^1.1.12"
 	}
 }

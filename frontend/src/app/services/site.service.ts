@@ -2,7 +2,7 @@ import {inject, Injectable} from '@angular/core';
 import {LoginService} from "./login.service";
 import {WebsiteItem} from "website-alerter-shared";
 import {ResolveFn} from "@angular/router";
-import {HttpClient} from "@angular/common/http";
+import { HttpClient } from "@angular/common/http";
 import {environment} from "../../environments/environment";
 
 /** Service that downloads and stores {@link WebsiteItem}s downloaded from the server. */
