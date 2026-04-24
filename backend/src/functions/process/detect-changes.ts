@@ -1,5 +1,5 @@
 import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {BedrockRuntimeClient, ConverseCommand} from "@aws-sdk/client-bedrock-runtime";
+import {BedrockRuntimeClient, ConverseCommand, ConverseCommandOutput} from "@aws-sdk/client-bedrock-runtime";
 import {DurableChild} from "../../util/durable-child";
 import {DurableContext} from "@aws/durable-execution-sdk-js";
 
@@ -138,15 +138,27 @@ export class DetectChanges extends DurableChild {
 			}
 		});
 
+		let response:ConverseCommandOutput;
+
 		try {
 			// Send the command to the model and wait for the response
-			const response = await this.bedrock.send(request);
+			response = await this.bedrock.send(request);
 
 			// parse the response
 			const responseText = response.output.message.content[0].text;
 			return JSON.parse(responseText) as AiResponse;
 		} catch(e) {
 			this.logger.error(`Failed to query the AI for site ${siteID}`, e as Error);
+
+			if(response) {
+				try {
+					const key = `content/${siteID}/error-${currentRevision.revisionID}.json`;
+					this.logger.info(`Response was received, but could not parse it to JSON, writing to S3 ${key}`);
+					await this.s3.putObject(key, JSON.stringify(response.output.message));
+				}	catch(e) {
+					this.logger.warn("Failed to write error to S3", e);
+				}
+			}
 		}
 
 		return undefined;
