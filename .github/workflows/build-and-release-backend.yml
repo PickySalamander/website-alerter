@@ -11,8 +11,10 @@ on:
         description: Whether the CloudWatch rule is enabled or not
         type: choice
         options:
+          - ""
           - "true"
           - "false"
+        default: ""
 
   push:
     paths:
