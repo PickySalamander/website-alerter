@@ -1,5 +1,5 @@
 import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {BedrockRuntimeClient, ConverseCommand, ConverseCommandOutput} from "@aws-sdk/client-bedrock-runtime";
+import {BedrockRuntimeClient, InvokeModelCommand} from "@aws-sdk/client-bedrock-runtime";
 import {DurableChild} from "../../util/durable-child";
 import {DurableContext} from "@aws/durable-execution-sdk-js";
 
@@ -15,7 +15,7 @@ export class DetectChanges extends DurableChild {
 	private systemPrompt:string;
 
 	/** The JSON schema to use for the AI response */
-	private schema:string;
+	private schema:any;
 
 	/** The Bedrock client to use */
 	private bedrock:BedrockRuntimeClient;
@@ -34,10 +34,10 @@ export class DetectChanges extends DurableChild {
 		if(!this.systemPrompt) {
 			this.logger.info("Loading system prompt for the first time...");
 			this.systemPrompt = await this.s3.getString("prompt/system-prompt.txt");
-			this.schema = await this.s3.getString("prompt/schema.json");
+			this.schema = JSON.parse(await this.s3.getString("prompt/schema.json"));
 		}
 
-		await Promise.all(this.sites.map(async site => this.checkSite(site)));
+		await Promise.all(this.sites.map(site => this.checkSite(site)));
 	}
 
 	/**
@@ -114,50 +114,56 @@ export class DetectChanges extends DurableChild {
 		this.logger.info(`Making AI request of ${this.ModelID}...`);
 
 		//compose the request to the AI
-		const request = new ConverseCommand({
-			modelId: this.ModelID,
-			system: [{text: this.systemPrompt}],
-			inferenceConfig: {maxTokens: 1024},
-			messages: [
+		const request = {
+			"anthropic_version": "bedrock-2023-05-31",
+			"max_tokens": 1024,
+			"system": this.systemPrompt,
+			"messages": [
 				{
-					role: "user",
-					content: [{text: previous}, {text: current}]
+					"role": "user",
+					"content": [
+						{
+							"type": "text",
+							"text": previous
+						},
+						{
+							"type": "text",
+							"text": current
+						}
+					]
 				}
 			],
-			outputConfig: {
-				textFormat: {
-					type: "json_schema",
-					structure: {
-						jsonSchema: {
-							schema: this.schema,
-							name: "compare",
-							description: "Comparing results of two different versions of a website"
-						}
-					}
+			"output_config": {
+				"format": {
+					"type": "json_schema",
+					"schema": this.schema
 				}
 			}
-		});
+		}
 
-		this.logger.info("Making request", request);
-
-		let response:ConverseCommandOutput;
+		let responseText:string;
 
 		try {
 			// Send the command to the model and wait for the response
-			response = await this.bedrock.send(request);
+			const response = await this.bedrock.send(new InvokeModelCommand({
+				modelId: this.ModelID,
+				body: JSON.stringify(request),
+				contentType: "application/json"
+			}));
 
 			// parse the response
-			const responseText = response.output.message.content[0].text;
-			return JSON.parse(responseText) as AiResponse;
+			let responseText = response.body.transformToString("utf8");
+			const parsedResponse = JSON.parse(responseText);
+			return parsedResponse.content[0].text as AiResponse;
 		} catch(e) {
 			this.logger.error(`Failed to query the AI for site ${siteID}`, e as Error);
 
-			if(response) {
+			if(responseText) {
 				try {
 					const key = `content/${siteID}/error-${currentRevision.revisionID}.json`;
 					this.logger.info(`Response was received, but could not parse it to JSON, writing to S3 ${key}`);
-					await this.s3.putObject(key, JSON.stringify(response.output.message));
-				}	catch(e) {
+					await this.s3.putObject(key, responseText);
+				} catch(e) {
 					this.logger.warn("Failed to write error to S3", e);
 				}
 			}
