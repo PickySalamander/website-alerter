@@ -27,25 +27,21 @@ class PollSites extends LambdaBase {
 	 * @param data which sites that should be polled and information about the run
 	 */
 	public handler:Handler<PollSiteData, WebsiteItem[]> = async(data) => {
+		console.info(`Starting to poll ${data.sites.length} sites in run ${data.runID}`);
+
+		this.runID = data.runID;
+
+		this.successfullyParsed = [];
+
+		await this.initialize();
+
 		try {
-			console.info(`Starting to poll ${data.sites.length} sites in run ${data.runID}`);
-
-			this.runID = data.runID;
-
-			this.successfullyParsed = [];
-
-			await this.initialize();
-
-			try {
-				await Promise.all(data.sites.map(async site => this.parseSite(site)));
-			} finally {
-				await this.close();
-			}
-
-			return this.successfullyParsed;
-		} catch(e) {
-			console.error("Uncaught exception", e);
+			await Promise.all(data.sites.map(async site => this.parseSite(site)));
+		} finally {
+			await this.close();
 		}
+
+		return this.successfullyParsed;
 	}
 
 	/** Start up a Puppeteer browser instance */

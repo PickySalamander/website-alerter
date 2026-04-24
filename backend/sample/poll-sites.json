@@ -1,0 +1,18 @@
+{
+	"runID": "124b86ff-9d32-4523-bf27-4ebddbd32f18",
+	"sites": [
+		{
+			"siteID": "a",
+			"site": "https://www.mobiusdigitalgames.com/jobs.html",
+			"last": {
+				"revisionID": "73a8abda-8568-4027-96ce-8e179f25c82c",
+				"siteID": "a",
+				"runID": "70b70cfa-7023-4f68-833d-7fc59e60b2d3",
+				"time": 1772341689754,
+				"siteState": 2
+			},
+			"created": 0,
+			"enabled": true
+		}
+	]
+}
