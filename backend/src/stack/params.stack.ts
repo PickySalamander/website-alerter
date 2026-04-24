@@ -1,5 +1,6 @@
-import {WebsiteAlerterStack} from "../website-alerter.stack";
+
 import {CfnCondition, CfnParameter, Fn, ICfnRuleConditionExpression} from "aws-cdk-lib";
+import {WebsiteAlerterStack} from "./website-alerter.stack";
 
 /**
  * Part of the CDK stack that concerns the CloudFormation input parameters
