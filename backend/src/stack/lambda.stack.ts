@@ -52,14 +52,14 @@ export class LambdaStack extends Construct {
 
 		//set up default environmental variables for the functions
 		this.environment = {
-			"CONFIG_S3": stack.configBucket.bucketName,
-			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
-			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
-			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
-			"NUM_RUNS_ALLOWED": stack.params.numRuns.valueAsString,
-			"ALLOWED_ORIGINS": allowOrigins,
-			"NODE_OPTIONS": "--enable-source-maps",
-			"IS_PRODUCTION": "true"
+			CONFIG_S3: stack.configBucket.bucketName,
+			RUN_TABLE: stack.dynamo.runThroughTable.tableName,
+			WEBSITE_TABLE: stack.dynamo.websiteTable.tableName,
+			REVISION_TABLE: stack.dynamo.revisionTable.tableName,
+			NUM_RUNS_ALLOWED: stack.params.numRuns.valueAsString,
+			ALLOWED_ORIGINS: allowOrigins,
+			NODE_OPTIONS: "--enable-source-maps",
+			IS_PRODUCTION: "true"
 		};
 
 		this.getSites = this.addFunction("GetSites", {
@@ -117,7 +117,9 @@ export class LambdaStack extends Construct {
 			},
 			environment: {
 				...this.environment,
-				POLL_SITES_ARN: this.pollSites.functionArn
+				WEBSITE_URL: `https://${stack.cdn.cdn.domainName}`,   //final website url for the email
+				POLL_SITES_ARN: this.pollSites.functionArn,
+				NOTIFICATION_SNS: this.stack.notificationSns.topicArn
 			}
 		});
 	}
