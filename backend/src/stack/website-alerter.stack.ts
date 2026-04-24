@@ -8,6 +8,11 @@ import {LambdaStack} from "./lambda.stack";
 import {Topic} from "aws-cdk-lib/aws-sns";
 import {CognitoStack} from "./cognito.stack";
 import {ApiStack} from "./api.stack";
+import {CfnRule, Rule, Schedule} from "aws-cdk-lib/aws-events";
+import {RunScheduling} from "website-alerter-shared";
+import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
+import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
+import {ParamsStack} from "./params.stack";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
@@ -26,6 +31,9 @@ export class WebsiteAlerterStack extends Stack {
 	/** CloudFront CDN for frontend */
 	readonly cdn:CdnStack;
 
+	/** CloudFormation input parameters */
+	readonly params:ParamsStack;
+
 	/** Email notification SNS queue */
 	readonly notificationSns:Topic;
 
@@ -39,6 +47,8 @@ export class WebsiteAlerterStack extends Stack {
 			description: "Tool that scans websites and checks for changes"
 		});
 
+		this.params = new ParamsStack(this);
+
 		this.dynamo = new DynamoStack(this);
 
 		// create the email notification SNS stream and add the email parameter from the input
@@ -46,14 +56,12 @@ export class WebsiteAlerterStack extends Stack {
 			topicName: "website-alerter-notifications",
 		});
 
-		// this.notificationSns.addSubscription(new EmailSubscription(this.params.emailAddress.valueAsString));
+		this.notificationSns.addSubscription(new EmailSubscription(this.params.emailAddress.valueAsString));
 
 		// create the S3 bucket
 		this.configBucket = new Bucket(this, 'ConfigurationBucket', {
 			bucketName: `website-alerter-${this.accountId}`,
-			removalPolicy: RemovalPolicy.DESTROY,
-			websiteIndexDocument: "index.html",
-			websiteErrorDocument: "index.html",
+			removalPolicy: RemovalPolicy.RETAIN,
 
 			//open-ended cors for downloading assets
 			cors: [{
@@ -78,17 +86,16 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.lambda = new LambdaStack(this);
 
-		//TODO re-enable this
-		// create the event bridge rule that starts up the whole process every 7 days
-		// const rule = new Rule(this, "ScheduledStartRule", {
-		// 	description: "Schedule the lambda to queue up the websites",
-		// 	schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
-		// 	enabled: false,
-		// 	targets: [new SfnStateMachine(steps.stateMachine)]
-		// });
-		//
-		// //set whether the rule starts enabled
-		// (rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
+		//create the event bridge rule that starts up the whole process every 7 days
+		const rule = new Rule(this, "ScheduledStartRule", {
+			description: "Schedule the lambda to queue up the websites",
+			schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
+			enabled: false,
+			targets: [new LambdaFunction(this.lambda.processSites)]
+		});
+
+		//set whether the rule starts enabled
+		(rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
 
 		new ApiStack(this);
 	}

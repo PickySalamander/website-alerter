@@ -22,11 +22,12 @@ export class HeaderComponent {
 	constructor(private loginService:LoginService) {
 	}
 
+	/** Is the user currently logged in? */
 	get isLoggedIn() {
 		return this.loginService.isLoggedIn;
 	}
 
-	/** Logout the user through the login service */
+	/** Log out the user through the login service */
 	onLogout() {
 		this.loginService.logout();
 	}

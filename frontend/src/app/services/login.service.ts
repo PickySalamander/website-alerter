@@ -20,6 +20,7 @@ export class LoginService implements HttpInterceptor {
 	/** The current Cognito session */
 	private session:AuthSession;
 
+	/** Is the user currently logged in? */
 	private _isLoggedIn = signal(false);
 
 	constructor(private router:Router) {
@@ -107,6 +108,7 @@ export class LoginService implements HttpInterceptor {
 		return this.router.navigate(initial);
 	}
 
+	/** Is the user logged in? */
 	get isLoggedIn() {
 		return this._isLoggedIn.asReadonly();
 	}

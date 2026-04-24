@@ -19,6 +19,6 @@ export interface WebsiteItem {
 	/** The time the site was created */
 	created:number;
 
-	/** The last time the site was polled */
+	/** The last revision of the site when it was polled */
 	last?:SiteRevision;
 }

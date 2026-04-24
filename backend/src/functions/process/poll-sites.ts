@@ -2,13 +2,13 @@ import {Handler} from "aws-lambda";
 import puppeteer, {Browser} from "puppeteer";
 import {LambdaBase} from "../../util/lambda-base";
 import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
-import {PollSiteData} from "./poll-site-data";
+import {PollSiteData} from "../../util/poll-site-data";
 import {randomUUID} from "crypto";
 import {DefaultChromeArgs} from "../../util/default-chrome-args";
 
 /**
  * Process a website through the Puppeteer framework. This function runs in its own Docker container which installs the
- * relevant dependencies required. ProcessSite will start Puppeteer, poll the provided website, wait for JS to render
+ * relevant dependencies required. This will start Puppeteer, poll the provided website, wait for JS to render
  * the site enough, save an HTML and PNG of the site to S3, and finally return information on the {@link SiteRevision}
  * so that it can be parsed for changes.
  */
@@ -23,8 +23,8 @@ class PollSites extends LambdaBase {
 	private runID:string;
 
 	/**
-	 * Entry point from the state machine
-	 * @param data data from the previous step that contains information about the site to check
+	 * Entry point from the lambda
+	 * @param data which sites that should be polled and information about the run
 	 */
 	public handler:Handler<PollSiteData, WebsiteItem[]> = async(data) => {
 		try {
@@ -88,6 +88,7 @@ class PollSites extends LambdaBase {
 		//poll the site and save the html
 		const result = await this.pollSite(site);
 
+		//there was an error, abort
 		if(!result) {
 			return;
 		}
@@ -107,6 +108,13 @@ class PollSites extends LambdaBase {
 		this.successfullyParsed.push(site);
 	}
 
+	/**
+	 * Navigate the browser to the page, wait for it to render, and get the HTML content from it. This will either use
+	 * the provided CSS {@link WebsiteItem.selector} or just wait for the body to render if a
+	 * {@link WebsiteItem.selector} was not provided.
+	 * @param site the site to navigate to
+	 * @returns the final HTML and screenshot of the loaded page, or undefined if the page could not be loaded
+	 */
 	private async pollSite(site:WebsiteItem):Promise<PageResult> {
 		console.info(`Navigating to ${site.site} in browser...`);
 
@@ -154,6 +162,7 @@ class PollSites extends LambdaBase {
 		}
 	}
 
+	/** Close down the browser instance */
 	async close() {
 		await this.browser?.close();
 	}

@@ -3,16 +3,22 @@ import {BedrockRuntimeClient, ConverseCommand} from "@aws-sdk/client-bedrock-run
 import {DurableChild} from "../../util/durable-child";
 import {DurableContext} from "@aws/durable-execution-sdk-js";
 
+/**
+ * Checks HTML {@link SiteRevision} downloaded into S3 for changes. It uses an AI model to generate a report of
+ * differences between the current and previous revisions of a website.
+ */
 export class DetectChanges extends DurableChild {
+	/** The bedrock model to use */
 	private readonly ModelID:string = "us.anthropic.claude-sonnet-4-6";
 
+	/** The system prompt to use */
 	private systemPrompt:string;
 
+	/** The JSON schema to use for the AI response */
 	private schema:string;
 
+	/** The Bedrock client to use */
 	private bedrock:BedrockRuntimeClient;
-
-	private changed:WebsiteItem[];
 
 	constructor(context:DurableContext, private sites:WebsiteItem[]) {
 		super(context);
@@ -20,20 +26,18 @@ export class DetectChanges extends DurableChild {
 		this.bedrock = new BedrockRuntimeClient();
 	}
 
+	/** Run the AI check */
 	async run() {
 		this.logger.info(`Checking for changes in ${this.sites.length} sites...`);
 
+		// load the system prompt if it hasn't been loaded yet
 		if(!this.systemPrompt) {
 			this.logger.info("Loading system prompt for the first time...");
 			this.systemPrompt = await this.s3.getString("prompt/system-prompt.txt");
 			this.schema = await this.s3.getString("prompt/schema.json");
 		}
 
-		this.changed = [];
-
 		await Promise.all(this.sites.map(async site => this.checkSite(site)));
-
-		return this.changed;
 	}
 
 	/**
@@ -66,6 +70,7 @@ export class DetectChanges extends DurableChild {
 		this.logger.info(`Comparing current:${currentRevision.revisionID} (${new Date(currentRevision.time)}) to ` +
 			`previous:${previousRevision.revisionID} (${new Date(previousRevision.time)})...`);
 
+		//run the AI model to see if there are any changes
 		const detection = await this.queryAi(site.siteID, previousRevision, currentRevision);
 
 		if(!detection) {
@@ -78,21 +83,28 @@ export class DetectChanges extends DurableChild {
 			return this.unchanged(site);
 		}
 
+		//if there are changes write them to the database
 		this.logger.info(`Found ${detection.differences.length} differences`);
 
 		currentRevision.siteState = SiteRevisionState.Changed;
 		currentRevision.differences = detection.differences;
 		await this.database.putSiteRevision(currentRevision);
-		this.changed.push(site);
 	}
 
+	/**
+	 * Query the AI model to see if there are any changes between the two revisions of the site.
+	 * @param siteID the site to check
+	 * @param lastRevision the previous revision that was downloaded
+	 * @param currentRevision the revision that was just downloaded
+	 */
 	private async queryAi(siteID:string, lastRevision:SiteRevision, currentRevision:SiteRevision) {
-		//get the current HTML revision and the previous
+		//get the HTML revisions
 		const previous = await this.s3.getString(`content/${siteID}/${lastRevision.revisionID}.html`);
 		const current = await this.s3.getString(`content/${siteID}/${currentRevision.revisionID}.html`);
 
 		this.logger.info(`Making AI request of ${this.ModelID}...`);
 
+		//compose the request to the AI
 		const request = new ConverseCommand({
 			modelId: this.ModelID,
 			system: [{text: this.systemPrompt}],
@@ -131,6 +143,10 @@ export class DetectChanges extends DurableChild {
 		return undefined;
 	}
 
+	/**
+	 * Mark the site as unchanged in the database
+	 * @param site the site to mark as unchanged
+	 */
 	private async unchanged(site:WebsiteItem) {
 		await this.database.updateSiteRevision(site.siteID, site.last.revisionID, SiteRevisionState.Unchanged);
 		site.last.siteState = SiteRevisionState.Unchanged;

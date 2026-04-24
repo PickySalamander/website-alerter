@@ -44,7 +44,7 @@ export class RevisionDetailComponent implements OnInit {
 		this.site = this.siteService.getSite(response.revision.siteID);
 	}
 
-	/** Get a Revision */
+	/** Get a Revision while the page is loading, so we can display it immediately. */
 	static resolve:ResolveFn<GetRevisionResponse> = async(route) => {
 		//get the editing site if it is provided (if not then we are adding a new site)
 		const revisionID = route.paramMap?.get("revisionID");

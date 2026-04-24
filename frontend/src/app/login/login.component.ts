@@ -47,14 +47,17 @@ export class LoginComponent {
 			//sign out any previous session
 			await signOut();
 
+			//sign in the user
 			const response = await signIn({
 				username: this.loginForm.value.email,
 				password: this.loginForm.value.password
 			});
 
+			//if the user was successfully signed in, redirect to the next step
 			if(response.nextStep.signInStep == 'DONE') {
 				await this.loginService.redirectAfterLogin();
 			} else {
+				//otherwise, display an error message (the user needs to do a second step which isn't handled by this app)
 				this.snackbar.error(`Failed to login, another login step is needed (${response.nextStep.signInStep}`);
 			}
 

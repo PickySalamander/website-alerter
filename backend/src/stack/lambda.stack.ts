@@ -32,8 +32,10 @@ export class LambdaStack extends Construct {
 	/** Get a specific revision */
 	readonly getRevision:FunctionBase;
 
+	/** Poll websites with puppeteer */
 	readonly pollSites:FunctionBase;
 
+	/** Durable function to process sites */
 	readonly processSites:FunctionBase;
 
 	/** Create the stack */
@@ -48,12 +50,13 @@ export class LambdaStack extends Construct {
 			allowOrigins += ",http://localhost:4200";
 		}
 
-		//setup default environmental variables for the functions
+		//set up default environmental variables for the functions
 		this.environment = {
 			"CONFIG_S3": stack.configBucket.bucketName,
 			"RUN_TABLE": stack.dynamo.runThroughTable.tableName,
 			"WEBSITE_TABLE": stack.dynamo.websiteTable.tableName,
 			"REVISION_TABLE": stack.dynamo.revisionTable.tableName,
+			"NUM_RUNS_ALLOWED": stack.params.numRuns.valueAsString,
 			"ALLOWED_ORIGINS": allowOrigins,
 			"NODE_OPTIONS": "--enable-source-maps",
 			"IS_PRODUCTION": "true"
@@ -118,6 +121,11 @@ export class LambdaStack extends Construct {
 		});
 	}
 
+	/**
+	 * Add a new Lambda function to the stack
+	 * @param name The name of the function
+	 * @param props The properties for the function
+	 */
 	addFunction(name:string, props:NodejsFunctionProps) {
 		const functionProps:NodejsFunctionProps = Object.assign({
 			functionName: `website-alerter-${LambdaStack.kebabCase(name)}`,
@@ -138,6 +146,10 @@ export class LambdaStack extends Construct {
 		return new NodejsFunction(this, name, functionProps);
 	}
 
+	/**
+	 * Create a new log group for a Lambda function
+	 * @param name The name of the function
+	 */
 	createLogGroup(name:string) {
 		return new LogGroup(this, `${name}Logs`, {
 			logGroupName: `website-alerter/lambda/website-alerter-${LambdaStack.kebabCase(name)}`,
@@ -146,7 +158,7 @@ export class LambdaStack extends Construct {
 		})
 	}
 
-	/** Turn a name into kebab case */
+	/** Turn a name into kebab-case */
 	private static kebabCase(name:string) {
 		return name.replace(/[A-Z]+(?![a-z])|[A-Z]/g, (
 			substring, args) => (args ? "-" : "") + substring.toLowerCase())

@@ -22,13 +22,14 @@ export class Cleanup extends DurableChild {
 
 	/**
 	 * Create the cleanup routine
-	 * @param context
+	 * @param context the context of the function to use for logging
 	 * @param runID The current {@link RunThrough.runID} being run through
 	 */
 	constructor(context:DurableContext, private runID:string) {
 		super(context);
 	}
 
+	/** Run the function */
 	async run() {
 		this.logger.info(`Processing the end of run ${this.runID}`);
 
@@ -91,9 +92,11 @@ export class Cleanup extends DurableChild {
 	 * @param errored the number of sites that errored
 	 */
 	private async sendEmail(changed:SiteRevision[], errored:number) {
+		//download the template
 		const template =
 			Handlebars.compile(await this.s3.getString("email/notification.txt"));
 
+		//compose the email
 		const email = template({
 			changed,
 			errored,

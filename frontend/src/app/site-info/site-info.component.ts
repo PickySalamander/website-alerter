@@ -47,7 +47,8 @@ export class SiteInfoComponent implements OnInit {
 	/** The website currently being edited, if not adding a new site */
 	data:WebsiteItem;
 
-	revisions:SiteRevision[];
+	/** The revisions for the site being edited, if not adding a new site */
+	revisions?:SiteRevision[];
 
 	/** The initial values of the form if editing */
 	private initial:{ [key:string]:string | boolean };

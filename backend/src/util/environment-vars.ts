@@ -1,6 +1,6 @@
 /** Get common environmental variables that the website alerter relies on */
 export abstract class EnvironmentVars {
-	/** Is this a production build (Retrieved from environmental variables) */
+	/** Is this a production build (Retrieved from environmental variables)? */
 	static get isProduction():boolean {
 		return process.env.IS_PRODUCTION == "true";
 	}

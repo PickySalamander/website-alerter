@@ -2,9 +2,14 @@ import {Construct} from "constructs";
 import {WebsiteAlerterStack} from "./website-alerter.stack";
 import {UserPool, UserPoolClient} from "aws-cdk-lib/aws-cognito";
 
+/**
+ * Part of the CDK stack that concerns the Cognito user pool
+ */
 export class CognitoStack extends Construct {
+	/** The created Cognito user pool */
 	readonly pool:UserPool;
 
+	/** The created Cognito user pool client */
 	readonly client:UserPoolClient;
 
 	constructor(stack:WebsiteAlerterStack) {

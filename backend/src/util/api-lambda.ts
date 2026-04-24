@@ -3,6 +3,9 @@ import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {AlerterUser} from "./alerter-user";
 import {EnvironmentVars} from "./environment-vars";
 
+/**
+ * Base class for all API Gateway lambdas
+ */
 export abstract class ApiLambda extends LambdaBase {
 	/** Cognito user's information */
 	private _user:AlerterUser;

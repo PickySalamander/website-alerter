@@ -2,6 +2,7 @@ import {Component, Inject, OnInit} from "@angular/core";
 import {MAT_DIALOG_DATA} from "@angular/material/dialog";
 import {MatProgressSpinnerModule} from "@angular/material/progress-spinner";
 
+/** Component to display a loading spinner on the page */
 @Component({
 	selector: "app-page-loader",
 	imports: [

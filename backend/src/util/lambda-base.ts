@@ -2,7 +2,7 @@ import {DatabaseService} from "../services/database.service";
 import {SNSClient} from "@aws-sdk/client-sns";
 import {S3Service} from "../services/s3.service";
 
-/** Base class for all Lambda functions in tool */
+/** Base class for all Lambda functions in the tool */
 export abstract class LambdaBase {
 
 	/** Cached database connection to Dynamo */

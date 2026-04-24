@@ -98,7 +98,7 @@ export class ApiStack extends Construct {
 			schemaName: "delete-sites"
 		});
 
-		//add the revisions path and get, get run revisions, and get site revisions functions
+		//add the revisions' path and get, get run revisions, and get site revisions functions
 		const revisions = this.api.root.addResource("revisions");
 
 		this.addLambda(revisions.addResource("{revisionID}"), {

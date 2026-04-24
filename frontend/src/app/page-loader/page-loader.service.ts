@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router} from "@angular/router";
-import {firstValueFrom, Observable} from "rxjs";
 import {PageLoaderComponent} from "./page-loader.component";
 
 /** Helper class to show a page loading spinner on the page */
@@ -15,7 +14,7 @@ export class PageLoaderService {
 	/** Timeout being run to show the loader on {@link NavigationStart} */
 	private timeout:any;
 
-	/** is there a load already in process? */
+	/** Is there a route load already in process? */
 	private routerLoading = false;
 
 	constructor(private dialog:MatDialog, private router:Router) {
@@ -55,23 +54,6 @@ export class PageLoaderService {
 				data: {text}
 			});
 		}, 300);
-	}
-
-	/**
-	 * Show the page loading indicator while waiting for an {@link Observable} or {@link Promise}
-	 * @param listen the action to listen to
-	 * @param text The text to show for the loader, defaults to "loading..."
-	 */
-	showAndListen(listen:Observable<any> | Promise<any>, text?:string):void {
-		this.show(text);
-
-		this.routerLoading = false;
-
-		if(listen instanceof Observable) {
-			firstValueFrom(listen).finally(() => this.close());
-		} else if(listen instanceof Promise) {
-			listen.finally(() => this.close());
-		}
 	}
 
 	/** Close a shown spinner */
