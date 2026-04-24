@@ -78,12 +78,29 @@ export class IamStack extends Construct {
 						actions: [
 							"lambda:InvokeFunction"
 						],
-						resources: [stack.formatArn({
-							arnFormat:ArnFormat.COLON_RESOURCE_NAME,
-							service: "lambda",
-							resource: "function",
-							resourceName: "website-alerter-poll-sites"
-						})]
+						resources: [
+							stack.formatArn({
+								arnFormat: ArnFormat.COLON_RESOURCE_NAME,
+								service: "lambda",
+								resource: "function",
+								resourceName: "website-alerter-poll-sites"
+							})
+						]
+					})
+				]
+			}),
+
+			// Run AI commands
+			Ai: new PolicyDocument({
+				statements: [
+					new PolicyStatement({
+						effect: Effect.ALLOW,
+						actions: [
+							"bedrock:InvokeModel"
+						],
+						resources: [
+							"*"
+						]
 					})
 				]
 			})
