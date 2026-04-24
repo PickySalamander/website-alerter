@@ -1,6 +1,6 @@
 # Docker file which downloads the dependencies needed for Puppeteer to run
 
-FROM public.ecr.aws/lambda/nodejs:20
+FROM public.ecr.aws/lambda/nodejs:24
 WORKDIR ${LAMBDA_TASK_ROOT}
 
 # Install Chromium to get all of the dependencies installed (we don't actually use this version of chrome)
@@ -12,7 +12,7 @@ RUN rpm --import linux_signing_key.pub
 RUN dnf install -y google-chrome-stable
 
 # Copy the compiled package.json, Typescript, and Puppeteer config over
-COPY package.json index.js index.js.map ./
+COPY package.json index.js index.js.map puppeteer.config.js ./
 
 # Force puppeteer to use the version it was built with: https://pptr.dev/chromium-support
 ENV PUPPETEER_BROWSER_REVISION 147.0.7727.57
