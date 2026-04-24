@@ -32,7 +32,10 @@
 							"includePaths": [
 								"src/styles"
 							]
-						}
+						},
+						"allowedCommonJsDependencies": [
+							"aws-cron-parser"
+						]
 					},
 					"configurations": {
 						"production": {
@@ -113,8 +116,8 @@
 		"@schematics/angular:resolver": {
 			"typeSeparator": "."
 		}
-  },
-  "cli": {
-    "analytics": false
-  }
+	},
+	"cli": {
+		"analytics": false
+	}
 }
