@@ -1,6 +1,7 @@
 import {Effect, ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import {WebsiteAlerterStack} from "./website-alerter.stack";
 import {Construct} from "constructs";
+import {ArnFormat} from "aws-cdk-lib";
 
 /**
  * Part of the CDK stack that concerns the IAM roles used
@@ -78,6 +79,7 @@ export class IamStack extends Construct {
 							"lambda:InvokeFunction"
 						],
 						resources: [stack.formatArn({
+							arnFormat:ArnFormat.COLON_RESOURCE_NAME,
 							service: "lambda",
 							resource: "function",
 							resourceName: "website-alerter-poll-sites"
