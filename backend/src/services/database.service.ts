@@ -381,17 +381,16 @@ export class DatabaseService {
 			throw new Error("Can only batch delete 25 at a time");
 		}
 
-		const runDelete:DeleteRequestElement[] =
-			runsToDelete.map(value => DatabaseService.createDeleteItems("runID", value));
+		const request:BatchWriteCommandInput = {RequestItems: {}};
 
-		const revisionDelete:DeleteRequestElement[] =
-			revisionsToDelete.map(value => DatabaseService.createDeleteItems("revisionID", value));
+		if(runsToDelete.length > 0) {
+			request.RequestItems[EnvironmentVars.runTableName] =
+				runsToDelete.map(value => DatabaseService.createDeleteItems("runID", value));
+		}
 
-		const request:BatchWriteCommandInput = {
-			RequestItems: {
-				[EnvironmentVars.runTableName]: runDelete,
-				[EnvironmentVars.revisionTableName]: revisionDelete
-			}
+		if(revisionsToDelete.length > 0) {
+			request.RequestItems[EnvironmentVars.revisionTableName] =
+				revisionsToDelete.map(value => DatabaseService.createDeleteItems("revisionID", value));
 		}
 
 		console.debug(`Deleting runs and revisions: ${JSON.stringify(request)}`);
