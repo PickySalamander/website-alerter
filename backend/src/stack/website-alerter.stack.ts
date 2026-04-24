@@ -53,7 +53,7 @@ export class WebsiteAlerterStack extends Stack {
 
 		// create the email notification SNS stream and add the email parameter from the input
 		this.notificationSns = new Topic(this, "WebsiteAlertNotifications", {
-			topicName: "website-alerter-notifications",
+			topicName: "website-alerter-notification",
 		});
 
 		this.notificationSns.addSubscription(new EmailSubscription(this.params.emailAddress.valueAsString));
