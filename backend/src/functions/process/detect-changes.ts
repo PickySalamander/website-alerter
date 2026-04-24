@@ -97,10 +97,19 @@ export class DetectChanges extends DurableChild {
 	 * @param lastRevision the previous revision that was downloaded
 	 * @param currentRevision the revision that was just downloaded
 	 */
-	private async queryAi(siteID:string, lastRevision:SiteRevision, currentRevision:SiteRevision) {
+	private async queryAi(siteID:string, lastRevision:SiteRevision, currentRevision:SiteRevision):Promise<AiResponse> {
 		//get the HTML revisions
 		const previous = await this.s3.getString(`content/${siteID}/${lastRevision.revisionID}.html`);
 		const current = await this.s3.getString(`content/${siteID}/${currentRevision.revisionID}.html`);
+
+		if(previous == current) {
+			this.logger.info("HTML was identical, no need to call the AI");
+
+			return {
+				changes: false,
+				differences: []
+			}
+		}
 
 		this.logger.info(`Making AI request of ${this.ModelID}...`);
 

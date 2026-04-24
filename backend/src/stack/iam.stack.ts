@@ -75,7 +75,7 @@ export class IamStack extends Construct {
 					new PolicyStatement({
 						effect: Effect.ALLOW,
 						actions: [
-							"lambda:invoke"
+							"lambda:InvokeFunction"
 						],
 						resources: [stack.formatArn({
 							service: "lambda",

@@ -99,6 +99,7 @@ export class LambdaStack extends Construct {
 
 		this.pollSites = new DockerImageFunction(this, 'PollSites', {
 			functionName: "website-alerter-poll-sites",
+			description: "The actual lambda scrapper called by ProcessSites",
 			timeout: Duration.minutes(15),
 			memorySize: 1024,
 			role: this.stack.iam.lambdaRole,
