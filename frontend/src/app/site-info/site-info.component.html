@@ -17,17 +17,15 @@
 
 			<mat-form-field>
 				<mat-label>A CSS selector to target an element for changes</mat-label>
-				<input matInput formControlName="selector" placeholder="body > .content">
+				<input matInput formControlName="selector" placeholder="body > .content" />
+				<button matIconButton matSuffix type="button" (click)="createForm.controls.selector.reset()">
+					<mat-icon>close</mat-icon>
+				</button>
 			</mat-form-field>
 
 			<div class="options">
 				<h3>Options</h3>
 				<mat-slide-toggle formControlName="enabled">Enabled for checking?</mat-slide-toggle>
-				<mat-slide-toggle formControlName="ignoreCss">Should "class" and "style" attributes be ignored as changes?
-				</mat-slide-toggle>
-				<mat-slide-toggle formControlName="ignoreAttributes">Should all HTML attributes be ignored as changes?
-				</mat-slide-toggle>
-				<mat-slide-toggle formControlName="ignoreScripts">Should "script" tags be ignored as changes?</mat-slide-toggle>
 			</div>
 		</form>
 	</div>
@@ -42,5 +40,5 @@
 </div>
 
 @if (!isNewSite) {
-	<app-revision-list [siteID]="data.siteID"></app-revision-list>
+	<app-revision-list [revisions]="revisions"></app-revision-list>
 }

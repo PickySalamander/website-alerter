@@ -16,24 +16,9 @@ export interface WebsiteItem {
 	 */
 	selector?:string;
 
-	/** Options for detecting changes on the page */
-	options?:ChangeOptions;
-
 	/** The time the site was created */
 	created:number;
 
-	/** The last time the site was polled */
+	/** The last revision of the site when it was polled */
 	last?:SiteRevision;
-}
-
-/** Options for detecting changes on the page */
-export interface ChangeOptions {
-	/** Ignore CSS on the page (anything in "class" and "style" attributes, plus "style" tags) (default:false) */
-	ignoreCss?:boolean;
-
-	/** Ignore <b>all</b> html attributes (default:false)*/
-	ignoreAttributes?:boolean;
-
-	/** ignore script tags on the page (default:true) */
-	ignoreScripts?:boolean;
 }

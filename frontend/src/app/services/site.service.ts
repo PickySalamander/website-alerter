@@ -1,9 +1,10 @@
-import {inject, Injectable} from '@angular/core';
+import {effect, inject, Injectable} from '@angular/core';
 import {LoginService} from "./login.service";
 import {WebsiteItem} from "website-alerter-shared";
 import {ResolveFn} from "@angular/router";
 import {HttpClient} from "@angular/common/http";
 import {environment} from "../../environments/environment";
+import {firstValueFrom} from "rxjs";
 
 /** Service that downloads and stores {@link WebsiteItem}s downloaded from the server. */
 @Injectable({
@@ -16,29 +17,26 @@ export class SiteService {
 	constructor(private http:HttpClient,
 	            private login:LoginService) {
 		//delete the sites when logging out
-		this.login.onLogout.subscribe(() => {
-			this.sites = undefined;
+		effect(() => {
+			if(!this.login.isLoggedIn()) {
+				this.sites = undefined;
+			}
 		});
 	}
 
 	/** Get all {@link WebsiteItem}s from the server if not already loaded */
-	private getSites():Promise<SiteService> | SiteService {
-		//return immediately if loaded
-		if(this.sites) {
-			return this;
+	private async getSites():Promise<SiteService> {
+		if(!this.sites) {
+			//download the sites
+			const items = await firstValueFrom(this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`));
+
+			if(items && items.length > 0) {
+				//store in the map
+				this.sites = new Map<string, WebsiteItem>(items.map(value => [value.siteID, value]));
+			}
 		}
 
-		//download the sites
-		return new Promise<SiteService>(resolve => {
-			this.http.get<WebsiteItem[]>(`${environment.apiUrl}/sites`).subscribe(items => {
-				if(items && items.length > 0) {
-					//store in the map
-					this.sites = new Map<string, WebsiteItem>(items.map(value => [value.siteID, value]));
-				}
-
-				resolve(this);
-			});
-		});
+		return this;
 	}
 
 	/** Get a {@link WebsiteItem} by its ID */

@@ -1,9 +1,10 @@
-import {inject, Injectable} from '@angular/core';
+import {effect, inject, Injectable} from '@angular/core';
 import {ResolveFn} from "@angular/router";
 import {RunThrough} from "website-alerter-shared";
 import {HttpClient} from "@angular/common/http";
 import {LoginService} from "./login.service";
 import {environment} from "../../environments/environment";
+import {firstValueFrom} from "rxjs";
 
 /** Service that downloads and stores {@link RunThrough}s downloaded from the server. */
 @Injectable({
@@ -16,28 +17,24 @@ export class RunService {
 	constructor(private http:HttpClient,
 	            private login:LoginService) {
 		//delete the runs when logging out
-		this.login.onLogout.subscribe(() => {
-			this.runs = undefined;
+		effect(() => {
+			if(!this.login.isLoggedIn()) {
+				this.runs = undefined;
+			}
 		});
 	}
 
 	/** Get all {@link RunThrough}s from the server if not already loaded */
-	private getRuns():Promise<RunService> | RunService {
-		//return immediately if loaded
-		if(this.runs) {
-			return this;
+	private async getRuns():Promise<RunService> {
+		if(!this.runs) {
+			const items = await firstValueFrom(this.http.get<RunThrough[]>(`${environment.apiUrl}/runs`));
+
+			if(items && items.length > 0) {
+				this.runs = items.sort((a, b) => b.time - a.time);
+			}
 		}
 
-		//download the runs
-		return new Promise<RunService>(resolve => {
-			this.http.get<RunThrough[]>(`${environment.apiUrl}/runs`).subscribe(items => {
-				if(items && items.length > 0) {
-					this.runs = items.sort((a, b) => b.time - a.time);
-				}
-
-				resolve(this);
-			});
-		})
+		return this;
 	}
 
 	/** Get all {@link RunThrough}s sorted by time */

@@ -13,7 +13,7 @@ import {S3SyncClient} from "s3-sync-client";
 import {CloudFrontClient, CreateInvalidationCommand} from "@aws-sdk/client-cloudfront";
 import mime from 'mime-types';
 
-console.log("Looking up stack outputs for bucket and cloud front information...");
+console.info("Looking up stack outputs for bucket and cloud front information...");
 
 const cloudFormationClient = new CloudFormationClient();
 
@@ -39,7 +39,7 @@ if (!bucketName) {
 
 // get the upload location
 const s3Loc = `s3://${bucketName}/web`;
-console.log(`Syncing files to ${s3Loc}...`);
+console.info(`Syncing files to ${s3Loc}...`);
 
 // make sure the distribution is built
 if (!fs.existsSync("dist/website-alerter/browser")) {
@@ -57,9 +57,9 @@ const syncOutput = await sync("dist/website-alerter/browser", s3Loc, {
 	})
 });
 
-console.log(`${syncOutput.deleted.length} files deleted and ${syncOutput.created.length} files uploaded.`);
+console.info(`${syncOutput.deleted.length} files deleted and ${syncOutput.created.length} files uploaded.`);
 
-console.log(`Creating invalidation on ${cdnID}...`);
+console.info(`Creating invalidation on ${cdnID}...`);
 
 const cloudFrontClient = new CloudFrontClient({});
 
@@ -75,7 +75,7 @@ await cloudFrontClient.send(new CreateInvalidationCommand({
 	}
 }));
 
-console.log("All done!");
+console.info("All done!");
 
 /**
  * Find the named output in a CloudFormation stack

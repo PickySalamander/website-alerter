@@ -1,30 +1,20 @@
-import {LambdaBase} from "../../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../../util/user-jwt";
+import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {MiddyUtil} from "../../util/middy-util";
 import {HttpMethod} from "../../util/http-method";
 import createError from "http-errors";
 import {SiteRevision, WebsiteItem} from "website-alerter-shared";
+import {ApiLambda} from "../../util/api-lambda";
 
 /**
  * Get all the {@link SiteRevision} for a {@link WebsiteItem} for the client
  */
-export class GetSiteRevisions extends LambdaBase {
+export class GetSiteRevisions extends ApiLambda {
 
-	/**
-	 * Entry point from API Gateway
-	 * @param event data from the client
-	 */
-	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
-		//get user from context
-		const user = event.requestContext.authorizer as UserJwt;
-
+	protected async handle(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
 		//get the requested site ID from the path
 		const siteID = <string>event.pathParameters.siteID;
 
-		await this.setupServices();
-
-		console.log(`Getting site ${siteID} revisions for user ${user.userID}`);
+		console.info(`Getting site ${siteID} revisions for user ${this.user.sub}`);
 
 		//make sure the site exists
 		const site = await this.database.getSite(siteID);
@@ -35,7 +25,7 @@ export class GetSiteRevisions extends LambdaBase {
 		//get all the revisions
 		const revisions = await this.database.getSiteRevisionsForSite(siteID);
 
-		console.log(`Returning ${revisions.length} revisions`);
+		console.info(`Returning ${revisions.length} revisions`);
 
 		return {
 			statusCode: 200,

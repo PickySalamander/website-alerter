@@ -35,7 +35,8 @@ export const routes:Routes = [
 			},
 			{
 				path: ":siteID",
-				component: SiteInfoComponent
+				component: SiteInfoComponent,
+				resolve: {revisions: SiteInfoComponent.resolve},
 			}
 		]
 	},
@@ -56,7 +57,7 @@ export const routes:Routes = [
 		path: "revision/:revisionID",
 		title: "Alerter - Revision",
 		component: RevisionDetailComponent,
-		resolve: {sites: SiteService.resolve},
+		resolve: {sites: SiteService.resolve, revision:RevisionDetailComponent.resolve},
 		canActivate: [LoginService.canActivateLoggedIn],
 	},
 	{path: '**', redirectTo: 'list'}

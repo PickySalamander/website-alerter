@@ -1,0 +1,17 @@
+Finished run through {{runID}} of {{total}} sites. Output follows:
+
+Changed: {{changed.length}}
+Errored: {{errored}}
+View changes here: {{websiteUrl}}
+
+{{#if changed.length}}
+Review the sites that changed:
+
+{{#each changed}}
+{{@index}}: {{lookup ../sites this.siteID}}
+{{#each this.differences}}
+	- {{this}}
+{{/each}}
+{{/each}}
+
+{{/if}}

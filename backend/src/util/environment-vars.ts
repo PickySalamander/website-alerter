@@ -1,6 +1,6 @@
 /** Get common environmental variables that the website alerter relies on */
 export abstract class EnvironmentVars {
-	/** Is this a production build (Retrieved from environmental variables) */
+	/** Is this a production build (Retrieved from environmental variables)? */
 	static get isProduction():boolean {
 		return process.env.IS_PRODUCTION == "true";
 	}
@@ -43,6 +43,11 @@ export abstract class EnvironmentVars {
 	/** The url of the website alerter frontend */
 	static get websiteUrl():string {
 		return process.env.WEBSITE_URL;
+	}
+
+	/** The url of the website alerter frontend */
+	static get pollSitesArn():string {
+		return process.env.POLL_SITES_ARN;
 	}
 
 	/** The maximum number of runs allowed in the database and S3 */

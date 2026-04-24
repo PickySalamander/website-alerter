@@ -38,7 +38,7 @@ export class DatabaseService {
 
 		//if not production use the local docker dynamodb
 		else {
-			console.log("Dynamo connecting to localhost");
+			console.info("Dynamo connecting to localhost");
 
 			//if a dev environment try to connect to docker
 			client = new DynamoDBClient({
@@ -46,26 +46,12 @@ export class DatabaseService {
 			});
 		}
 
-		this.client = DynamoDBDocumentClient.from(client);
-	}
-
-	/**
-	 * Get a user from the database by email
-	 * @param email the email to get the user by
-	 */
-	async getUser(email:string):Promise<UserItem> {
-		//query the database
-		const response = await this.client.send(new QueryCommand({
-			TableName: EnvironmentVars.usersTableName,
-			IndexName: "user-name-index",
-			KeyConditionExpression: "email = :email",
-			ExpressionAttributeValues: {
-				":email": email
-			},
-			Limit: 1
-		}));
-
-		return response.Items && response.Items.length > 0 ? response.Items[0] as UserItem : undefined;
+		this.client = DynamoDBDocumentClient.from(client, {
+			marshallOptions: {
+				//make sure that undefined values don't break puts
+				removeUndefinedValues: true
+			}
+		});
 	}
 
 	/**
@@ -106,16 +92,10 @@ export class DatabaseService {
 			},
 			ExpressionAttributeValues: {
 				":true": true
-			},
-			ProjectionExpression: "siteID"
+			}
 		}));
 
-		if(response.Items && response.Items.length > 0) {
-			const items = response.Items as WebsiteItem[];
-			return items.map(value => value.siteID);
-		}
-
-		return [];
+		return response.Items && response.Items.length > 0 ? response.Items as WebsiteItem[] : [];
 	}
 
 	/**
@@ -139,11 +119,10 @@ export class DatabaseService {
 			Key: {
 				siteID: item.siteID
 			},
-			UpdateExpression: "SET selector = :selector, enabled = :enabled, options = :options",
+			UpdateExpression: "SET selector = :selector, enabled = :enabled",
 			ExpressionAttributeValues: {
 				":selector": item.selector,
-				":enabled": item.enabled,
-				":options": item.options
+				":enabled": item.enabled
 			}
 		}));
 	}
@@ -435,18 +414,6 @@ export class DatabaseService {
 			}
 		}
 	}
-}
-
-/** A user in the website alerter */
-export interface UserItem {
-	/** The user's ID */
-	userID:string;
-
-	/** The user's email */
-	email:string;
-
-	/** The user's encrypted password */
-	password:string;
 }
 
 /** Portion of dynamo batch delete operation */

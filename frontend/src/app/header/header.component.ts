@@ -1,24 +1,34 @@
 import {Component} from '@angular/core';
-import {CommonModule, NgOptimizedImage} from '@angular/common';
 import {MatButtonModule} from "@angular/material/button";
 import {RouterLink, RouterLinkActive} from "@angular/router";
-import {MatRippleModule} from "@angular/material/core";
 import {LoginService} from "../services/login.service";
+import {MatMenuModule} from "@angular/material/menu";
+import {MatIconModule} from "@angular/material/icon";
 
 /** Handle the header on top of the application */
 @Component({
 	selector: 'app-header',
-	standalone: true,
-	imports: [CommonModule, NgOptimizedImage, MatButtonModule, RouterLink, MatRippleModule, RouterLinkActive],
+	imports: [
+		MatButtonModule,
+		RouterLink,
+		RouterLinkActive,
+		MatMenuModule,
+		MatIconModule
+	],
 	templateUrl: './header.component.html',
 	styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
-	constructor(private login:LoginService) {
+	constructor(private loginService:LoginService) {
 	}
 
-	/** Logout the user through the login service */
+	/** Is the user currently logged in? */
+	get isLoggedIn() {
+		return this.loginService.isLoggedIn;
+	}
+
+	/** Log out the user through the login service */
 	onLogout() {
-		this.login.logout();
+		this.loginService.logout();
 	}
 }

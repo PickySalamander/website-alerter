@@ -10,36 +10,44 @@
 				<mat-icon [inline]="true">open_in_new</mat-icon>
 			</a>
 		</div>
-		<div><b>Final State</b>:
-			<app-revision-state [state]="revision.siteState"></app-revision-state>
+		<div>
+			<b>Final State</b>: <app-revision-state [state]="revision.siteState"></app-revision-state>
 		</div>
 	</div>
 
 	<div class="info">
 		<div><b>Download:</b></div>
+
+		@if (urls.previousScreenshot) {
+			<div>
+				<a [href]="urls.previousScreenshot" download>Previous Screenshot</a>
+			</div>
+		}
+
 		<div>
 			<a [href]="urls.screenshot" download>Screenshot</a>
 		</div>
+
+		@if (urls.previousHtml) {
+			<div>
+				<a [href]="urls.previousHtml" download>Previous HTML</a>
+			</div>
+		}
+
 		<div>
 			<a [href]="urls.html" download>HTML</a>
 		</div>
-
-		@if (revision.siteState == SiteRevisionState.Changed) {
-			<div>
-				<a [href]="urls.diff" download>Unified Diff</a>
-			</div>
-		}
 	</div>
 
-	@if (diffHtml) {
-		<div class="diff" [innerHTML]="diffHtml"></div>
-	} @else if (revision.siteState == SiteRevisionState.Changed) {
+	@if (revision.siteState == SiteRevisionState.Changed) {
 		<div>
-			Loading diff...
-		</div>
-	} @else {
-		<div>
-			No changes to show
+			<h3>AI Found the following differences:</h3>
+
+			<ul>
+				@for (difference of revision.differences; track difference) {
+					<li>{{difference}}</li>
+				}
+			</ul>
 		</div>
 	}
 }

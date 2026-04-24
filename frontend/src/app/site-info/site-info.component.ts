@@ -1,24 +1,34 @@
-import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import {Component, inject, OnInit} from '@angular/core';
 import {MatButtonModule} from "@angular/material/button";
 import {FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators} from "@angular/forms";
 import {MatInputModule} from "@angular/material/input";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatCheckboxModule} from "@angular/material/checkbox";
 import {HttpClient} from "@angular/common/http";
-import {WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
+import {SiteRevision, WebsiteItem, WebsiteItemRequest} from "website-alerter-shared";
 import {MatSlideToggleModule} from "@angular/material/slide-toggle";
 import {SiteService} from "../services/site.service";
 import {SnackbarService} from "../services/snackbar.service";
-import {ActivatedRoute, Router, RouterLink} from "@angular/router";
+import {ActivatedRoute, ResolveFn, Router, RouterLink} from "@angular/router";
 import {environment} from "../../environments/environment";
 import {RevisionListComponent} from "./revision-list/revision-list.component";
+import {firstValueFrom} from "rxjs";
+import {MatIconModule} from "@angular/material/icon";
 
 /** Display information on a site and the add/edit form */
 @Component({
 	selector: 'app-add-site',
-	standalone: true,
-	imports: [CommonModule, MatButtonModule, ReactiveFormsModule, MatInputModule, MatCheckboxModule, MatDialogModule, MatSlideToggleModule, RouterLink, RevisionListComponent],
+	imports: [
+		MatButtonModule,
+		ReactiveFormsModule,
+		MatInputModule,
+		MatCheckboxModule,
+		MatDialogModule,
+		MatSlideToggleModule,
+		RouterLink,
+		RevisionListComponent,
+		MatIconModule
+	],
 	templateUrl: './site-info.component.html',
 	styleUrl: './site-info.component.scss'
 })
@@ -31,14 +41,14 @@ export class SiteInfoComponent implements OnInit {
 		url: new FormControl('', [Validators.required,
 			Validators.pattern(SiteInfoComponent.SITE_PATTERN), Validators.maxLength(2048)]),
 		selector: new FormControl('', [Validators.maxLength(2048)]),
-		enabled: new FormControl(true),
-		ignoreCss: new FormControl(false),
-		ignoreAttributes: new FormControl(false),
-		ignoreScripts: new FormControl(false),
+		enabled: new FormControl(true)
 	});
 
 	/** The website currently being edited, if not adding a new site */
 	data:WebsiteItem;
+
+	/** The revisions for the site being edited, if not adding a new site */
+	revisions?:SiteRevision[];
 
 	/** The initial values of the form if editing */
 	private initial:{ [key:string]:string | boolean };
@@ -57,19 +67,19 @@ export class SiteInfoComponent implements OnInit {
 		//if editing get the site's data and add defaults to the form
 		if(siteID) {
 			this.data = this.sites.getSite(siteID);
+
 			if(this.data) {
 				this.createForm.controls.url.setValue(this.data.site);
 				this.createForm.controls.url.disable();
 				this.createForm.controls.selector.setValue(this.data.selector ?? "");
 				this.createForm.controls.enabled.setValue(this.data.enabled ?? true);
-				this.createForm.controls.ignoreCss.setValue(this.data.options?.ignoreCss ?? false);
-				this.createForm.controls.ignoreAttributes.setValue(this.data.options?.ignoreAttributes ?? false);
-				this.createForm.controls.ignoreScripts.setValue(this.data.options?.ignoreScripts ?? false);
 
 				//add the initial values and set up the change validator
 				this.initial = this.createForm.value;
 				this.createForm.addValidators(() => this.notEqualValidator());
 			}
+
+			this.revisions = this.route.snapshot.data["revisions"];
 		}
 	}
 
@@ -87,12 +97,7 @@ export class SiteInfoComponent implements OnInit {
 		const updated:WebsiteItemRequest = {
 			site: this.createForm.value.url,
 			selector: this.createForm.value.selector ?? undefined,
-			enabled: this.createForm.value.enabled ?? true,
-			options: {
-				ignoreCss: this.createForm.value.ignoreCss ?? false,
-				ignoreScripts: this.createForm.value.ignoreScripts ?? false,
-				ignoreAttributes: this.createForm.value.ignoreAttributes ?? false
-			}
+			enabled: this.createForm.value.enabled ?? true
 		};
 
 		//if we're updating...
@@ -144,4 +149,18 @@ export class SiteInfoComponent implements OnInit {
 	get isNewSite() {
 		return this.data == null;
 	}
+
+	/** A site and all revisions for it */
+	static resolve:ResolveFn<SiteRevision[]> = async(route) => {
+		//get the editing site if it is provided (if not then we are adding a new site)
+		const siteID = route.paramMap?.get("siteID");
+		if(siteID) {
+			const http = inject(HttpClient);
+
+			//load the revisions from the server and display them
+			return await firstValueFrom(http.get<SiteRevision[]>(`${environment.apiUrl}/revisions/site/${siteID}`));
+		}
+
+		return undefined;
+	};
 }

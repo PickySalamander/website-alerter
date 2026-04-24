@@ -1,12 +1,27 @@
-@import "theme";
+@use '@angular/material' as mat;
 
-html, body {
+html {
 	height: 100%;
+	@include mat.theme(
+		(
+			color: (
+				primary: mat.$azure-palette,
+				tertiary: mat.$blue-palette,
+			),
+			typography: Roboto Slab,
+			density: 0,
+		)
+	);
 }
 
 body {
+	color-scheme: light;
+	background-color: var(--mat-sys-surface);
+	color: var(--mat-sys-on-surface);
+	font: var(--mat-sys-body-medium);
+
 	margin: 0;
-	font-family: "Roboto Slab", "Courier New", sans-serif;
+	height: 100%;
 }
 
 * {
@@ -14,11 +29,11 @@ body {
 }
 
 a {
-	color: map-get($accent-colors, 500);
+	//color: map-get($accent-colors, 500);
 	transition: all 300ms;
 
 	&:hover {
-		color: map-get($accent-colors, 700);
+		//color: map-get($accent-colors, 700);
 	}
 }
 
@@ -27,3 +42,5 @@ a {
 		padding: 17px;
 	}
 }
+
+

@@ -14,6 +14,9 @@ export interface SiteRevision {
 
 	/** The state of the site's polling and change detection */
 	siteState:SiteRevisionState;
+
+	/** The differences as explained by AI */
+	differences?:string[];
 }
 
 /** The state of the site's polling and change detection */

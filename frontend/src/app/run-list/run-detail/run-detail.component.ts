@@ -1,10 +1,9 @@
 import {Component, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {CommonModule} from '@angular/common';
 import {HttpClient} from "@angular/common/http";
-import {ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink, RouterOutlet} from "@angular/router";
+import {ActivatedRoute, NavigationEnd, Router, RouterLink} from "@angular/router";
 import {Subscription} from "rxjs";
 import {environment} from "../../../environments/environment";
-import {RunThrough, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {SiteRevision, WebsiteItem} from "website-alerter-shared";
 import {MatTable, MatTableDataSource, MatTableModule} from "@angular/material/table";
 import {ShortUuidComponent} from "../../short-uuid/short-uuid.component";
 import {SiteService} from "../../services/site.service";
@@ -13,8 +12,12 @@ import {RevisionStateComponent} from "../../revision-state/revision-state.compon
 /** Display the currently selected run's details along with a list of revisions */
 @Component({
 	selector: 'app-run-detail',
-	standalone: true,
-	imports: [CommonModule, MatTableModule, RouterOutlet, ShortUuidComponent, RevisionStateComponent, RouterLink],
+	imports: [
+		MatTableModule,
+		ShortUuidComponent,
+		RevisionStateComponent,
+		RouterLink
+	],
 	templateUrl: './run-detail.component.html',
 	styleUrl: './run-detail.component.scss'
 })
@@ -32,7 +35,7 @@ export class RunDetailComponent implements OnInit, OnDestroy {
 	private sub:Subscription;
 
 	constructor(private http:HttpClient,
-							private router:Router,
+	            private router:Router,
 	            private route:ActivatedRoute,
 	            private siteService:SiteService) {
 		this.sub = this.router.events.subscribe(event => {

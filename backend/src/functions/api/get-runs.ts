@@ -1,31 +1,21 @@
-import {LambdaBase} from "../../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../../util/user-jwt";
+import {APIGatewayProxyResult} from "aws-lambda";
 import {MiddyUtil} from "../../util/middy-util";
 import {HttpMethod} from "../../util/http-method";
 import {RunThrough} from "website-alerter-shared";
+import {ApiLambda} from "../../util/api-lambda";
 
 /**
  * Get all the {@link RunThrough}'s for the client
  */
-export class GetRuns extends LambdaBase {
+export class GetRuns extends ApiLambda {
 
-	/**
-	 * Entry point from API Gateway
-	 * @param event data from the client
-	 */
-	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
-		//get user from context
-		const user = event.requestContext.authorizer as UserJwt;
-
-		await this.setupServices();
-
-		console.log(`Getting runs for user ${user.userID}`);
+	protected async handle():Promise<APIGatewayProxyResult> {
+		console.info(`Getting runs for user ${this.user.sub}`);
 
 		//get all the runs
 		const runs = await this.database.getRunThroughs();
 
-		console.log(`Returning ${runs.length} runs.`);
+		console.info(`Returning ${runs.length} runs.`);
 
 		return {
 			statusCode: 200,

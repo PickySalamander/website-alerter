@@ -1,38 +1,28 @@
-import {LambdaBase} from "../../util/lambda-base";
-import {APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult} from "aws-lambda";
-import {UserJwt} from "../../util/user-jwt";
+import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {MiddyUtil} from "../../util/middy-util";
 import createError from "http-errors";
 import {HttpMethod} from "../../util/http-method";
+import {ApiLambda} from "../../util/api-lambda";
 
 /**
  * Request to delete a site or sites from the database.
  */
-export class DeleteSites extends LambdaBase {
+export class DeleteSites extends ApiLambda {
 
-	/**
-	 * Entry point from API Gateway
-	 * @param event data from the client
-	 */
-	public handler:APIGatewayProxyHandler = async(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
+	protected async handle(event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> {
 		//make sure there was a body
 		if(!event.body) {
 			throw new createError.BadRequest("Body was not specified");
 		}
 
-		//get user from context
-		const user = event.requestContext.authorizer as UserJwt;
-
 		//get the id's of the sites the user wants to delete
 		const toDelete = new Set(<string[]>JSON.parse(event.body));
-		console.log(`User "${user.userID}" wants to delete ${toDelete.size} sites.`);
+		console.info(`User "${this.user.sub}" wants to delete ${toDelete.size} sites.`);
 
 		//can't delete more than 25 per dynamo standards
 		if(toDelete.size > 25) {
 			throw new createError.BadRequest("Can only delete 25 items at a time");
 		}
-
-		await this.setupServices();
 
 		//retrieve all the sites that need to be deleted (verify they exist)
 		const itemsToDelete = await this.database.getSitesByID(toDelete);

@@ -1,9 +1,6 @@
-@import "theme";
-
 header {
 	height: 4rem;
-
-	background-color: map-get($primary-colors, 500);
+	background-color: var(--mat-sys-primary-container);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -14,7 +11,6 @@ header {
 	.content {
 		display: flex;
 		align-items: center;
-		color: white;
 		font-size: 20px;
 
 		img {
@@ -28,12 +24,4 @@ header {
 	display: flex;
 	align-items: center;
 	gap: 1em;
-
-	.mat-mdc-button:not(:disabled) {
-		color: white;
-	}
-
-	.active.mat-mdc-button {
-		color: map-get($accent-colors, 500);
-	}
 }

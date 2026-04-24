@@ -13,20 +13,6 @@
 		},
 		"enabled": {
 			"type": "boolean"
-		},
-		"options": {
-			"type": "object",
-			"properties": {
-				"ignoreCss": {
-					"type": "boolean"
-				},
-				"ignoreAttributes": {
-					"type": "boolean"
-				},
-				"ignoreScripts": {
-					"type": "boolean"
-				}
-			}
 		}
 	},
 	"required": [

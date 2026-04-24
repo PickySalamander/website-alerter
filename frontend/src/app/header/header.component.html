@@ -1,16 +1,19 @@
 <header class="mat-elevation-z5">
 	<a mat-button routerLink="" class="logo">
 		<div class="content">
-			<img src="assets/favicon.svg" alt="The site logo"/>
-
-			Website Alerter
+			<img src="assets/favicon.svg" alt="The site logo"/> Website Alerter
 		</div>
 	</a>
 
-	<div class="actions">
-		<a mat-button routerLink="list" routerLinkActive="active" [routerLinkActiveOptions]="{exact:false}">Site List</a>
-		<a mat-button routerLink="runs" routerLinkActive="active" [routerLinkActiveOptions]="{exact:false}">Run List</a>
+	@if (isLoggedIn()) {
+		<button matIconButton [matMenuTriggerFor]="menu">
+			<mat-icon>menu</mat-icon>
+		</button>
+		<mat-menu #menu="matMenu">
+			<a mat-menu-item routerLink="list" routerLinkActive="active">Sites</a> <a mat-menu-item routerLink="runs"
+			                                                                          routerLinkActive="active">Runs</a>
 
-		<button mat-flat-button (click)="onLogout()">Logout</button>
-	</div>
+			<button mat-menu-item (click)="onLogout()">Logout</button>
+		</mat-menu>
+	}
 </header>
