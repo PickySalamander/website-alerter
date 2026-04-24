@@ -9,7 +9,10 @@ on:
         type: string
       ruleEnabled:
         description: Whether the CloudWatch rule is enabled or not
-        type: boolean
+        type: choice
+        options:
+          - "true"
+          - "false"
 
   push:
     paths:
@@ -72,13 +75,13 @@ jobs:
         run: |
           INPUT_EMAIL="${{ inputs.email }}"
           RULE_ENABLED="${{ inputs.ruleEnabled }}"
-          npm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL}
+          npm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL} ${RULE_ENABLED:+enableSchedule=RULE_ENABLED}
 
       # Deploy
       - name: Deploy to S3
         run: |
-          cd backend/src/prompt
+          cd backend/prompt
           aws s3 sync --delete . s3://website-alerter-${{ vars.AWS_ACCOUNT_NUMBER }}/prompt/
 
-          cd ../email
+          cd ../src/email
           aws s3 sync --delete . s3://website-alerter-${{ vars.AWS_ACCOUNT_NUMBER }}/email/
