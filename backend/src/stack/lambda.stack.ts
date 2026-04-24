@@ -138,7 +138,7 @@ export class LambdaStack extends Construct {
 			handler: "handler",
 			role: this.stack.iam.lambdaRole,
 			bundling: {
-				externalModules: this.stack.isLocal ? [] : ["@aws-sdk/*"],
+				// externalModules: this.stack.isLocal ? [] : ["@aws-sdk/*"],
 				metafile: true,
 				minify: true,
 				sourceMap: true

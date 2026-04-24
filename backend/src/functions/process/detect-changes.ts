@@ -138,6 +138,8 @@ export class DetectChanges extends DurableChild {
 			}
 		});
 
+		this.logger.info("Making request", request);
+
 		let response:ConverseCommandOutput;
 
 		try {
