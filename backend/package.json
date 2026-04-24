@@ -9,7 +9,7 @@
 		"start:local": "npm run build:local && sam local start-api --warm-containers LAZY -n env.json -t cdk.out/WebsiteAlerter.template.json --profile $AWS_PROFILE",
 		"test": "vitest --passWithNoTests",
 		"clean": "rimraf cdk.out build .aws-sam .durable-executions-local",
-		"deploy": "tsc -noEmit && cdk deploy --quiet --require-approval never"
+		"deploy": "tsc -noEmit && cdk deploy --quiet --require-approval never --previous-parameters true"
 	},
 	"devDependencies": {
 		"@aws-sdk/client-bedrock-runtime": "^3.1036.0",

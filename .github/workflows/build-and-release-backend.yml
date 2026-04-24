@@ -3,6 +3,13 @@ run-name: "Building ${{ github.workflow }}-${{ github.ref_name }}"
 
 on:
   workflow_dispatch:
+    inputs:
+      email:
+        description: The email address to send the notifications to
+        type: string
+      ruleEnabled:
+        description: Whether the CloudWatch rule is enabled or not
+        type: boolean
 
   push:
     paths:
@@ -58,12 +65,14 @@ jobs:
 
       # Run tests
       - name: Run Shared Tests
-        if: ${{ inputs.test }}
         run: npm run test -w shared
 
       # Run the deploy
       - name: CDK Deploy
-        run: npm run deploy -w backend
+        run: |
+          INPUT_EMAIL="${{ inputs.email }}"
+          RULE_ENABLED="${{ inputs.ruleEnabled }}"
+          npm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL}
 
       # Deploy
       - name: Deploy to S3
