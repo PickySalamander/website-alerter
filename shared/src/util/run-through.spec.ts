@@ -1,4 +1,5 @@
-import {RunScheduling} from "../src";
+import {RunScheduling} from "../index";
+import {describe, expect, test} from "vitest";
 
 describe("Scheduling", () => {
 	test("Next Run", () => {

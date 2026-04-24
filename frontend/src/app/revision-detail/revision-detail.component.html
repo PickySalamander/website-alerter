@@ -4,14 +4,14 @@
 	<h1>Revision {{ revision.revisionID }}</h1>
 	<div class="info">
 		<div><b>Time</b>: {{ revision.time | date : "short" }}</div>
-		<div><b>Site</b>: <a [routerLink]="['/', 'site', site.siteID]">{{ site.site }}</a> <a [href]="site.site"
-		                                                                                      target="_blank"
-		                                                                                      class="open-new">
-			<mat-icon [inline]="true">open_in_new</mat-icon>
-		</a>
+		<div><b>Site</b>:
+			<a [routerLink]="['/', 'site', site.siteID]">{{ site.site }}</a>
+			<a [href]="site.site" target="_blank" class="open-new">
+				<mat-icon [inline]="true">open_in_new</mat-icon>
+			</a>
 		</div>
-		<div><b>Final State</b>:
-			<app-revision-state [state]="revision.siteState"></app-revision-state>
+		<div>
+			<b>Final State</b>: <app-revision-state [state]="revision.siteState"></app-revision-state>
 		</div>
 	</div>
 
