@@ -38,7 +38,7 @@ export class DatabaseService {
 
 		//if not production use the local docker dynamodb
 		else {
-			console.log("Dynamo connecting to localhost");
+			console.info("Dynamo connecting to localhost");
 
 			//if a dev environment try to connect to docker
 			client = new DynamoDBClient({

@@ -1,14 +1,14 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {HttpClient} from "@angular/common/http";
 import {SiteService} from "../services/site.service";
 import {environment} from "../../environments/environment";
-import {ActivatedRoute, RouterLink} from "@angular/router";
-import {GetRevisionResponse, RevisionUrls} from "website-alerter-shared/dist/util/get-revision-response";
-import {SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
+import {ActivatedRoute, ResolveFn, RouterLink} from "@angular/router";
+import {GetRevisionResponse, RevisionUrls, SiteRevision, SiteRevisionState, WebsiteItem} from "website-alerter-shared";
 import {RevisionStateComponent} from "../revision-state/revision-state.component";
 import {MatButtonModule} from "@angular/material/button";
 import {MatIconModule} from "@angular/material/icon";
+import {firstValueFrom} from "rxjs";
 
 /** Display the details of the revision along with a diff if the revision has a change */
 @Component({
@@ -27,9 +27,6 @@ export class RevisionDetailComponent implements OnInit {
 	/** The site this revision is for */
 	site:WebsiteItem;
 
-	/** The rendered unified diff from the diff2html library */
-	diffHtml:string;
-
 	/** The state of the site's polling and change detection */
 	SiteRevisionState = SiteRevisionState;
 
@@ -40,13 +37,21 @@ export class RevisionDetailComponent implements OnInit {
 
 	ngOnInit() {
 		//get the revision id from the route params
-		const revisionID = this.route.snapshot.paramMap.get("revisionID");
+		const response = this.route.snapshot.data['revision'];
+
+		this.revision = response.revision;
+		this.urls = response.urls;
+		this.site = this.siteService.getSite(response.revision.siteID);
+	}
+
+	/** Get a Revision */
+	static resolve:ResolveFn<GetRevisionResponse> = async(route) => {
+		//get the editing site if it is provided (if not then we are adding a new site)
+		const revisionID = route.paramMap?.get("revisionID");
+
+		const http = inject(HttpClient);
 
 		//load the revision from the API
-		this.http.get<GetRevisionResponse>(`${environment.apiUrl}/revisions/${revisionID}`).subscribe(response => {
-			this.revision = response.revision;
-			this.urls = response.urls;
-			this.site = this.siteService.getSite(response.revision.siteID);
-		});
-	}
+		return await firstValueFrom(http.get<GetRevisionResponse>(`${environment.apiUrl}/revisions/${revisionID}`));
+	};
 }

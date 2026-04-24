@@ -10,12 +10,12 @@ import {ApiLambda} from "../../util/api-lambda";
 export class GetSites extends ApiLambda {
 
 	protected async handle():Promise<APIGatewayProxyResult> {
-		console.log(`Getting sites for user ${this.user.sub}`);
+		console.info(`Getting sites for user ${this.user.sub}`);
 
 		//get the sites
 		const sites = await this.database.getSites();
 
-		console.log(`Returning ${sites.length} sites.`);
+		console.info(`Returning ${sites.length} sites.`);
 
 		return {
 			statusCode: 200,

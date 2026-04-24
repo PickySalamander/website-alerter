@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core';
+import {effect, inject, Injectable} from '@angular/core';
 import {LoginService} from "./login.service";
 import {WebsiteItem} from "website-alerter-shared";
 import {ResolveFn} from "@angular/router";
@@ -16,8 +16,10 @@ export class SiteService {
 	constructor(private http:HttpClient,
 	            private login:LoginService) {
 		//delete the sites when logging out
-		this.login.onLogout.subscribe(() => {
-			this.sites = undefined;
+		effect(() => {
+			if(!this.login.isLoggedIn()) {
+				this.sites = undefined;
+			}
 		});
 	}
 

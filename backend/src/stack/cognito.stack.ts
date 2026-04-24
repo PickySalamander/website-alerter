@@ -37,7 +37,8 @@ export class CognitoStack extends Construct {
 			userPoolClientName: "regular-login",
 			userPool: this.pool,
 			authFlows: {
-				userPassword: true
+				userPassword: true,
+				userSrp: true
 			}
 		});
 	}

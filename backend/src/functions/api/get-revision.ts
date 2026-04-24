@@ -15,7 +15,7 @@ export class GetRevision extends ApiLambda {
 		//get the revision requested from the path
 		const revisionID = <string>event.pathParameters.revisionID;
 
-		console.log(`Getting revision ${revisionID} for user ${this.user.sub}`);
+		console.info(`Getting revision ${revisionID} for user ${this.user.sub}`);
 
 		//verify the revision exists in the database
 		const revision = await this.database.getSiteRevision(revisionID);
@@ -23,13 +23,21 @@ export class GetRevision extends ApiLambda {
 			throw createError.BadRequest(`Failed to find ${revisionID}`);
 		}
 
+		//get the previous successful revision in the database
+		const previousRevision =
+			await this.database.getSiteRevisionAfter(revision.siteID, revision.time);
+
 		//set up the response to the user
 		const toReturn:GetRevisionResponse = {
 			revision,
 			urls: {
-				screenshot: await this.s3.getPreSigned(`content/${revision.siteID}${revisionID}.png`),
-				html: await this.s3.getPreSigned(`content/${revision.siteID}${revisionID}.html`)
-			}
+				screenshot: await this.s3.getPreSigned(`content/${revision.siteID}/${revisionID}.png`),
+				previousScreenshot: previousRevision ?
+					await this.s3.getPreSigned(`content/${previousRevision.siteID}/${previousRevision.revisionID}.png`) : undefined,
+				html: await this.s3.getPreSigned(`content/${revision.siteID}/${revisionID}.html`),
+				previousHtml: previousRevision ?
+					await this.s3.getPreSigned(`content/${previousRevision.siteID}/${previousRevision.revisionID}.html`) : undefined,
+			},
 		};
 
 		return {

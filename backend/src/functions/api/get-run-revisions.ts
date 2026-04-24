@@ -13,7 +13,7 @@ export class GetRunRevisions extends ApiLambda {
 		//the requested run ID from the path
 		const runID = event.pathParameters.runID;
 
-		console.log(`Getting run ${runID} revisions for user ${this.user.sub}`);
+		console.info(`Getting run ${runID} revisions for user ${this.user.sub}`);
 
 		//make sure the run exists
 		const run = await this.database.getRunThrough(runID);
@@ -24,7 +24,7 @@ export class GetRunRevisions extends ApiLambda {
 		//get all the revisions
 		const revisions = await this.database.getSiteRevisionsInRun(runID);
 
-		console.log(`Returning ${revisions.length} runs.`);
+		console.info(`Returning ${revisions.length} runs.`);
 
 		return {
 			statusCode: 200,

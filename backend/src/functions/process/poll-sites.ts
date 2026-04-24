@@ -121,8 +121,23 @@ class PollSites extends LambdaBase {
 				timeout: 30000
 			});
 
-			//get page html
-			const content = await page.content();
+			let content:string;
+
+			if(site.selector) {
+				console.info(`Getting with selector "${site.selector}"...`);
+
+				//wait for the css selector to be visible on the page
+				const element = await page.waitForSelector(site.selector, {
+					timeout: 15000,
+					visible: true
+				});
+
+				//get the outer html when it is available
+				content = await element.evaluate(el => el.outerHTML);
+			} else {
+				//get page html
+				content = await page.content();
+			}
 
 			//take a PNG screenshot for posterity
 			const screenshot = await page.screenshot({fullPage: true}) as Buffer;

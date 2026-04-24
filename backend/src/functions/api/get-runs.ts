@@ -10,12 +10,12 @@ import {ApiLambda} from "../../util/api-lambda";
 export class GetRuns extends ApiLambda {
 
 	protected async handle():Promise<APIGatewayProxyResult> {
-		console.log(`Getting runs for user ${this.user.sub}`);
+		console.info(`Getting runs for user ${this.user.sub}`);
 
 		//get all the runs
 		const runs = await this.database.getRunThroughs();
 
-		console.log(`Returning ${runs.length} runs.`);
+		console.info(`Returning ${runs.length} runs.`);
 
 		return {
 			statusCode: 200,

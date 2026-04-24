@@ -23,7 +23,7 @@ export class PutSite extends ApiLambda {
 		//parse the body of the request
 		const siteRequest = JSON.parse(event.body) as WebsiteItemRequest;
 
-		console.log(`User "${this.user.sub}" ${isNewSite ? "adding" : "updating"} site ${siteRequest.site}`);
+		console.info(`User "${this.user.sub}" ${isNewSite ? "adding" : "updating"} site ${siteRequest.site}`);
 
 		//create a new item for the database (we can trust siteRequest since it is pre-verified by a json schema)
 		const siteItem:WebsiteItem = Object.assign(siteRequest, {

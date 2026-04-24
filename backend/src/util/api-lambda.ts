@@ -1,6 +1,7 @@
 import {LambdaBase} from "./lambda-base";
 import {APIGatewayProxyEvent, APIGatewayProxyResult} from "aws-lambda";
 import {AlerterUser} from "./alerter-user";
+import {EnvironmentVars} from "./environment-vars";
 
 export abstract class ApiLambda extends LambdaBase {
 	/** Cognito user's information */
@@ -11,7 +12,15 @@ export abstract class ApiLambda extends LambdaBase {
 	 * @param event data from the client
 	 */
 	handler = (event:APIGatewayProxyEvent):Promise<APIGatewayProxyResult> => {
-		this._user = event.requestContext.authorizer.claims;
+		if(!EnvironmentVars.isProduction && event.requestContext.authorizer == undefined) {
+			this._user = {
+				sub: "unknown",
+				email: "test@test.com"
+			};
+		} else {
+			this._user = event.requestContext.authorizer.claims;
+		}
+
 		return this.handle(event)
 	}
 

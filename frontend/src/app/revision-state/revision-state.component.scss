@@ -1,13 +1,11 @@
-@import "theme";
-
 .error {
-	color: map-get($warn-colors, 500);
+	color: var(--mat-sys-error);
 }
 
 .unchanged {
-	color: map-get($primary-colors, 500);
+	color: var(--mat-sys-primary);
 }
 
 .changed {
-	color: map-get($accent-colors, 500);
+	color: var(--mat-sys-secondary);
 }

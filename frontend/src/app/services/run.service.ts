@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core';
+import {effect, inject, Injectable} from '@angular/core';
 import {ResolveFn} from "@angular/router";
 import {RunThrough} from "website-alerter-shared";
 import { HttpClient } from "@angular/common/http";
@@ -16,8 +16,10 @@ export class RunService {
 	constructor(private http:HttpClient,
 	            private login:LoginService) {
 		//delete the runs when logging out
-		this.login.onLogout.subscribe(() => {
-			this.runs = undefined;
+		effect(() => {
+			if(!this.login.isLoggedIn()) {
+				this.runs = undefined;
+			}
 		});
 	}
 

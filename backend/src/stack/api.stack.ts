@@ -159,7 +159,7 @@ export class ApiStack extends Construct {
 	 */
 	private schemaFromFile(name:string):JsonSchema {
 		const fileName = path.resolve(__dirname, '..', 'schema', `${name}.json`);
-		console.log(`Loading json schema from ${fileName}`);
+		console.info(`Loading json schema from ${fileName}`);
 		return JSON.parse(fs.readFileSync(fileName, {encoding: 'utf-8'}));
 	}
 }

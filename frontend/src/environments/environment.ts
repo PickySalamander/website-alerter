@@ -3,8 +3,11 @@ export const environment = {
 	production: true,
 
 	/** location of the api to query */
-	apiUrl: 'https://5tc7tm4v57.execute-api.us-east-1.amazonaws.com/prod',
+	apiUrl: 'https://cxo421kqw0.execute-api.us-east-1.amazonaws.com/prod',
 
-	/** Timeout of the session in hours */
-	sessionTimeout: 8
+	/** Login Cognito client ID */
+	cognitoClientId: '76gsbnst2sf83rsbf7vg1f2kqq',
+
+	/** Login Cognito pool ID */
+	cognitoUserPoolId: 'us-east-1_fEEGEBbLh'
 };

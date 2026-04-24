@@ -17,7 +17,7 @@ export class DeleteSites extends ApiLambda {
 
 		//get the id's of the sites the user wants to delete
 		const toDelete = new Set(<string[]>JSON.parse(event.body));
-		console.log(`User "${this.user.sub}" wants to delete ${toDelete.size} sites.`);
+		console.info(`User "${this.user.sub}" wants to delete ${toDelete.size} sites.`);
 
 		//can't delete more than 25 per dynamo standards
 		if(toDelete.size > 25) {

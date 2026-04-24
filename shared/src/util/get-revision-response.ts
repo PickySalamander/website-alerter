@@ -14,9 +14,12 @@ export interface RevisionUrls {
 	/** Link to download an image of the polling */
 	screenshot:string;
 
-	/** Link to download a unified dif of the polling, if there was a change */
-	diff?:string;
+	/** Link to download an image of the previous polling */
+	previousScreenshot?:string;
 
 	/** Link to download HTML of the polling */
 	html:string;
+
+	/** Link to download HTML of the previous polling */
+	previousHtml?:string;
 }

@@ -5,11 +5,11 @@ import {MatInputModule} from "@angular/material/input";
 import {MatIconModule} from "@angular/material/icon";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {MatButtonModule} from "@angular/material/button";
-import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {environment} from "../../environments/environment";
+import {HttpErrorResponse} from "@angular/common/http";
 import {LoginService} from "../services/login.service";
 import {SnackbarService} from "../services/snackbar.service";
-import {LoginRequest, LoginResponse} from "website-alerter-shared";
+import {PageLoaderService} from "../page-loader/page-loader.service";
+import {signIn, signOut} from "aws-amplify/auth";
 
 /** The login page */
 @Component({
@@ -28,56 +28,48 @@ export class LoginComponent {
 	/** Whether to obfuscate the password on the login form */
 	hidePassword:boolean = true;
 
-	/** Whether the login routine is running, if so block input */
-	loggingIn:boolean = false;
-
-	constructor(private http:HttpClient,
-	            private loginService:LoginService,
+	constructor(private loginService:LoginService,
+	            private pageLoader:PageLoaderService,
 	            private snackbar:SnackbarService) {
 	}
 
 	/** Called to submit the form */
-	submit() {
+	async submit() {
 		//ignore if invalid
 		if(this.loginForm.invalid) {
 			return;
 		}
 
-		//the request to make
-		let request:LoginRequest = {
-			email: this.loginForm.controls.email.value,
-			password: this.loginForm.controls.password.value
-		};
+		this.pageLoader.show("Logging in...")
 
-		//block the login button
-		this.loggingIn = true;
+		try {
 
-		//post to the server
-		this.http.post<LoginResponse>(`${environment.apiUrl}/login`, request, {observe: "response"})
-			.subscribe({
-				next: response => {
-					//get the session and save it if found
-					const session = response.headers.get("session");
-					if(session) {
-						this.loginService.session = session;
-						this.loginService.sendInitialUrl();
-					} else {
-						this.handleError();
-					}
-				},
-				error: err => this.handleError(err)
+			//sign out any previous session
+			await signOut();
+
+			const response = await signIn({
+				username: this.loginForm.value.email,
+				password: this.loginForm.value.password
 			});
-	}
 
-	/** Report an error back to the user, using the snackbar */
-	private handleError(error?:HttpErrorResponse) {
-		this.loggingIn = false;
-		this.loginForm.controls.password.reset();
+			if(response.nextStep.signInStep == 'DONE') {
+				await this.loginService.redirectAfterLogin();
+			} else {
+				this.snackbar.error(`Failed to login, another login step is needed (${response.nextStep.signInStep}`);
+			}
 
-		if(error && error.status == 401) {
-			this.snackbar.message("Password or username was incorrect");
-		} else {
-			this.snackbar.error("An unknown error occurred");
+		} catch(e) {
+			if(e instanceof HttpErrorResponse && e.status == 401) {
+				this.snackbar.message("Password or username was incorrect");
+			} else {
+				this.snackbar.error("An unknown error occurred");
+			}
+
+			this.loginForm.controls.password.reset();
+
+			console.error("Failed to login", e);
+		} finally {
+			this.pageLoader.close();
 		}
 	}
 }

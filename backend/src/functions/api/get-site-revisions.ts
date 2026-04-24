@@ -14,7 +14,7 @@ export class GetSiteRevisions extends ApiLambda {
 		//get the requested site ID from the path
 		const siteID = <string>event.pathParameters.siteID;
 
-		console.log(`Getting site ${siteID} revisions for user ${this.user.sub}`);
+		console.info(`Getting site ${siteID} revisions for user ${this.user.sub}`);
 
 		//make sure the site exists
 		const site = await this.database.getSite(siteID);
@@ -25,7 +25,7 @@ export class GetSiteRevisions extends ApiLambda {
 		//get all the revisions
 		const revisions = await this.database.getSiteRevisionsForSite(siteID);
 
-		console.log(`Returning ${revisions.length} revisions`);
+		console.info(`Returning ${revisions.length} revisions`);
 
 		return {
 			statusCode: 200,
