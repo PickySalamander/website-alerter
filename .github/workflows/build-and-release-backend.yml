@@ -77,7 +77,7 @@ jobs:
         run: |
           INPUT_EMAIL="${{ inputs.email }}"
           RULE_ENABLED="${{ inputs.ruleEnabled }}"
-          npm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL} ${RULE_ENABLED:+enableSchedule=RULE_ENABLED}
+          npm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL} ${RULE_ENABLED:+enableSchedule=$RULE_ENABLED}
 
       # Deploy
       - name: Deploy to S3
