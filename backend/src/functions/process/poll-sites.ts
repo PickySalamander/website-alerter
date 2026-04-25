@@ -94,8 +94,10 @@ class PollSites extends LambdaBase {
 		//put the HTML in S3
 		await this.s3.putObject(`content/${site.siteID}/${revisionID}.html`, result.content);
 
+		if(result.screenshot) {
 		//put the PNG in S3
 		await this.s3.putObject(`content/${site.siteID}/${revisionID}.png`, result.screenshot);
+		}
 
 		//add a revision to the database
 		site.last.siteState = SiteRevisionState.Polled;
@@ -121,9 +123,18 @@ class PollSites extends LambdaBase {
 		try {
 			//go to the page and wait for it to render
 			await page.goto(site.site, {
-				waitUntil: ["load", "domcontentloaded", "networkidle2"],
+				waitUntil: ["load", "domcontentloaded"],
 				timeout: 30000
 			});
+
+			try {
+				await page.waitForNetworkIdle({
+					timeout: 15000,
+					concurrency: 3
+				});
+			} catch(e) {
+				console.warn(`Network idle timeout failed for ${site.site}, attempting to keep going`, e);
+			}
 
 			let content:string;
 
@@ -143,15 +154,21 @@ class PollSites extends LambdaBase {
 				content = await page.content();
 			}
 
-			//take a PNG screenshot for posterity
-			const screenshot = await page.screenshot({fullPage: true}) as Buffer;
+			let screenshot:Buffer;
+
+			try {
+				//take a PNG screenshot for posterity
+				screenshot = await page.screenshot({fullPage: true}) as Buffer;
+			} catch(e) {
+				console.warn(`Failed to take screenshot of site ${site.site}`);
+			}
 
 			return {
 				content,
 				screenshot
 			}
 		} catch(e) {
-			console.warn("Failed to parse website", e as Error);
+			console.warn(`Failed to parse website ${site.site}`, e as Error);
 			return undefined;
 		} finally {
 			await page.close();
