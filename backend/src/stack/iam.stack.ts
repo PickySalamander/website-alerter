@@ -10,6 +10,8 @@ export class IamStack extends Construct {
 	/** Role for lambda functions */
 	public readonly lambdaRole:Role;
 
+	readonly schedulerRole:Role;
+
 	/** Create the stack */
 	constructor(private stack:WebsiteAlerterStack) {
 		super(stack, "IAM");
@@ -116,6 +118,21 @@ export class IamStack extends Construct {
 				ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicExecutionRole"),
 				ManagedPolicy.fromAwsManagedPolicyName("service-role/AWSLambdaBasicDurableExecutionRolePolicy"),
 			],
+		});
+
+		this.schedulerRole = new Role(this, "SchedulerRole", {
+			assumedBy: new ServicePrincipal("scheduler.amazonaws.com"),
+			inlinePolicies: {
+				Lambda: new PolicyDocument({
+					statements: [
+						new PolicyStatement({
+							effect: Effect.ALLOW,
+							actions: ["lambda:InvokeFunction"],
+							resources: [stack.lambda.processSites.functionArn],
+						})
+					]
+				})
+			}
 		});
 	}
 }

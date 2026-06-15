@@ -38,6 +38,7 @@
 		"handlebars": "^4.7.9",
 		"http-errors": "^2.0.1",
 		"puppeteer": "^24.42.0",
-		"source-map-support": "^0.5.21"
+		"source-map-support": "^0.5.21",
+		"website-alerter-shared": "workspace:*"
 	}
 }

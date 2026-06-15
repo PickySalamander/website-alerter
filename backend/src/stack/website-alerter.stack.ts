@@ -8,11 +8,11 @@ import {LambdaStack} from "./lambda.stack";
 import {Topic} from "aws-cdk-lib/aws-sns";
 import {CognitoStack} from "./cognito.stack";
 import {ApiStack} from "./api.stack";
-import {CfnRule, Rule, Schedule} from "aws-cdk-lib/aws-events";
-import {RunScheduling} from "website-alerter-shared";
-import {LambdaFunction} from "aws-cdk-lib/aws-events-targets";
 import {EmailSubscription} from "aws-cdk-lib/aws-sns-subscriptions";
 import {ParamsStack} from "./params.stack";
+import {CfnSchedule, Schedule, ScheduleExpression} from "aws-cdk-lib/aws-scheduler";
+import {RunScheduling} from "website-alerter-shared";
+import {LambdaInvoke} from "aws-cdk-lib/aws-scheduler-targets";
 
 /** CDK code to build the Website Alerter Tool's serverless stack */
 export class WebsiteAlerterStack extends Stack {
@@ -86,16 +86,16 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.lambda = new LambdaStack(this);
 
-		//create the event bridge rule that starts up the whole process every 7 days
-		const rule = new Rule(this, "ScheduledStartRule", {
+		const schedule = new Schedule(this, "ScheduledStartRule", {
 			description: "Schedule the lambda to queue up the websites",
-			schedule: Schedule.expression(`cron(${RunScheduling.CRON})`),
-			enabled: false,
-			targets: [new LambdaFunction(this.lambda.processSites)]
+			schedule: ScheduleExpression.expression(`cron(${RunScheduling.CRON})`),
+			target: new LambdaInvoke(this.lambda.processSites, {
+				role: this.iam.schedulerRole
+			})
 		});
 
 		//set whether the rule starts enabled
-		(rule.node.defaultChild as CfnRule).state = this.params.enableSchedule.toString();
+		(schedule.node.defaultChild as CfnSchedule).state = this.params.enableSchedule.toString();
 
 		new ApiStack(this);
 	}

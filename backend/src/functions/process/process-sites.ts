@@ -1,6 +1,5 @@
 import {LambdaBase} from "../../util/lambda-base";
 import {DurableContext, RetryDecision, withDurableExecution} from "@aws/durable-execution-sdk-js";
-import {ScheduledEvent} from "aws-lambda/trigger/cloudwatch-events";
 import {WebsiteItem} from "website-alerter-shared";
 import {EnvironmentVars} from "../../util/environment-vars";
 import {DetectChanges} from "./detect-changes";
@@ -12,7 +11,7 @@ import {Cleanup} from "./cleanup";
  * CloudWatch Event.
  */
 export class ProcessSites extends LambdaBase {
-	async handle(event:ScheduledEvent, context:DurableContext) {
+	async handle(event:object, context:DurableContext) {
 		context.logger.info("Starting scheduled queuing of websites", JSON.stringify(event));
 
 		//get all the websites that should be polled

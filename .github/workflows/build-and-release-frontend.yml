@@ -50,21 +50,26 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: PNPM Setup
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11
+
       # Install dependencies
       - name: Install Node Dependencies
-        run: npm ci
+        run: pnpm install
 
       # Build Shared
       - name: Build Shared
-        run: npm run build -w shared
+        run: pnpm run build -w shared
 
       # Run tests
       - name: Run Shared Tests
-        run: npm run test -w shared
+        run: pnpm run test -w shared
 
       # Run the build
       - name: Run Build
-        run: npm run build -w frontend
+        run: pnpm run build -w frontend
 
       # Deploy
       - name: Deploy to S3

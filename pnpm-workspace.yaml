@@ -1,0 +1,11 @@
+packages:
+  - shared
+  - frontend
+  - backend
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+  puppeteer: false
+linkWorkspacePackages: true
