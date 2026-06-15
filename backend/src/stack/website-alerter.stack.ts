@@ -86,6 +86,8 @@ export class WebsiteAlerterStack extends Stack {
 
 		this.lambda = new LambdaStack(this);
 
+		this.iam.addSchedulerRole();
+
 		const schedule = new Schedule(this, "ScheduledStartRule", {
 			description: "Schedule the lambda to queue up the websites",
 			schedule: ScheduleExpression.expression(`cron(${RunScheduling.CRON})`),
