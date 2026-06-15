@@ -71,18 +71,18 @@ jobs:
 
       # Build Shared
       - name: Build Shared
-        run: pnpm run build -w shared
+        run: pnpm --filter=website-alerter-shared run build
 
       # Run tests
       - name: Run Shared Tests
-        run: pnpm run test -w shared
+        run: pnpm --filter=website-alerter-shared run test
 
       # Run the deploy
       - name: CDK Deploy
         run: |
           INPUT_EMAIL="${{ inputs.email }}"
           RULE_ENABLED="${{ inputs.ruleEnabled }}"
-          pnpm run deploy -w backend -- --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL} ${RULE_ENABLED:+enableSchedule=$RULE_ENABLED}
+          pnpm --filter=website-alerter-backend run deploy -w backend --parameters ${INPUT_EMAIL:+notificationEmail=$INPUT_EMAIL} ${RULE_ENABLED:+enableSchedule=$RULE_ENABLED}
 
       # Deploy
       - name: Deploy to S3

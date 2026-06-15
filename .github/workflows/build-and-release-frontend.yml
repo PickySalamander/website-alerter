@@ -59,17 +59,17 @@ jobs:
       - name: Install Node Dependencies
         run: pnpm install
 
-      # Build Shared
+        # Build Shared
       - name: Build Shared
-        run: pnpm run build -w shared
+        run: pnpm --filter=website-alerter-shared run build
 
       # Run tests
       - name: Run Shared Tests
-        run: pnpm run test -w shared
+        run: pnpm --filter=website-alerter-shared run test
 
       # Run the build
       - name: Run Build
-        run: pnpm run build -w frontend
+        run: pnpm --filter=website-alerter-frontend run build
 
       # Deploy
       - name: Deploy to S3
