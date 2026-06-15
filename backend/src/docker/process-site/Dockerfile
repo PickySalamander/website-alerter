@@ -15,7 +15,7 @@ RUN dnf install -y google-chrome-stable
 COPY package.json index.js index.js.map puppeteer.config.js ./
 
 # Force puppeteer to use the version it was built with: https://pptr.dev/chromium-support
-ENV PUPPETEER_BROWSER_REVISION 147.0.7727.57
+ENV PUPPETEER_BROWSER_REVISION=147.0.7727.57
 
 # Install Puppeteer and any other dependencies not built into the index.js
 RUN npm install --silent
