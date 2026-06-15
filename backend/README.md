@@ -63,3 +63,16 @@ The following are parameters that can be passed to `cdk deploy` to customize the
 
 ## Local Development
 Refer to the guide [here](local-dev.md) for local development instructions.
+
+# Upgrading
+When upgrading dependencies pay attention to the current state of Chrome and the version that is maintained with Puppeteer.
+
+- To update Node version:
+  - Update the base image tag in [the process Dockerfile](src/docker/process-site/Dockerfile) (e.g. `public.ecr.aws/lambda/nodejs:24`).
+  - The Node version in [GitHub Actions](../.github/workflows).
+  - The Node version for [lambda.stack.ts](src/stack/lambda.stack.ts).
+  - Change the Node version used by [tsconfig.json](tsconfig.json).
+- To update Puppeteer version:
+  - Update the pinned version in [src/docker/process-site/package.json](src/docker/process-site/package.json) to match the version in backend's [package.json](package.json). Make sure to use a fixed version, adding a `~` or `^` will potentially have Puppeteer download the wrong version.
+  - Check the [Puppeteer changelog](https://pptr.dev/chromium-support) to confirm the bundled Chrome revision and update it in the [Dockerfile](src/docker/process-site/Dockerfile).
+  - Ensure `google-chrome-stable` installed via dnf in the [Dockerfile](src/docker/process-site/Dockerfile) still satisfies the system library dependencies for that Chrome build.
